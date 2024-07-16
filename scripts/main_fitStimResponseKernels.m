@@ -21,7 +21,7 @@ addpath(fullfile(folders.repo))
 
 %% Fit kernels
 sets = {'neurons', 'boutons'};
-stimTypes = {'drifting', 'static', 'bars'};
+stimTypes = {'gratingsDrifting', 'gratingsStatic', 'bars'};
 for s = 1:2
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     for subj = 1:length(subjDirs)
@@ -87,7 +87,9 @@ for s = 1:2
                     fitResults(iCell) = result;
                     
                     % save and close plot
-                    saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iCell)))
+                    if result.pValue < 2
+                        saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iCell)))
+                    end
                     close(gcf)
                 end
                 % save results
