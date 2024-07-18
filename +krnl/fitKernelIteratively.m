@@ -1,6 +1,6 @@
 function fitResults = ...
     fitKernelIteratively(time, trace, stimOnsets, stimIDs, kernelLength, ...
-    doPlot, doShuffle, stimLength)
+    doShift, doPlot, doShuffle, stimLength)
 
 % time                  [time x 1], time of trace samples
 % trace                 [time x 1], trace of one neuron
@@ -21,12 +21,15 @@ batch = 50;
 numBatches = ceil(testRep/batch);
 
 if nargin < 5
-    doPlot = 0;
+    doShift = false;
 end
 if nargin < 6
-    doShuffle = 0;
+    doPlot = 0;
 end
 if nargin < 7
+    doShuffle = 0;
+end
+if nargin < 8
     stimLength = kernelLength;
 end
 
@@ -34,7 +37,7 @@ end
 stimOnsetFrames = find(histcounts(stimOnsets, time));
 
 [alphas, kernel, prediction, R2] = ...
-    krnl.sumOfPulses(trace, stimOnsetFrames, kernelLength, stimLength);
+    krnl.sumOfPulses(trace, stimOnsetFrames, doShift, stimIDskernelLength, stimLength);
 
 stimUnique = unique(stimIDs);
 numTrials = ceil(length(stimOnsets) / length(stimUnique));

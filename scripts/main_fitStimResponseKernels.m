@@ -21,13 +21,13 @@ addpath(fullfile(folders.repo))
 
 %% Fit kernels
 sets = {'neurons', 'boutons'};
-stimTypes = {'gratingsDrifting', 'gratingsStatic', 'bars'};
+stimTypes = {'bars'}; %{'gratingsDrifting', 'gratingsStatic', 'bars'};
 for s = 1:2
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     for subj = 1:length(subjDirs)
         name = subjDirs(subj).name;
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs)
+        for dt = 1 %1:length(dateDirs)
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
             for k = 1:length(stimTypes)
@@ -41,18 +41,24 @@ for s = 1:2
                 end
                 
                 % load data
+                data = io.getGratingInfo(f, type);
+                time_stim = data.times;
+                stimIDs = data.ids;
+                stimRecording = data.interval;
+                switch type
+                    case {'gratingsDrifting', 'bars'}
+                        stimDirs = data.directions;
+                    case 'gratingsStatic'
+                        stimDirs = data.orientations;
+                        stimPhases = data.phases;
+                end
+
                 data = io.getCalciumData(f);
                 time_traces = data.time;
                 tr = data.traces;
                 planes = data.planes;
                 cellIDs = data.ids;
                 delays = data.delays;
-
-                data = io.getGratingInfo(f, type);
-                time_stim = data.times;
-                stimIDs = data.ids;
-                stimDirs = data.directions;
-                stimRecording = data.interval;
 
                 % only consider data during stimuli
                 ind = time_traces >= time_stim(1,1)-1 & ...
