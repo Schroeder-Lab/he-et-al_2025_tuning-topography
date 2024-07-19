@@ -10,16 +10,17 @@ if nargin < 6
     lenEssential = len;
 end
 
+maxShift = round(0.4 * lenEssential);
+kernelThreshold = 0.1;
+BreakTol = 0.01;
+MaxIter = 500;
+
 trace = trace(:);
 indNaN = find(isnan(trace));
 traceLen = length(trace);
 
 onsets = onsets(:);
 nPulses = length(onsets);
-
-kernelThreshold = 0.1;
-BreakTol = 0.01;
-MaxIter = 500;
 
 % The algorithm works by iterating two steps: computing the amplitudes
 % then computing the pulse shape. Both of these are done by a backslash
@@ -42,7 +43,8 @@ mPulses = sum(indValid);
 % initial guess for the amplitudes: all ones.
 amplitudes = ones(mPulses,1);
 % initial guess for lags: all zeros.
-lags = zeros(mPulses,1);
+stims = unique(stimIDs);
+lagsTrials = zeros(1,mPulses);
 
 % for the traceLen by nPulses Toeplitz Matrix, where trace ~ Toep*PulseShape
 xt = repmat(1:len,mPulses,1);
@@ -51,25 +53,16 @@ tUseMe = find(yt<=traceLen & ~ismember(yt, indNaN)); % this makes sure we don't 
 
 % for the Shifted Pulse matrix, where trace ~ ShiftedPulses*PulseAmps
 xs = repmat(1:mPulses,len,1);
-ys = repmat((0:len-1)',1,mPulses) + repmat(onsets(indValid)',len,1);
+ys = repmat(onsets(indValid)',len,1) + repmat((0:len-1)',1,mPulses);
 sUseMe = find(ys<=traceLen & ~ismember(ys, indNaN)); % this makes sure we don't write outside the matrix
 
 traceNoNaN = trace;
 traceNoNaN(indNaN) = 0;
 
-if doShift
-    pulses = trace(yt(yt <= traceLen));
-    stims = unique(stimIDs);
-    meanPulses = NaN(length(stims), len);
-    for s = 1:length(stims)
-        meanPulses(s,:) = mean(pulses(stimIDs == stims(s),:), 1, 'omitnan');
-    end
-end
-
 ys_original = ys; 
 yt_original = yt;
 for i=1:MaxIter
-    yt = yt_original + lags;
+    yt = yt_original + lagsTrials';
     tUseMe = find(yt<=traceLen & ~ismember(yt, indNaN) & yt>0); % this makes sure we don't write outside the matrix
 
     % make the toeplitz matrix based on current estimated amplitudes
@@ -86,27 +79,6 @@ for i=1:MaxIter
         kernel = -kernel;
     end
 
-    % determine lags
-    if doShift
-        indMax = find(kernel == 1);
-        indThr = find(kernel(1:indMax) < kernelThreshold, 1, 'last');
-        if indThr > 2
-            kernel = kernel([indThr-1:end, 1:indThr-2]);
-        end
-        lags = NaN(mPulses,1);
-        kernelPadded = padarray(kernel, [0 lenEssential], 0, 'pre');
-        for s = 1:length(stims)
-            pulsePadded = padarray(meanPulses(s,:), [0 lenEssential], 0, 'pre');
-            [corrs, l] = xcorr(pulsePadded, kernelPadded, lenEssential, 'unbiased');
-            [~,indCorr] = max(corrs);
-            indStim = stimIDs == stims(s);
-            lags(indStim) = l(indCorr);
-        end
-        %update ys matrix based on lags
-        ys = ys_original + lags;
-        sUseMe = find(ys<=traceLen & ~ismember(ys, indNaN) & ys>0); %find(ys<=SigLen & ys>0)
-    end
-    
     % construct a matrix of shifted pulses
     ss = repmat(kernel,mPulses,1);
     ShiftedPulses = sparse(ys(sUseMe), xs(sUseMe), ss(sUseMe), ...
@@ -120,11 +92,55 @@ for i=1:MaxIter
     
     % break if tolerance achieved
     if norm(amplitudes-Oldamplitudes)<BreakTol; break; end
+    
+    % CONTINUE HERE-------------------------------------------------
+    % todo: is zscoring better? is dividing by max better? don't set lag to
+    % 0 if it was larger than maxShift. instead set to median(lags)?
+    % consider maxShift because lags are ADDED!
+    % determine lags
+    if doShift
+        oldLags = lagsTrials;
+        lagsTrials = NaN(1,mPulses);
+
+        indUse = ys > 0 & ys <= traceLen;
+        yUse = ys;
+        yUse(~indUse) = 1;
+
+        indMax = find(kernel == 1);
+        indThr = find(kernel(1:indMax) < kernelThreshold, 1, 'last');
+        if indThr > 2
+            kernel = kernel([indThr-1:end, 1:indThr-2]);
+        end
+        for s = 1:length(stims)
+            trials = stimIDs(indValid) == stims(s);
+            pred = ShiftedPulses(:,~trials) * amplitudes(~trials);
+            tr = trace - pred;
+            pulses = tr(yUse);
+            pulses(~indUse) = NaN;
+            pulse = mean(pulses(:,trials), 2, 'omitnan');
+            % pulse = pulse ./ max(abs(pulse));
+            pulseModel = mean(kernel * amplitudes(trials)',2);
+            % pulseModel = pulseModel ./ max(abs(pulseModel));
+            [corrs, l] = xcorr(pulse, pulseModel, maxShift, 'unbiased');
+            [~,indCorr] = max(corrs);
+            lagsTrials(trials) = l(indCorr);
+
+            % figure,plot((1:len)-l(indCorr),pulse),hold on,plot(pulseModel)
+        end
+        lagsTrials = oldLags + lagsTrials;
+        lagsTrials = lagsTrials - max(lagsTrials);
+        lagsTrials(lagsTrials < -2*maxShift) = round(median(lagsTrials(lagsTrials > -2*maxShift)));
+        %update ys matrix based on lags
+        ys = ys_original + lagsTrials;
+        sUseMe = find(ys<=traceLen & ~ismember(ys, indNaN) & ys>0); %find(ys<=SigLen & ys>0)
+    end
 end
 prediction = ShiftedPulses * amplitudes;
 amps = NaN(nPulses,1);
 amps(indValid) = amplitudes;
 amplitudes = amps;
+lags = zeros(nPulses,1);
+lags(indValid) = lagsTrials';
 
 R2 = 1 - sum((traceNoNaN - prediction).^2) / ...
     sum((traceNoNaN - mean(traceNoNaN)).^2);

@@ -36,23 +36,28 @@ end
 % get stimulus onsets in frames
 stimOnsetFrames = find(histcounts(stimOnsets, time));
 
-[alphas, kernel, prediction, R2] = ...
-    krnl.sumOfPulses(trace, stimOnsetFrames, doShift, stimIDskernelLength, stimLength);
+[alphas, kernel, lags, prediction, R2] = ...
+    krnl.sumOfPulses(trace, stimOnsetFrames, doShift, stimIDs, ...
+    kernelLength, stimLength);
 
 stimUnique = unique(stimIDs);
 numTrials = ceil(length(stimOnsets) / length(stimUnique));
 if ~isempty(alphas)
     alphaMat = NaN(numTrials, length(stimUnique));
     % [trials x stimuli]
+    lagMat = NaN(numTrials, length(stimUnique));
     for iStim = 1:length(stimUnique)
         alphaMat(:,iStim) = alphas(stimIDs == stimUnique(iStim));
+        lagMat(:,iStim) = lags(stimIDs == stimUnique(iStim));
     end
 else
     alphaMat = [];
+    lagMat = [];
 end
 
 fitResults.kernel = kernel(:);
 fitResults.amplitudes = alphaMat;
+fitResults.lags = lagMat;
 fitResults.prediction = prediction;
 fitResults.pValue = NaN;
 fitResults.R2 = R2;
@@ -70,8 +75,8 @@ if doShuffle == 1
         r2Sh = zeros(1, n);
         sh = shuffled(:,(1:n)+(iBatch-1)*batch);
         parfor iRep = 1:n
-            [~,~,~,r] = krnl.sumOfPulses(sh(:,iRep), stimOnsetFrames, ...
-                kernelLength, stimLength);
+            [~,~,~,~,r] = krnl.sumOfPulses(sh(:,iRep), stimOnsetFrames, ...
+                doShift, stimIDs, kernelLength, stimLength);
             r2Sh(iRep) = r;
         end
         R2Shuffled((1:n)+(iBatch-1)*batch) = r2Sh;
@@ -94,7 +99,8 @@ if doPlot == 1
     subplot(3,2,1)
     plot((0:kernelLength-1) .* binSize, kernel)
     hold on
-    plot((stimLength-1) .* binSize, kernel(stimLength), 'ro')
+    plot([1 1] .* (stimLength-1) .* binSize, [0 1], 'r')
+    legend('kernel','stim offset')
     xlim([0 kernelLength-1] .* binSize)
     title('Response waveform');
     xlabel('time (s)')
