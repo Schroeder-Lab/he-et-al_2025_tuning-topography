@@ -1,12 +1,14 @@
+% Given the pre-processed calcium traces, fit response kernels, response
+% amplitudes (per trial), and kernel shift (per stimulus, in case of bar 
+% stimuli) to calcium responses to drifting gratings, static gratings, and
+% moving bars.
+
 %% Folders
 getFolders;
 
 %% Parameters
-doShuffle = 1; % test whether calcium trace is better fit using a kernel
-               % decribing stimulus response or just a baseline
-doPlot = 1; % if 1, plot results for each cell (kernel fit and relationship
-            % between nonvisual signal, stimulus response and baseline)
-
+doPlot = 1; % if 1, plot results for each cell: kernel fit and trial 
+            % amplitudes
 kernelLength = 10; % length of kernel in sec
 
 %% Add paths
@@ -15,24 +17,26 @@ addpath(fullfile(folders.repo))
 
 %% Fit kernels
 sets = {'neurons', 'boutons'};
-stimTypes = {'gratingsStatic', 'bars'}; %{'gratingsDrifting', 'gratingsStatic', 'bars'};
-for s = 1:2
+stimTypes = {'gratingsDrifting', 'gratingsStatic', 'bars'};
+for s = 1:2 % neurons and boutons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    for subj = 1:length(subjDirs)
+    for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
         fprintf('%s\n', name)
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs)
+        for dt = 1:length(dateDirs) %dates
             date = dateDirs(dt).name;
             fprintf('  %s\n', date)
             f = fullfile(folders.data, sets{s}, name, date);
             for k = 1:length(stimTypes)
                 type = stimTypes{k};
+                % ignore session if stimulus was not presented
                 if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', type)))
                     continue
                 end
                 fprintf('    %s:', type)
-                fPlots = fullfile(folders.plots, type, sets{s}, name, date);
+                fPlots = fullfile(folders.plots, 'FittedKernels', type, ...
+                    sets{s}, name, date);
                 if ~isfolder(fPlots)
                     mkdir(fPlots)
                 end
@@ -56,31 +60,32 @@ for s = 1:2
                         stimDirs = data.directions;
                     case 'gratingsStatic'
                         stimDirs = data.orientations;
-                        stimPhases = data.phases;
                     case 'bars'
                         stimDirs = data.directions;
                         doShift = true;
                 end
 
-                % only consider data during stimuli
+                % ignore clacium traces before and after stimulus paradigm
                 ind = time_traces >= time_stim(1,1)-1 & ...
                     time_traces <= time_stim(end,end)+1;
                 t = time_traces(ind);
                 tr = tr(ind,:);
-%                 % [upsample and time-shift traces]
-%                 [t, tr] = traces.alignSampling(t, tr, delays, planes);
-                % subtract 8th percentile
+                % subtract 8th percentile of each trace
                 tr = tr - prctile(tr, 8, 1);
 
+                % ignore "blank"/gray sitmuli
                 sampleRate = 1 / median(diff(time_traces));
-
                 blankStim = find(isnan(stimDirs));
                 indNoBlank = stimIDs ~= blankStim;
                 stimsNoBlank = stimIDs(indNoBlank);
+                % get stimulus onset times and duration in number of
+                % samples
                 stimOnsets = time_stim(indNoBlank,1);
                 stimFrames = ceil(median(diff(time_stim,1,2)) * sampleRate);
 
+                % length of kernel in number of samples
                 kernelLengthSamples = round(kernelLength * sampleRate);
+                % initialize results structure
                 fitResults = struct('kernel', ...
                     repmat({NaN(kernelLengthSamples,1)}, size(tr,2), 1), ...
                     'amplitudes', NaN(size(time_stim,1)/length(stimDirs), ...
@@ -89,10 +94,12 @@ for s = 1:2
                     length(stimDirs)-length(blankStim)), ...
                     'prediction', NaN(size(tr,1),1), ...
                     'pValue', NaN, 'R2', NaN);
+                % loop over all ROIs
                 for iCell = 1:size(tr,2)
                     if mod(iCell,20) == 0
                         fprintf(' %d', iCell)
                     end
+                    % fit kernel, amplitudes, and kernel shifts
                     result = krnl.fitKernelIteratively(...
                         t + delays(planes(iCell)), tr(:,iCell), ...
                         stimOnsets, stimsNoBlank, kernelLengthSamples, ...
