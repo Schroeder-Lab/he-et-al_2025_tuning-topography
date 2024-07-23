@@ -23,13 +23,13 @@ function data = getStimResponseFits(folder, type)
 %                   [rep x stim x ROIs], kernel lag for each repetition of
 %                   each stimulus
 
-data.time_kernel = readNPY(fullfile(folder, sprintf('_ss_%sKernels.timestamps.npy', type));
+data.time_kernel = readNPY(fullfile(folder, sprintf('_ss_%sKernels.timestamps.npy', type)));
 data.kernel = readNPY(fullfile(folder, sprintf('_ss_%sKernels.dff.npy', type)));
 data.amplitudes = readNPY(fullfile(folder, sprintf('_ss_%sTrials.amplitudes.npy', type)));
 data.time_prediction = readNPY(fullfile(folder, sprintf('_ss_%sPredictions.timestamps.npy', type)));
 data.prediction = readNPY(fullfile(folder, sprintf('_ss_%sPredictions.dff.npy', type)));
 data.pValue = readNPY(fullfile(folder, sprintf('_ss_%sFits.pValue.npy', type)));
-data.R2 = readNPY(fullfile(folder, sprintf('_ss_%sFits.R2.npy', type));
+data.R2 = readNPY(fullfile(folder, sprintf('_ss_%sFits.R2.npy', type)));
 
 if strcmp(type, 'bars')
     data.lags = readNPY(fullfile(folder, sprintf('_ss_%sTrials.lags.npy', type)));

@@ -2,15 +2,17 @@ function [direction, orientation] = determineTuning(amplitudes, ...
     stimDirections, numShuffles)
 
 % direction tuning
-[pref, sel] = tuning.vectorAveraging(amplitudes, stimDirections);
+[pref, sel, sgn] = tuning.vectorAveraging(amplitudes, stimDirections);
 direction.preference = pref;
 direction.selectivity = sel;
+direction.responseSign = sgn;
 
 % orientation tuning
 stimOrientations = mod(stimDirections, 180);
-[pref, sel] = tuning.vectorAveraging(amplitudes, stimOrientations);
-orientation.preference = pref;
+[pref, sel, sgn] = tuning.vectorAveraging(amplitudes, 2*stimOrientations);
+orientation.preference = pref/2;
 orientation.selectivity = sel;
+orientation.responseSign = sgn;
 
 % do shuffle test
 numTrials = numel(amplitudes);
@@ -23,7 +25,7 @@ for k = 1:numShuffles
     [~, dirSelectivities(k)] = tuning.vectorAveraging(ampsShuffled, ...
         stimDirections);
     [~, oriSelectivities(k)] = tuning.vectorAveraging(ampsShuffled, ...
-        stimOrientations);
+        2*stimOrientations);
 end
 
 % determine p-values based on shuffled data

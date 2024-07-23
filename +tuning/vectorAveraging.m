@@ -1,4 +1,4 @@
-function [direction, length] = vectorAveraging(amplitudes, stimDirections)
+function [direction, length, respSign] = vectorAveraging(amplitudes, stimDirections)
 %VECTORAVERAGING   Determine angle and length of average vector.
 
 % INPUT
@@ -11,25 +11,27 @@ function [direction, length] = vectorAveraging(amplitudes, stimDirections)
 % length            double, length of average vector (input vectors
 %                   normalized by sum)
 
-% determine average response across repetitions
-medAmps = median(amplitudes,1,'omitnan')';
+% determine mean response across repetitions
+meanAmps = mean(amplitudes,1,'omitnan')';
+respSign = 1;
 % if most responses are negative, multiply by -1
-if sum(medAmps) < 0
-    medAmps = -medAmps;
+if sum(meanAmps) < 0
+    meanAmps = -meanAmps;
+    respSign = -1;
 end
 % ignore negative responses
-medAmps(medAmps < 0) = 0;
+meanAmps(meanAmps < 0) = 0;
 % normalize responses to sum of 1
-medAmps = medAmps ./ sum(medAmps);
+meanAmps = meanAmps ./ sum(meanAmps);
 % translate stimulus directions to radians
 dirsRadian = deg2rad(stimDirections);
 
 % create vectors representing average responses to each stimulus direction
-vectors = medAmps .* exp(1i .* dirsRadian);
-% average vectors
-meanVector = mean(vectors);
+vectors = meanAmps .* exp(1i .* dirsRadian);
+% sum vectors
+finalVector = sum(vectors);
 
-% direction of average vector in degrees
-direction = rad2deg(angle(meanVector));
-% length of average vector
-length = abs(meanVector);
+% direction of final vector in degrees
+direction = mod(rad2deg(angle(finalVector)), 360);
+% length of final vector
+length = abs(finalVector);

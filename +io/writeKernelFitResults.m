@@ -4,26 +4,22 @@ function writeKernelFitResults(fitResults, time, folder, type)
 
 % INPUTS
 % fitResults
-%   .kernel         [k x 1], shape of kernel, normalized to max = 1
-%   .amplitudes     [rep x stim], kernel amplitudes for each repetition
+%   .kernel         [k x ROIs], shape of kernel, normalized to max = 1
+%   .amplitudes     [rep x stim x ROIs], kernel amplitudes for each repetition
 %                   (rep) of each stimulus
-%   .lags           [rep x stim], kernel lag for each repetition of
+%   .lags           [rep x stim x ROIs], kernel lag for each repetition of
 %                   each stimulus
-%   .prediction     [time x 1], predicted calcium trace
-%   .pValue         [1], p-value of fit based on shift-test; set to 2
+%   .prediction     [time x ROIs], predicted calcium trace
+%   .pValue         [ROIs x 1], p-value of fit based on shift-test; set to 2
 %                   if more than 5% of current set of shifted data
 %                   resulted in better fit than non-shifted data
-%   .R2             [1], explained variance of fit
+%   .R2             [ROIs x 1], explained variance of fit
 % time
 %   .kernel         [k x 1], time of kernel samples
 %   .prediction     [time x 1], time of predicted trace samples
 % folder            path to data of recording session
 % type              str, stimulus type:
 %                   'grating'/'gratingsDrifting'/'gratingsStatic'/'bars'
-
-if nargin < 2
-    type = 'grating';
-end
 
 % time of kernel samples [t_k x 1]
 writeNPY(time.kernel, fullfile(folder, ...
