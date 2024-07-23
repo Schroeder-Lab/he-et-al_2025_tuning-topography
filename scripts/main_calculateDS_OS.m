@@ -8,10 +8,13 @@
 getFolders;
 
 %% Parameters
-numShuffles = 1000;
-maxP = 0.05;
-minR2 = 0;
+numShuffles = 1000; % number of permutations for testing significance of 
+                    % direction and orientation selectivity
+maxP = 0.05; % p-value threshold for response kernel and 
+             % direction/orientation selectivity
+minR2 = 0; % threshold for explained variance for response kernel
 
+% colors for plotting
 cols = [1 0 0; 1 0.8 0.8];
 phaseCols = lines(6);
 
@@ -30,7 +33,7 @@ for s = 1:2 % neurons and boutons
         for dt = 1:length(dateDirs) %dates
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
-            for k = 3 %1:length(stimTypes)
+            for k = 1:length(stimTypes)
                 type = stimTypes{k};
                 % ignore session if stimulus was not presented
                 if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', type)))
@@ -54,6 +57,7 @@ for s = 1:2 % neurons and boutons
                 switch type
                     case {'gratingsDrifting', 'bars'}
                         stimDirs = data.directions;
+                        % ignore blank stimulus
                         stimDirs(isnan(stimDirs)) = [];
                         % determine values needed for plotting
                         stimDist = median(diff(stimDirs));
@@ -62,11 +66,12 @@ for s = 1:2 % neurons and boutons
                     case 'gratingsStatic'
                         stimDirs = data.orientations;
                         stimPhases = data.phases;
+                        % ignore blank stimulus
                         indNaN = isnan(stimDirs);
                         stimDirs(indNaN) = [];
                         stimPhases(indNaN) = [];
-                        phases = unique(stimPhases);
                         % determine values needed for plotting
+                        phases = unique(stimPhases);
                         ind0 = find(stimDirs == 0);
                         stimOrisCirc = [stimDirs; ...
                             ones(length(ind0),1) .* 180];
@@ -87,13 +92,19 @@ for s = 1:2 % neurons and boutons
                 indResponsive = find(p_kernel < maxP & r2_kernel > minR2)';
                 % loop over all ROIs
                 for iCell = indResponsive
+                    % determine direction/orientation preference,
+                    % selectivity, and signficance (response sign: -1 if
+                    % most responses are negative)
                     [drct, ori] = tuning.determineTuning(amplitudes(:,:,iCell), ...
                         stimDirs, numShuffles);
                     dirTuning(iCell) = drct;
                     oriTuning(iCell) = ori;
                     maxi = max(amplitudes(:,:,iCell),[],'all');
                     mini = min(amplitudes(:,:,iCell),[],'all');
-                    
+
+                    % plot results
+                    % replicate responses at 0 degrees to plot at 360 or
+                    % 180 degrees
                     switch type
                         case {'gratingsDrifting', 'bars'}
                             ampsDir = amplitudes(:, [1:end,1], iCell) .* drct.responseSign;
@@ -109,7 +120,7 @@ for s = 1:2 % neurons and boutons
                             figure('Position', [100 380 1200 420]);
                             tiledlayout(1,2)
                     end
-                    nexttile
+                    nexttile % response kernel
                     plot(time_kernel, kernel(:,iCell), 'k', 'LineWidth', 2)
                     hold on
                     plot([1 1].*stimDur, [min([0 min(kernel(:,iCell))]) 1], ...
@@ -120,6 +131,7 @@ for s = 1:2 % neurons and boutons
                     xlabel('Time (s)')
                     set(gca, 'box', 'off')
                     
+                    % direction tuning curve (not if grating was static)
                     if any(strcmp(type, stimTypes(1:2)))
                         nexttile
                         c = cols(1,:);
@@ -142,14 +154,15 @@ for s = 1:2 % neurons and boutons
                         set(gca, 'box', 'off', 'XTick', stimDirsCirc(1:3:end))
                     end
 
-                    nexttile
+                    nexttile % orientation tuning curve
                     c = cols(1,:);
                     h = [0 0 0];
                     if ori.pValue > maxP
                         c = cols(2,:);
                     end
-                    if strcmp(type, stimTypes{3})
+                    if strcmp(type, stimTypes{3}) % for static gratings
                         hold on
+                        % color code responses for difference phases
                         for ph = 1:length(phases)
                             indSt = stimPhasesCirc == phases(ph);
                             hs = plot(stimOrisCirc(indSt)' + ...
@@ -158,6 +171,8 @@ for s = 1:2 % neurons and boutons
                                 'Color', phaseCols(ph,:));
                         end
                         h(1) = hs(1);
+                        % average responses for same orientation across
+                        % phases
                         meanAmps = NaN(length(orientations),1);
                         for st = 1:length(orientations)
                             indSt = stimOrisCirc == orientations(st);
