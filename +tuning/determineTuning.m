@@ -1,5 +1,7 @@
 function [direction, orientation] = determineTuning(amplitudes, ...
     stimDirections, numShuffles)
+%DETERMINETUNING   Determine direction and orientation preference,
+%selectivity and significance.
 
 % direction tuning
 [pref, sel, sgn] = tuning.vectorAveraging(amplitudes, stimDirections);
@@ -14,7 +16,7 @@ orientation.preference = pref/2;
 orientation.selectivity = sel;
 orientation.responseSign = sgn;
 
-% do shuffle test
+% do permutation test
 numTrials = numel(amplitudes);
 numRep = size(amplitudes,1);
 dirSelectivities = NaN(numShuffles,1);
@@ -28,6 +30,6 @@ for k = 1:numShuffles
         2*stimOrientations);
 end
 
-% determine p-values based on shuffled data
+% determine p-values based on permuted data
 direction.pValue = sum(dirSelectivities > direction.selectivity) / numShuffles;
 orientation.pValue = sum(oriSelectivities > orientation.selectivity) / numShuffles;

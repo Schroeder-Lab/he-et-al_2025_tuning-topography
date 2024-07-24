@@ -10,6 +10,8 @@ function [direction, length, respSign] = vectorAveraging(amplitudes, stimDirecti
 % direction         double, directin of average vector in degrees
 % length            double, length of average vector (input vectors
 %                   normalized by sum)
+% respSign          1 or -1, sign of mean response amplitude (across all
+%                   stimuli)
 
 % determine mean response across repetitions
 meanAmps = mean(amplitudes,1,'omitnan')';
