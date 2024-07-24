@@ -30,7 +30,7 @@ for s = 1:2 % neurons and boutons
         for dt = 1:length(dateDirs) %dates
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
-            for k = 3 %1:length(stimTypes)
+            for k = 1:length(stimTypes)
                 type = stimTypes{k};
                 % ignore session if stimulus was not presented
                 if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', type)))
