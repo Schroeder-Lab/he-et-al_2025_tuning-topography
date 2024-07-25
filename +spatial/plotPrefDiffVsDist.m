@@ -1,5 +1,18 @@
 function fig = plotPrefDiffVsDist(distances, prefDiffs, prefDiffsPermuted, ...
     binSize, stepSize)
+%PLOTPREFDIFFVSDIST   Plot brain distances versus differences in
+%direction/orientation preferences.
+
+% INPUTS
+% distance      [pairs x 1], pairwise distances
+% prefDiffs     [pairs x 1], pairwise tuning differences
+% prefDiffsPermuted [pairs x permutations], tuning differences of permuted
+%               ROIs
+% binSize       int, bin size to determine average differences
+% stepSize      int, step size for moving average
+
+% OUTPUTS
+% fig       int, handle to figure
 
 fig = [];
 minSamples = 6;

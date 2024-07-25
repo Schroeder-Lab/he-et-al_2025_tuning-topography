@@ -1,4 +1,13 @@
 function differences = determinePreferenceDiff(angles, type)
+%DETERMINEPREFERENCEDIFF   Calculate all pairwise differences in preferred
+%directions/orientations.
+
+% INPUTS
+% angles        [ROIs x 1], preferred directions or orientations of ROIs
+% type          'ori' or 'dir'
+
+% OUTPUTS
+% differences   [pairs x 1], pairwise differences
 
 differences = [];
 diff = abs(angles - angles');
