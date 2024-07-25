@@ -1,3 +1,7 @@
+% Plot pairwise differences in preferred direction or orientation against
+% the distance of ROIs in the brain. Consider only ROIs within the same
+% plane or ROIs across all planes (ignoring distances in depth).
+
 %% Folders
 getFolders;
 
@@ -46,6 +50,7 @@ for s = 2 % neurons and boutons
             roiPos = data.roiPositions(:,1:2);
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
+            % loop across each plane of recording + all planes together
             uniquePlanes = unique(planes);
             indPlanes = true(length(planes), length(uniquePlanes)+1);
             for p = 1:length(uniquePlanes)
@@ -62,11 +67,14 @@ for s = 2 % neurons and boutons
             oriDiffPlaneNull{rec} = [];
             oriDiffRecNull{rec} = [];
             for p = 1:size(indPlanes,2)
+                % get tuning preferences of ROIs within plane
                 dp = dirTuning.preference(indPlanes(:,p));
                 op = oriTuning.preference(indPlanes(:,p));
+                % ignore untuned ROIs
                 indValid1 = ~(isnan(dp) & isnan(op));
                 dp = dp(indValid1);
                 op = op(indValid1);
+                % get indices of tuned ROIs within plane
                 indValid2 = find(indPlanes(:,p));
                 indValid2 = indValid2(indValid1);
 
@@ -102,7 +110,7 @@ for s = 2 % neurons and boutons
                     oriDiffRecNull{rec} = [oriDiffRecNull{rec}; odPermuted];
                 end
                 
-                % plot
+                % plot results per recording (each + across planes)
                 if p < size(indPlanes,2) % for each plane
                     strDir = sprintf('Direction_Plane%02d.jpg', uniquePlanes(p));
                     strOri = sprintf('Orientation_Plane%02d.jpg', uniquePlanes(p));

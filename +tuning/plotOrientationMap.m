@@ -1,12 +1,15 @@
 function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, fovMicron)
+%PLOTORIENTATIONMAP   Plot ROI masks within imaging FOV with preferred
+%direction/orientation color coded.
 
-% neuronOrientations    [neurons x 2]; 1st col: pref. orientation or
+% angles    [neurons x 2]; 1st col: pref. orientation or
 %                       direction, 2nd col.: goodness of tuning, e.g. adj.
 %                       R-Squared
+% isTuned
 % type                  'ori' or 'dir'
-% ROImaps               {neurons x 1}; each entry contains pixels of ROI
-% mapsSize              [1 x 2]; size of frame ([validY validX])
-% minWeight             minimum goodness of tuning to show orientation,
+% masks               {neurons x 1}; each entry contains pixels of ROI
+% fovPix              [1 x 2]; size of frame ([validY validX])
+% fovMicron             minimum goodness of tuning to show orientation,
 %                       otherwise ROI will be gray
 
 % map = zeros([fovPix,3]);
