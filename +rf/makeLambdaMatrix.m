@@ -1,4 +1,12 @@
 function matrix = makeLambdaMatrix(krnlDims, smoothPerDim)
+%MAKELAMBDAMATRIX   Create lambda matrix for ridge regression.
+
+% INPUTS
+% krnlDims      [dims], size of each dimension, e.g. [numRows, numCols, numTime]
+% smoothPerDim  [dims], smoothing within each dimension
+
+% OUTPUTS
+% matrix        matrix of size(dims), lambda matrix
 
 allDims = [krnlDims, prod(krnlDims)];
 % create kernel of given size

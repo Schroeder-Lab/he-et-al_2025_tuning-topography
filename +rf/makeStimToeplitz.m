@@ -1,21 +1,19 @@
 function [stim, time, stimFrames, stimBin] = ...
     makeStimToeplitz(stimFrames, stimTimes, RFtimesInFrames)
+%MAKESTIMTOEPLITZ   Generate toeplitz matrix for visual noise stimuli.
 
-%MAKESTIMTOEPLITZ Generates toeplitz matrix for whitenoise stimuli.
-%   [stim, time, stimFrames, stimBin] = ...
-%    MAKESTIMTOEPLITZ(stimFrames, stimTimes, RFtimesInFrames) generates the
-%    toeplitz matrix for the given stimulus frames.
-%
+% INPUTS
+%   stimFrames          [time x rows x cols]; noise stimulus
+%   stimTimes           [time x 1]; times of stimulus frames
+%   RFtimesInFrames     [1 x RFframes]; frames of receptive field relative
+%                       to stimulus frames
+
+% OUTPUTS
 %   stim                [time x pixels]; toeplitz matrix
 %   time                [time x 1]; time of stimulus frames (no gaps)
 %   stimFrames          [time x rows x cols]; stimulus frames, gaps filled
 %                       with zeros
 %   stimBin             double; duration of each stimulus frame
-%
-%   stimFrames          [time x rows x cols]; noise stimulus
-%   stimTimes           [time x 1]; times of stimulus frames
-%   RFtimesInFrames     [1 x RFframes]; frames of receptive field relative
-%                       to stimulus frames
 
 % generate toeplitz matrix for stimuli: [time x pixels]
 % each row holds all pixels at current and previous time points:

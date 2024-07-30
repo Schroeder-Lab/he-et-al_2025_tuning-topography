@@ -10,16 +10,15 @@ decayWin = 20; % in s, window to test whether baseline is higher than normal
 decayThresh = 1.5; % in std, threshold for decay
 correctWin = 150; % in s, window to fit exponential
 
-% for receptive field estimates
-% used for fitting 2 RFs (ON and OFF simultaneously), and fitting running
-% kernels and RFs simultaneously
-lambdasStim = 0.002; % 1e-4;
-RFlimits = [0.2 0.4];
+% for receptive field fits
+lambdasStim = 0.002; % smoothing parameter for spatial RF
+RFlimits = [0.2 0.4]; % time range of stimulus before neural response 
+                      % considered for RF
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 
 % % for evaluation of receptive fields (significance/goodness)
-minEV = 0.005;
-minPeak = 3.5;
+minEV = 0.005; % minimum explained variance to plot RF
+minPeak = 3.5; % minimum peak of RF (compared to noise) to plot RF
 
 % colormaps
 [cm_ON, cm_OFF] = colmaps.getRFMaps;
@@ -35,7 +34,7 @@ addpath(fullfile(folders.repo))
 sets = {'neurons', 'boutons'};
 for s = 1:2 % neurons and boutons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    for subj = 1:length(subjDirs)
+    for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
         fprintf('%s\n', name)
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
@@ -43,11 +42,10 @@ for s = 1:2 % neurons and boutons
             date = dateDirs(dt).name;
             fprintf('  %s\n', date)
             f = fullfile(folders.data, sets{s}, name, date);
-
+            % ignore session if visual noise stimuolus was not present
             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
                 continue
             end
-
             fPlots = fullfile(folders.plots, 'ReceptiveFields', ...
                 sets{s}, name, date);
             if ~isfolder(fPlots)
@@ -73,6 +71,7 @@ for s = 1:2 % neurons and boutons
             % if stimulus covers both hemifields, only
             % consider right hemifield (affected datasets all recorded in left
             % hemisphere)
+            % width and height of visual noise pixels
             squW = diff(stimPos(1:2)) / size(stimMaps,3);
             squH = -diff(stimPos(3:4)) / size(stimMaps,2);
             if stimPos(1) * stimPos(2) < 0
@@ -82,22 +81,24 @@ for s = 1:2 % neurons and boutons
                 stimMaps = stimMaps(:,:,validPix);
                 stimPos(1) = leftEdges(find(validPix,1));
             end
+            % make meshgrid for plotting fitted RF contour (later)
             [x0, y0] = meshgrid(linspace(stimPos(1), stimPos(2), 100), ...
                 flip(linspace(stimPos(4), stimPos(3), 100)));
 
-            % ignore data outside visual noise stimulation
+            % ignore data before/after visual noise stimulation
             t_ind = time_tr > time_stim(1) - 10 & ...
                 time_tr < time_stim(end) + 10;
             tr = tr(t_ind,:);
             time_tr = time_tr(t_ind);
             % interpolate calcium traces to align all to same time
             if length(unique(planes)) > 1
-                [tr, time_tr] = traces.alignPlaneTraces(tr, time_tr, delays, planes);
+                [tr, time_tr] = traces.alignPlaneTraces(tr, time_tr, ...
+                    delays, planes);
             end
 
-            % remove strong baseline decay at start of experiment in cells that
-            % show it
-            tr = traces.removeInitialDecay(tr, time_tr, decayWin, decayThresh);
+            % remove strong baseline decay at start of experiment
+            tr = traces.removeInitialDecay(tr, time_tr, decayWin, ...
+                decayThresh);
 
             % more stimulus information
             stimFrames = stimMaps(stimSeq,:,:);
@@ -107,14 +108,16 @@ for s = 1:2 % neurons and boutons
             clear stimMaps stimSeq
 
             % map RF
-            rFields = ...
-                rf.getReceptiveField( ...
+            rFields = rf.getReceptiveField( ...
                 tr, time_tr, stimFrames, time_stim, ...
                 RFtimesInFrames, lambdasStim);
+            % [rows x columns x time x ON/OFF x units]
 
             % fit Gaussian
+            % parameters of fitted Gaussian
             fitPars = NaN(size(tr,2), 6); % each row: [amplitude, xCenter,
             % xStd, yCenter, yStd, rotation]
+            % fitted 2D Gaussian map (one for ON and OFF)
             fitGaussians = NaN(size(tr,2), size(rFields,1), size(rFields,2), 2);
             fitWeights = NaN(size(tr,2), length(RFtimesInFrames));
             peak_from_noise = NaN(size(tr,2), 1);
@@ -125,11 +128,13 @@ for s = 1:2 % neurons and boutons
             EVs = NaN(size(tr,2), 1);
             for iUnit = 1:size(fitPars,1)
                 rfield = permute(rFields(:,:,:,:,iUnit), [1 2 4 3]); % [rows x cols x ON/OFF x t]
-                [mx,mxTime] = max(max(reshape(abs(rfield), [], size(rfield,4)), [], 1));
+                [mx,mxTime] = max(max(reshape(abs(rfield), [], ...
+                    size(rfield,4)), [], 1));
                 rf_T = squeeze(rfield(:,:,:,mxTime));
 
                 % find whether Gaussian is best fit to only ON, only OFF, or
-                % ON-OFF subfields
+                % ON-OFF subfields, and what optimal sign of each subfield
+                % is
                 [fitRFs, RFsigns, MSEs] = rf.findRFGaussianMask(rf_T);
                 [~, bestSubField] = min(MSEs);
                 subFields{iUnit} = RFtypes{bestSubField};
@@ -150,8 +155,8 @@ for s = 1:2 % neurons and boutons
 
                 % compare peak of fitted RF to amplitude of noise in RF map;
                 % reproduce fitted Gaussian RF
-                fitRF = rf.sampleGaussianAtPixelPos(rf_sub, stimPos, fitPars(iUnit,:));
-
+                fitRF = rf.sampleGaussianAtPixelPos(size(rf_sub, [1 2]), ...
+                    stimPos, fitPars(iUnit,:));
                 % subtract Gaussian from original RF map
                 noise = rf_sub - fitRF;
                 % distance of peak from noise
@@ -159,12 +164,19 @@ for s = 1:2 % neurons and boutons
                     mean(noise(:))) / std(noise(:));
 
                 % predict response from RF
+                % amplitudes (weights) of spatial RF across time span of RF
                 weights = reshape(fitRFs(:,:,:,bestSubField), [], 1) \ ...
                     reshape(rfield, [], size(rfield,4));
-                spatTempMask = reshape(fitRFs(:,:,:,bestSubField), [], 1) * weights;
+                % generate spatio-temporal RF from fitted Gaussian and
+                % temporal weights
+                spatTempMask = reshape(fitRFs(:,:,:,bestSubField), [], 1) * ...
+                    weights;
                 spatTempMask = permute(reshape(spatTempMask, size(fitRFs,1), ...
                     size(fitRFs,2), 2, length(weights)), [1 2 4 3]); % [rows x cols x t x ON/OFF]
-                [predictions(:, iUnit), EVs(iUnit)] = rf.predictFromRF(tr(:,iUnit), time_tr, stimFrames, ...
+                % predict calcium trace based on generated spatio-temporal
+                % RF
+                [predictions(:, iUnit), EVs(iUnit)] = ...
+                    rf.predictFromRF(tr(:,iUnit), time_tr, stimFrames, ...
                     time_stim, RFtimesInFrames, spatTempMask);
                 fitWeights(iUnit,:) = weights;
 
@@ -175,15 +187,17 @@ for s = 1:2 % neurons and boutons
                 % (top is positive)
                 fitPars(iUnit,6) = -fitPars(iUnit,6);
 
-                % plot RF
+                % plot RF (if explained var. and peak-to-noise high enough
                 if EVs(iUnit) >= minEV && peak_from_noise(iUnit) >= minPeak
                     figure('Position', [75 195 1470 475])
                     for sf = 1:2
                         subplot(1,2,sf)
+                        % STA
                         imagesc([stimPos(1)+squW/2 stimPos(2)-squW/2], ...
                             [stimPos(3)-squH/2 stimPos(4)+squH/2], ...
                             rf_T(:,:,sf),[-mx mx])
                         hold on
+                        % contour of fitted 2D Gaussian
                         fitRF = rf.D2GaussFunctionRot(fitPars(iUnit,:), cat(3, x0, y0));
                         if any(strcmp(subFields{iUnit}, [RFtypes(sf), RFtypes(3)]))
                             contour(x0, y0, fitRF, [1 1] .* (fitPars(iUnit,1) * normpdf(1.5) / normpdf(0)), ...

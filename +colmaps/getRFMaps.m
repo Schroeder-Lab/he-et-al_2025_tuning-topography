@@ -1,4 +1,10 @@
 function [colormapON, colormapOFF] = getRFMaps()
+%GETRFMAPS   Return color maps used for plotting receptive fields (ON and
+%OFF separately).
+
+% OUTPUTS
+% colormapON    [100 x 3], grey-white-pink color gradient
+% colormapOFF   [100 x 3], grey-white-blue color gradient
 
 red = [1 0 .5];
 blue = [0 .5 1];

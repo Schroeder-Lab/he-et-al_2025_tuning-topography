@@ -1,22 +1,22 @@
-function F = D2GaussFunctionRot(x,xdata)
-%% x = [Amp, x0, wx, y0, wy, fi]
-%[X,Y] = meshgrid(x,y) 
-%  xdata(:,:,1) = X
-%  xdata(:,:,2) = Y           
-% Mrot = [cos(fi) -sin(fi); sin(fi) cos(fi)]
-%%
-xdatarot(:,:,1)= xdata(:,:,1)*cos(x(6)) - xdata(:,:,2)*sin(x(6));
-xdatarot(:,:,2)= xdata(:,:,1)*sin(x(6)) + xdata(:,:,2)*cos(x(6));
-x0rot = x(2)*cos(x(6)) - x(4)*sin(x(6));
-y0rot = x(2)*sin(x(6)) + x(4)*cos(x(6));
+function map = D2GaussFunctionRot(parameters, mesh)
+%D2GAUSSFUNCTIONROT   Create 2D Gaussian map using the given parameters and
+% size of mesh.
 
-F = x(1)*exp(   -((xdatarot(:,:,1)-x0rot).^2/(2*x(3)^2) + (xdatarot(:,:,2)-y0rot).^2/(2*x(5)^2) )    );
+% INPUTS
+% parameters    [amplitude, x-center, width, y-center, height, rotation]
+% mesh          [rows x columns x 2], mesh(:,:,1): x-coordinates,
+%               mesh(:,:,2): y-coordinates
 
-% figure(3)
-% alpha(0)
-% imagesc(F)
-% colormap('gray')
-% figure(gcf)%bring current figure to front
-% drawnow
-% beep
-% pause %Wait for keystroke
+% OUTPUTS
+% map           [rows x columns], map of 2D Gaussian
+
+% rotate input matrix of x- and y-coordinates
+xdatarot(:,:,1)= mesh(:,:,1)*cos(parameters(6)) - mesh(:,:,2)*sin(parameters(6));
+xdatarot(:,:,2)= mesh(:,:,1)*sin(parameters(6)) + mesh(:,:,2)*cos(parameters(6));
+% coordinates pointing to center of Gaussian
+x0rot = parameters(2)*cos(parameters(6)) - parameters(4)*sin(parameters(6));
+y0rot = parameters(2)*sin(parameters(6)) + parameters(4)*cos(parameters(6));
+
+map = parameters(1) * exp( ...
+    -((xdatarot(:,:,1) - x0rot).^2 / (2 * parameters(3)^2) + ...
+      (xdatarot(:,:,2) - y0rot).^2 / (2 * parameters(5)^2)));
