@@ -1,0 +1,19 @@
+function tracesNew = removeInitialDecay(traces, time, decayWin, ...
+    decayThresh)
+
+tracesNew = traces;
+timeBin = median(diff(time));
+indUnits = find(mean(traces(1:round(decayWin / timeBin),:),1,'omitnan') > ...
+    mean(traces,1,'omitnan') + decayThresh .* std(traces,0,1,'omitnan'));
+for iUnit = 1:length(indUnits)
+    y = traces(:, indUnits(iUnit));
+    y = fillmissing(y, 'linear');
+    % fit double exponential to start of trace
+    f = fit((1:length(y))', y, ...
+        @(a,b,c,d,e,x) a + b .* exp(-x ./ c) + d .* exp(-x ./ e), ...
+        'Lower', [0 0 0 0 0], ...
+        'Upper', [max(y) max(y) 500 max(y) 500], ...
+        'StartPoint', [min(y) mean(y) 50 mean(y) 5]);
+    % remove fit
+    tracesNew(:, indUnits(iUnit)) = y - f(1:size(traces,1)) + f.a;
+end
