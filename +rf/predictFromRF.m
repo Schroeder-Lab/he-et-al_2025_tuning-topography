@@ -31,4 +31,4 @@ clear sdesl
 
 prediction = NaN(size(ind));
 prediction(~ind) = stim2 * spatTempRF(:);
-explainedVar = 1 - sum((zTrace - prediction).^2, 1) ./ sum(zTrace.^2, 1);
+explainedVar = 1 - sum((zTrace - prediction(~ind)).^2, 1) ./ sum(zTrace.^2, 1);

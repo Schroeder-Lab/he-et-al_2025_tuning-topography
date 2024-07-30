@@ -91,7 +91,9 @@ for s = 1:2 % neurons and boutons
             tr = tr(t_ind,:);
             time_tr = time_tr(t_ind);
             % interpolate calcium traces to align all to same time
-            [tr, time_tr] = traces.alignPlaneTraces(tr, time_tr, delays, planes);
+            if length(unique(planes)) > 1
+                [tr, time_tr] = traces.alignPlaneTraces(tr, time_tr, delays, planes);
+            end
 
             % remove strong baseline decay at start of experiment in cells that
             % show it
