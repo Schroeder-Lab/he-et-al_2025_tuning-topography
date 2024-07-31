@@ -11,11 +11,19 @@ function data = getRecordingInfo(folder)
 %   .roiPositions [ROIs x 3], (horizontal, vertical, depth)-coordinates in
 %               microns
 %   .fovPix     [nPlanes x 2], size of field-of-view in pixels (height x
-%               width)
+%               width), size of reference frame for ROI masks
 %   .fovMicrons [nPlanes x 2], size of field-of-view in microns (height x
 %               width)
+%   .fovBoundaries [nPlanes x 4], for each plane: [top bottom left right]
+%               pixels relative to full imaged FOV, pixels outside these
+%               boundaries were disregarded for ROI detection as the edges
+%               were not always visible
+%   .meanFrame  [nPlanes x rows x columns], mean frame after frame
+%               alignment
 
 data.roiMasks = readNPY(fullfile(folder, '_ss_2pRois.masks.npy'));
 data.roiPositions = readNPY(fullfile(folder, '_ss_2pRois.xyz.npy'));
 data.fovPix = readNPY(fullfile(folder, '_ss_2pPlanes.fovSizePix.npy'));
 data.fovMicrons = readNPY(fullfile(folder, '_ss_2pPlanes.fovSizeMicrons.npy'));
+data.fovBoundaries = readNPY(fullfile(folder, '_ss_2pPlanes.fovBoundariesPix.npy'));
+data.meanFrame = readNPY(fullfile(folder, '_ss_2pPlanes.meanFrame.npy'));

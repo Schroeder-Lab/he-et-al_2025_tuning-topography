@@ -3,8 +3,8 @@ function [colormapON, colormapOFF] = getRFMaps()
 %OFF separately).
 
 % OUTPUTS
-% colormapON    [100 x 3], grey-white-pink color gradient
-% colormapOFF   [100 x 3], grey-white-blue color gradient
+% colormapON    [200 x 3], grey-white-pink color gradient
+% colormapOFF   [200 x 3], grey-white-blue color gradient
 
 red = [1 0 .5];
 blue = [0 .5 1];

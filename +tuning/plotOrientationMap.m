@@ -23,9 +23,11 @@ map = ones(fovPix) .* 363;
 if strcmp(type, 'ori')
     angles = round(mod(angles(:,1),180)*2);
     str = 'Orientation';
+    labels = 0:15:180;
 elseif strcmp(type, 'dir')
     angles = round(mod(angles(:,1),360));
     str = 'Direction';
+    labels = 0:30:360;
 end
 angles(angles == 0) = 360;
 % set untuned ROIs to light gray
@@ -54,6 +56,6 @@ colormap(colors);
 ylabel(str)
 % rescale plots
 set(ax(2), 'Position', [0.85 0.11 0.05 0.82], 'YAxisLocation', 'right', ...
-    'YTick', 1:30:360, 'YTickLabel', 0:15:179, 'XTick', [], 'box', 'off')
+    'YTick', 1:30:360, 'YTickLabel', labels, 'XTick', [], 'box', 'off')
 set(ax(1), 'Position', [0.13 0.11 0.7 0.82])
 axis(ax(1), 'equal')

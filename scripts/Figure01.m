@@ -4,115 +4,149 @@ getFolders;
 %% Parameters
 
 %% Examples
-ex = cell(2,4); % rows: (1) bouton, (2) neuron, columns: (1) ori, (2) dir
-ex(1,1,:) = {'SS076', '2017-10-02', 6, 4};
-ex(1,2,:) = {'SS076', '2017-10-02', 6, 6};
-ex(2,:) = {'SS044', '2015-04-28', 3, [227 231 236 240 244 245 249 252 256 258 260 262 263 264 268 273 281 285 293 313 321 328 369 378 379 380 383 385 393 393 402 408 412 425 426 430 440]};
+ex = cell(2,4); % rows: (1) bouton, (2) neuron
+ex(1,:) = {'SS078', '2017-09-28', 1, []};
+% good neurons
+% ex(2,:) = {'SS044', '2015-04-28', 3, [227 231 236 240 245 252 256 258 268 281 285 293 313 321 328 369 378 379 380 383 385 393 408 425 426 430]};
+% best neurons (mix of DS and OS)
+% ex(2,:) = {'SS044', '2015-04-28', 3, [231 240 245 252 256 258 268 281 293 313 321 328 369 378 379 380 385 393]};
+% best DS neurons
+% ex(2,:) = {'SS044', '2015-04-28', 3, [227 236 240 285 383 408 425 426 430]};
+% best OS neurons
+% ex(2,:) = {'SS044', '2015-04-28', 3, [227 236 240 285 383 408 425 426 430]};
+% final selection (2 triples of neighbours)
+ex(2,:) = {'SS044', '2015-04-28', 3, [328 378 369 236 245 258]};
 sets = {'boutons', 'neurons'};
 
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
 addpath(fullfile(folders.repo))
 
-%% Example calcium traces and tuning curves
+%% Example mean frames, calcium traces and tuning curves
 buffer = 1; % in sec (before and after stim period)
-for s = 1:2
-    str = sets{k};
+fPlot = fullfile(folders.plots, 'Figure01');
+if ~isfolder(fPlot)
+    mkdir(fPlot)
+end
+for s = 2
+    str = sets{s};
     f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
     calc = io.getCalciumData(f);
     stim = io.getGratingInfo(f, 'gratingsDrifting');
     krnlFits = io.getStimResponseFits(f, 'gratingsDrifting');
+    [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+    recInfo = io.getRecordingInfo(f);
 
-    % loop over all examples
+    stimDur = median(diff(stim.times,1,2));
+    validStims = find(~isnan(stim.directions));
+
     units = ex{s,4};
-    for k = 1:length(units)
-        % align calcium traces to stimuli
-
-        % align prediction traces to stimuli
-
-        % plot for each stimulus:
-        % single-trial traces +
-        % mean of prediction
-    end
-
-    cellID = examplesTun{ex,3}==planes & examplesTun{ex,4}==ids;
-    t = time + planeDelays(examplesTun{ex,3});
-    stimMatrix = exp.buildStimMatrix(stimSequence, stimIntervals, t);
-    directions(isnan(directions)) = [];
-    timeBin = median(diff(time));
-    repetitions = sum(stimSequence == 1);
-    stimDurInFrames = round(sum(stimMatrix(1,:)) / repetitions);
-    stimDur = stimDurInFrames * timeBin;
-    offset = ceil(buffer / timeBin);
-    resp = squeeze(exp.getTracesPerStimulus(traces(:,cellID), stimMatrix, ...
-        [1 1] .* offset)); % [stimulus x trial x time]
-    predResp = squeeze(exp.getTracesPerStimulus(predictions(:,cellID), ...
-        stimMatrix, [1 1] .* offset));
-
-    ind = ~largePupil;
-    ind = repmat(ind, 1, 1, size(resp,3));
-    temp = resp(1:end-1,:,:);
-    temp(~ind) = NaN;
-    respMean = nanmean(temp, 2);
-    temp = predResp(1:end-1,:,:);
-    temp(~ind) = NaN;
-    predMean = nanmean(temp, 2);
-    respMean = respMean(1:3:end,:);
-    predMean = predMean(1:3:end,:);
-
-    mini = min([respMean(:); predMean(:)]);
-    maxi = max([respMean(:); predMean(:)]);
-    rng = maxi - mini;
-    mini = mini - 0.05*rng;
-    maxi = maxi + 0.05*rng;
-    xDist = .5;
-    traceDur = stimDur + 2*buffer;
-    respTime = (-offset:stimDurInFrames+offset-1) .* timeBin;
-
-    figure('Position',[50 500 1000 420])
-    hold on
-    h = [0 0];
-    x0 = 0;
-    for st = 1:size(respMean,1)
-        fill([0 stimDur stimDur 0] + x0, ...
-            [mini mini maxi maxi], 'k', 'FaceColor', 'k', ...
-            'FaceAlpha', 0.1, 'EdgeColor', 'none')
-        plot(respTime([1 end]) + x0, [0 0], 'k:')
-        h1 = plot(respTime + x0, squeeze(respMean(st,:)), ...
-            'Color', 'k');
-        h2 = plot(respTime + x0, squeeze(predMean(st,:)), ...
-            'Color', 'k', 'LineWidth', 2);
-        x0 = x0 + traceDur + xDist;
-        if st==1
-            h(1) = h2;
-            h(2) = h1;
+    % align calcium trace to stimuli
+    [alignedTrace, t] = traces.getAlignedTraces( ...
+        calc.traces(:,units), calc.time, ...
+        stim.times(:,1), [-buffer stimDur+buffer]);
+    % align predicted trace to stimuli
+    alignedPredicted = traces.getAlignedTraces( ...
+        krnlFits.prediction(:,units), krnlFits.time_prediction, ...
+        stim.times(:,1), [-buffer stimDur+buffer]);
+    % loop over all examples
+    for iUnit = 1:length(units)
+        mini = min(alignedTrace(:,:,iUnit), [], "all");
+        maxi = max(alignedTrace(:,:,iUnit), [], "all");
+        f1 = figure('Position',[3 570 1915 420]);
+        tiledlayout(1, length(validStims), "TileSpacing", "tight", ...
+            "Padding", "tight")
+        for st = 1:length(validStims)
+            indSt = stim.ids == validStims(st);
+            nexttile
+            hold on
+            fill([0 0 stimDur stimDur], [mini maxi maxi mini], 'k', ...
+                'FaceColor', [1 1 1].*0.9, 'EdgeColor', 'none')
+            plot(t, alignedTrace(:,indSt,iUnit), ...
+                "Color", [1 1 1].*0.5);
+            plot(t, mean(alignedPredicted(:,indSt,iUnit), 2, "omitnan"), ...
+                'k', "LineWidth", 1)
+            set(gca, "Box", "off")
+            xlim(t([1 end]))
+            ylim([mini maxi])
+            if st == 1
+                xlabel('Time (s)')
+                ylabel('\DeltaF/F')
+            end
+            title(sprintf('%d deg', stim.directions(validStims(st))))
         end
-    end
-    axis tight
-    set(gca, 'XTick', [0 stimDur])
-    legend(h, {'Prediction from kernel fit','Data'})
-    xlabel('Stimuli')
-    ylabel('\DeltaF/F')
-    title(sprintf('Example %d',ex))
+        sgtitle(sprintf('ROI %03d: DS = %.2f (p=%.3f), OS = %.2f (p=%.3f)', ...
+            units(iUnit), dirTuning.selectivity(units(iUnit)), ...
+            dirTuning.pValue(units(iUnit)), oriTuning.selectivity(units(iUnit)), ...
+            oriTuning.pValue(units(iUnit))))
 
+        mini = min(krnlFits.kernel(:,units(iUnit)));
+        f2 = figure('Position', [150 150 475 325]);
+        hold on
+        fill([0 0 stimDur stimDur], [mini 1 1 mini], 'k', ...
+                'FaceColor', [1 1 1].*0.9, 'EdgeColor', 'none')
+        plot(krnlFits.time_kernel, krnlFits.kernel(:,units(iUnit)), ...
+            'k', "LineWidth", 1)
+        set(gca, "Box", "off")
+        xlim(krnlFits.time_kernel([1 end]))
+        ylim([mini 1])
+        xlabel('Time (s)')
+        title(sprintf('ROI %03d: kernel', units(iUnit)))
+
+        amps = krnlFits.amplitudes(:, validStims([1:end 1]), units(iUnit));
+        drct = [stim.directions(validStims); 360]';
+        mini = min(amps, [], "all");
+        maxi = max(amps, [], "all");
+        range = maxi - mini;
+        f3 = figure('Position', [800 150 475 325]);
+        hold on
+        plot(drct + randn(size(amps)).*3, ...
+            amps, '.', 'Color', [1 1 1].*0.5, 'MarkerSize', 10);
+        plot(drct, mean(amps,1,'omitnan'), ...
+            'k.-', 'MarkerSize', 30, 'LineWidth', 1);
+        plot(dirTuning.preference(units(iUnit)), maxi, 'v', 'MarkerSize', 8, ...
+            'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none');
+        set(gca, 'box', 'off', 'XTick', drct(1:3:end))
+        xlim([-10 370])
+        ylim([min([0 mini-0.05*range]) maxi+0.05*range])
+        xlabel('Direction (deg)')
+        ylabel('\DeltaF/F (kernel amplitude)')
+        title(sprintf('ROI %03d: Direction tuning', units(iUnit)))
+
+        io.saveFigure(f1, fPlot, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
+            str, ex{s,1}, ex{s,2}, units(iUnit)))
+        io.saveFigure(f2, fPlot, sprintf('example_%s_kernel_%s_%s_%03d', ...
+            str, ex{s,1}, ex{s,2}, units(iUnit)))
+        io.saveFigure(f3, fPlot, sprintf('example_%s_tuningCurve_%s_%s_%03d', ...
+            str, ex{s,1}, ex{s,2}, units(iUnit)))
+    end
+
+    % plot ROI masks with numbers
+    masks = NaN(size(recInfo.roiMasks));
+    masks(units,:) = recInfo.roiMasks(units,:);
+    b = recInfo.fovBoundaries(ex{s,3},:);
+    map = spatial.getROIMaskImage(masks, recInfo.fovPix(ex{s,3},:), b);
+    colors = spatial.plotROIMaskImage(map, masks, true);
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasks_%s_%s_%03d', ...
+        str, ex{s,1}, ex{s,2}, units(iUnit)))
+
+    % plot ROI masks on mean image
+    im = squeeze(recInfo.meanFrame(ex{s,3}, b(1):b(2), b(3):b(4)));
+    imMasks = spatial.mergeImageWithMasks(im, map, colors);
     figure
-    hold on
-    amps = amplitudes(:,:,cellID);
-    amps(largePupil) = NaN;
-    plot(1:360, curves(cellID,:), 'Color', 'k', 'LineWidth',2);
-    m = nanmean(amps,2);
-    s = nanstd(amps,0,2) ./ sqrt(sum(~largePupil,2));
-    errorbar([directions; 360], m([1:end 1]), s([1:end 1]), 'o', ...
-        'Color', 'k', 'CapSize', 2, 'MarkerFaceColor', 'k')
-    plot([0 360], [0 0], 'k:', 'LineWidth', 2)
-    set(gca,'XTick',0:90:360)
-    title(sprintf('Example %d',ex))
-    xlim([0 360])
-    mini = min([mini; m-s; curves(cellID,:)']);
-    maxi = max([maxi; m+s; curves(cellID,:)']);
-    ylim([mini maxi])
-    xlabel('Direction (in degrees)')
-    ylabel('\DeltaF/F')
+    imshow(imMasks)
+    set(gcf, 'Position', [680 50 1050 945])
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasksOnImage_%s_%s_%03d', ...
+        str, ex{s,1}, ex{s,2}, units(iUnit)))
+    % plot mean frame
+    im = (im - min(im,[],"all"));
+    im = im ./ max(im,[],"all");
+    figure('Position', [680 50 1050 945])
+    imagesc(imadjust(im))
+    colormap(colmaps.getGCaMPMap)
+    axis image off
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_meanFrame_%s_%s_%03d', ...
+        str, ex{s,1}, ex{s,2}, units(iUnit)))
 end
 
 %% Population direction tuning curves
