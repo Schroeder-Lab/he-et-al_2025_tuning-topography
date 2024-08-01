@@ -3,7 +3,9 @@ getFolders;
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-maxP = 0.05; % p-value threshold for direction/orientation selectivity
+maxP = 0.05; % p-value threshold for response kernel and 
+             % direction/orientation selectivity
+minR2 = 0.02; % threshold for explained variance for response kernel
 
 %% Examples
 ex = cell(2,4); % rows: (1) bouton, (2) neuron
@@ -164,25 +166,173 @@ end
 %% Population direction tuning curves
 for s = 1:2 % neurons and boutons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    oriCurves = [];
-    dirCurves = [];
+    curves = [];
+    R2 = [];
+    dirPreferences = [];
+    oriPreferences = [];
+    dirSel = [];
+    oriSel = [];
+    dirTuned = [];
+    oriTuned = [];
+    dataset = [];
     stimAll = 0:30:330;
+    count = 1;
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs) %dates
-            date = dateDirs(dt).name;
+        for d = 1:length(dateDirs) %dates
+            date = dateDirs(d).name;
             f = fullfile(folders.data, sets{s}, name, date);
+            % ignore session if stimulus was not presented
+            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
+                continue
+            end
 
             stim = io.getGratingInfo(f, 'gratingsDrifting');
             krnlFits = io.getStimResponseFits(f, 'gratingsDrifting');
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
+            % check whether the typical stimulus directions were used in
+            % experiment
+            if ~all(ismember(stimAll, stim.directions))
+                fprintf('WARNING: Grating directions are different from usual in %s %s!\n', ...
+                    name, date)
+            end
+            % find indices of relevant stimuli
+            indStims = find(ismember(stim.directions, stimAll));
+            % find units that are responsive
+            unitsResponsive = krnlFits.pValue < maxP;
+            % determine tuning curves
+            c = NaN(sum(unitsResponsive), length(stimAll));
+            c(:,indStims) = squeeze(mean( ...
+                krnlFits.amplitudes(:,indStims,unitsResponsive), 1, "omitnan"))';
+            % append tuning curves of current dataset
+            curves = [curves; c];
+            R2 = [R2; krnlFits.R2(unitsResponsive)];
+            dirPreferences = [dirPreferences; dirTuning.preference(unitsResponsive)];
+            oriPreferences = [oriPreferences; oriTuning.preference(unitsResponsive)];
+            dirSel = [dirSel; dirTuning.selectivity(unitsResponsive)];
+            oriSel = [oriSel; oriTuning.selectivity(unitsResponsive)];
+            dirTuned = [dirTuned; dirTuning.pValue(unitsResponsive) < maxP];
+            oriTuned = [oriTuned; oriTuning.pValue(unitsResponsive) < maxP];
+            dataset = [dataset; ones(sum(unitsResponsive),1) .* count];
+
+            count = count + 1;
         end
     end
-end
+    % direction tuning curves: direction selective units (sorted by pref.
+    % dir.) + gap + non-selective units
+    dc = curves(dirTuned & R2>minR2,:);
+    [~, order] = sort(dirPreferences(dirTuned & R2>minR2));
+    dirCurves = [dc(order,:); zeros(100,length(stimAll))];
+    dc = curves(~dirTuned & R2>minR2,:);
+    [~, order] = sort(dirPreferences(~dirTuned & R2>minR2));
+    dirCurves = [dirCurves; dc(order,:)];
+    % determine orientation tuning curves
+    oCurves = permute(curves, [2 3 1]);
+    oCurves = reshape(oCurves, length(stimAll)/2, 2, []);
+    oCurves = mean(oCurves,2);
+    oCurves = permute(oCurves, [3 1 2]);
+    % orientation tuning curves: orientation selective units (sorted by pref.
+    % dir.) + gap + non-selective units
+    oc = oCurves(oriTuned & R2>minR2,:);
+    [~, order] = sort(oriPreferences(oriTuned & R2>minR2));
+    oriCurves = [oc(order,:); NaN(100, size(oc,2))];
+    oc = oCurves(~oriTuned & R2>minR2,:);
+    [~, order] = sort(oriPreferences(~oriTuned & R2>minR2));
+    oriCurves = [oriCurves; oc(order,:)];
+    % normalize tuning curves
+    dirCurves = dirCurves - min(dirCurves, [], 2);
+    dirCurves = dirCurves ./ max(dirCurves, [], 2);
+    dirCurves(isnan(dirCurves)) = 0;
+    oriCurves = oriCurves - min(oriCurves, [], 2);
+    oriCurves = oriCurves ./ max(oriCurves, [], 2);
+    oriCurves(isnan(oriCurves)) = 0;
+    % duplicate responses to 0 deg (for 360 deg and 180 deg)
+    dirCurves = dirCurves(:,[1:end 1]);
+    oriCurves = oriCurves(:,[1:end 1]);
+    % upsample and smooth curves
+    dirs1 = 0:30:360;
+    dirs2 = 0:5:360;
+    oris1 = 0:30:180;
+    oris2 = 0:5:180;
+    dirCurves = interp1(dirs1, dirCurves', dirs2, "pchip")';
+    oriCurves = interp1(oris1, oriCurves', oris2, "pchip")';
 
-%% Population orientation tuning curves
+    % plot direction tuning curves
+    figure('Position', [150 50 560 785])
+    imagesc(dirCurves, [0 1])
+    colormap(flip(gray, 1))
+    set(gca, "Box", "off", "XTick", 1:6:length(dirs2), "XTickLabel", dirs1)
+    xlabel('Direction (deg)')
+    ylabel(sets{s})
+    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_directionHeatmap', sets{s}));
+    % plot orientation tuning curves
+    figure('Position', [150 50 560 785])
+    imagesc(oriCurves, [0 1])
+    colormap(flip(gray, 1))
+    set(gca, "Box", "off", "XTick", 1:6:length(oris2), "XTickLabel", oris1)
+    xlabel('Direction (deg)')
+    ylabel(sets{s})
+    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_orientationHeatmap', sets{s}));
+
+    % plot direction preference histogram
+    figure
+    dirBins = 0:30:360;
+    dirEdges = (0:30:390) - 15;
+    n1 = histcounts(dirPreferences(R2>minR2 & dirTuned & oriTuned), dirEdges);
+    n2 = histcounts(dirPreferences(R2>minR2 & dirTuned & ~oriTuned), dirEdges);
+    b = bar(dirBins, [n1' n2'], 'stacked');
+    b(1).FaceColor = 'k';
+    b(2).FaceColor = [.5 .5 .5];
+    xlim([-20 380])
+    set(gca, "Box", "off", "XTick", 0:90:360)
+    xlabel('Direction (deg)')
+    ylabel(sets{s})
+    legend(b, sprintf('DS & OS (%d)', sum(R2>minR2 & dirTuned & oriTuned)), ...
+        sprintf('DS (%d)', sum(R2>minR2 & dirTuned & ~oriTuned)))
+    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_directionPrefHist', sets{s}));
+    % plot orientation preference histogram
+    figure
+    oriBins = 0:30:180;
+    oriEdges = (0:30:210) - 15;
+    n1 = histcounts(oriPreferences(R2>minR2 & oriTuned & dirTuned), oriEdges);
+    n2 = histcounts(oriPreferences(R2>minR2 & oriTuned & ~dirTuned), oriEdges);
+    b = bar(oriBins, [n1' n2'], 'stacked');
+    b(1).FaceColor = 'k';
+    b(2).FaceColor = [.5 .5 .5];
+    xlim([-20 200])
+    set(gca, "Box", "off", "XTick", 0:90:180)
+    xlabel('Orientation (deg)')
+    ylabel(sets{s})
+    legend(b, sprintf('OS & DS (%d)', sum(R2>minR2 & dirTuned & oriTuned)), ...
+        sprintf('OS (%d)', sum(R2>minR2 & ~dirTuned & oriTuned)))
+    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_orientationPrefHist', sets{s}));
+
+    % % plot direction preference histogram per dataset
+    % dirBins = 0:30:360;
+    % dirEdges = (0:30:390) - 15;
+    % oriBins = 0:30:180;
+    % oriEdges = (0:30:210) - 15;
+    % dirHists = NaN(length(dirBins), max(dataset));
+    % oriHists = NaN(length(oriBins), max(dataset));
+    % for c = 1:max(dataset)
+    %     pref = dirPreferences(R2>minR2 & dirTuned & c==dataset);
+    %     dirHists(:,c) = histcounts(pref, dirEdges);
+    %     pref = oriPreferences(R2>minR2 & oriTuned & c==dataset);
+    %     oriHists(:,c) = histcounts(pref, oriEdges);
+    % end
+    % dirHists = dirHists ./ sum(dirHists,2);
+    % oriHists = oriHists ./ sum(oriHists,2);
+    % figure
+    % plot(dirBins, dirHists', "LineWidth", 2)
+    % set(gca, "ColorOrder", hsv(max(dataset)))
+
+    % plot DS vs OS scatterplot
+    figure
+    hold on
+    plot()
+end
 
 %% Total direction preferences histogram
 
