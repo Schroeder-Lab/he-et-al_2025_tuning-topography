@@ -132,8 +132,8 @@ for s = 1:2 % boutons and neurons
     b = recInfo.fovBoundaries(ex{s,3},:);
     map = spatial.getROIMaskImage(masks, recInfo.fovPix(ex{s,3},:), b);
     colors = spatial.plotROIMaskImage(map, masks, true);
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasks_%s_%s_%03d', ...
-        str, ex{s,1}, ex{s,2}, units(iUnit)))
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasks_%s_%s_plane%02d', ...
+        str, ex{s,1}, ex{s,2}, ex{s,3}))
 
     % plot ROI masks on mean image
     im = squeeze(recInfo.meanFrame(ex{s,3}, b(1):b(2), b(3):b(4)));
@@ -141,8 +141,8 @@ for s = 1:2 % boutons and neurons
     figure
     imshow(imMasks)
     set(gcf, 'Position', [680 50 1050 945])
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasksOnImage_%s_%s_%03d', ...
-        str, ex{s,1}, ex{s,2}, units(iUnit)))
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasksOnImage_%s_%s_plane%02d', ...
+        str, ex{s,1}, ex{s,2}, ex{s,3}))
 
     % plot mean frame
     im = (im - min(im,[],"all"));
@@ -151,6 +151,6 @@ for s = 1:2 % boutons and neurons
     imagesc(imadjust(im))
     colormap(colmaps.getGCaMPMap)
     axis image off
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_meanFrame_%s_%s_%03d', ...
-        str, ex{s,1}, ex{s,2}, units(iUnit)))
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_meanFrame_%s_%s_plane%02d', ...
+        str, ex{s,1}, ex{s,2}, ex{s,3}))
 end

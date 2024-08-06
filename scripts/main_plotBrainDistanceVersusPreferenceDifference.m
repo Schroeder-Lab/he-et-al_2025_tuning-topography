@@ -71,6 +71,7 @@ for s = 2 % neurons and boutons
                 dp = dirTuning.preference(indPlanes(:,p));
                 op = oriTuning.preference(indPlanes(:,p));
                 % ignore untuned ROIs
+                % TODO: check p-value! ----------------------------------
                 indValid1 = ~(isnan(dp) & isnan(op));
                 dp = dp(indValid1);
                 op = op(indValid1);
@@ -119,14 +120,14 @@ for s = 2 % neurons and boutons
                     strOri = 'Orientation_allPlanes.jpg';
                 end
                 fig = spatial.plotPrefDiffVsDist(d, dd, ddPermuted, ...
-                    binSize(s), stepSize(s));
+                    binSize(s), stepSize(s), true);
                 if ~isempty(fig)
                     title('\DeltaDirection pref. vs \Deltaposition')
                     saveas(gcf, fullfile(fPlots, strDir))
                     close gcf
                 end
                 fig = spatial.plotPrefDiffVsDist(d, od, odPermuted, ...
-                    binSize(s), stepSize(s));
+                    binSize(s), stepSize(s), true);
                 if ~isempty(fig)
                     title('\DeltaOrientation pref. vs \Deltaposition')
                     saveas(gcf, fullfile(fPlots, strOri))
@@ -142,7 +143,7 @@ for s = 2 % neurons and boutons
         'PreferenceDiffVsBrainDistance', sets{s});
     fig = spatial.plotPrefDiffVsDist(cat(1, distPlane{:}), ...
         cat(1, dirDiffPlane{:}), cat(1, dirDiffPlaneNull{:}), ...
-        binSize(s), stepSize(s));
+        binSize(s), stepSize(s), false);
     if ~isempty(fig)
         title('\DeltaDirection pref. vs \Deltaposition (within planes)')
         saveas(gcf, fullfile(fPlots, 'Direction_withinPlanes.jpg'))
@@ -150,7 +151,7 @@ for s = 2 % neurons and boutons
     end
     fig = spatial.plotPrefDiffVsDist(cat(1, distPlane{:}), ...
         cat(1, oriDiffPlane{:}), cat(1, oriDiffPlaneNull{:}), ...
-        binSize(s), stepSize(s));
+        binSize(s), stepSize(s), false);
     if ~isempty(fig)
         title('\DeltaOrientation pref. vs \Deltaposition (within planes)')
         saveas(gcf, fullfile(fPlots, 'Orientation_withinPlanes.jpg'))
