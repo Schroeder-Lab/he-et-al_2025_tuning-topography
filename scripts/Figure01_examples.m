@@ -77,7 +77,7 @@ for s = 1:2 % boutons and neurons
         mini = min(amps, [], "all");
         maxi = max(amps, [], "all");
         range = maxi - mini;
-        f3 = figure('Position', [800 150 475 325]);
+        f3 = figure('Position', [700 150 475 325]);
         hold on
         plot(drct + randn(size(amps)).*3, ...
             amps, '.', 'Color', [1 1 1].*0.5, 'MarkerSize', 10);
@@ -92,11 +92,37 @@ for s = 1:2 % boutons and neurons
         ylabel('\DeltaF/F (kernel amplitude)')
         title(sprintf('ROI %03d: Direction tuning', units(iUnit)))
 
+        % plot orientation tuning curve
+        amps = krnlFits.amplitudes(:, validStims, units(iUnit));
+        amps = reshape(amps, size(amps,1), size(amps,2)/2, 2);
+        amps = reshape(permute(amps, [1 3 2]), size(amps,1)*2, []);
+        amps = amps(:,[1:end 1]);
+        ortn = [stim.directions(validStims(1:length(validStims)/2)); 180]';
+        mini = min(amps, [], "all");
+        maxi = max(amps, [], "all");
+        range = maxi - mini;
+        f4 = figure('Position', [1250 150 475 325]);
+        hold on
+        plot(ortn + randn(size(amps)).*3, ...
+            amps, '.', 'Color', [1 1 1].*0.5, 'MarkerSize', 10);
+        plot(ortn, mean(amps,1,'omitnan'), ...
+            'k.-', 'MarkerSize', 30, 'LineWidth', 1);
+        plot(oriTuning.preference(units(iUnit)), maxi, 'v', 'MarkerSize', 8, ...
+            'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none');
+        set(gca, 'box', 'off', 'XTick', ortn(1:3:end))
+        xlim([-10 190])
+        ylim([min([0 mini-0.05*range]) maxi+0.05*range])
+        xlabel('Orientation (deg)')
+        ylabel('\DeltaF/F (kernel amplitude)')
+        title(sprintf('ROI %03d: Orientation tuning', units(iUnit)))
+
         io.saveFigure(f1, fPlot, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
         io.saveFigure(f2, fPlot, sprintf('example_%s_kernel_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
-        io.saveFigure(f3, fPlot, sprintf('example_%s_tuningCurve_%s_%s_%03d', ...
+        io.saveFigure(f3, fPlot, sprintf('example_%s_dirTuningCurve_%s_%s_%03d', ...
+            str, ex{s,1}, ex{s,2}, units(iUnit)))
+        io.saveFigure(f4, fPlot, sprintf('example_%s_oriTuningCurve_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
     end
 
@@ -117,7 +143,7 @@ for s = 1:2 % boutons and neurons
     set(gcf, 'Position', [680 50 1050 945])
     io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasksOnImage_%s_%s_%03d', ...
         str, ex{s,1}, ex{s,2}, units(iUnit)))
-    
+
     % plot mean frame
     im = (im - min(im,[],"all"));
     im = im ./ max(im,[],"all");

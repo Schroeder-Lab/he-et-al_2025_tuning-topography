@@ -1,7 +1,28 @@
 function [direction, orientation] = determineTuning(amplitudes, ...
     stimDirections, numShuffles)
 %DETERMINETUNING   Determine direction and orientation preference,
-%selectivity and significance.
+%selectivity and significance of one unit.
+
+% INPUTS
+% amplitudes        [repetitions x stim], response amplitudes to multiple
+%                   repetitions of the same stimuli
+% stimDirections    [stim x 1], direction of stimuli in degrees
+% numShuffles       int, number of permutations for significance 
+%                   (permutation) test
+
+% OUTPUTS
+% direction
+%   .preference     double, preferred direction (direction of vector sum)
+%   .selectivity    double, direction selectivity (length of vector sum)
+%   .responseSign   1 or -1, sign of mean response amplitude (across all
+%                   stimuli)
+%   .pValue         p-value of permutation test
+% orientation
+%   .preference     double, preferred orientation (half direction of vector sum)
+%   .selectivity    double, orientation selectivity (length of vector sum)
+%   .responseSign   1 or -1, sign of mean response amplitude (across all
+%                   stimuli)
+%   .pValue         p-value of permutation test
 
 % direction tuning
 [pref, sel, sgn] = tuning.vectorAveraging(amplitudes, stimDirections);

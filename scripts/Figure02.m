@@ -6,6 +6,11 @@ binSize = [10, 5];
 stepSize = [5, 2.5];
 numPerm = 1000;
 
+%% Examples
+ex = cell(2,3); % rows: (1) bouton, (2) neuron
+ex(1,:) = {'SS078', '2017-09-28', 1};
+ex(2,:) = {'SS044', '2015-04-28', 3};
+
 %% Plot pairwise distance in brain versus difference in tuning preference
 sets = {'neurons', 'boutons'};
 stimTypes = {'gratingsDrifting', 'gratingsStatic', 'bars'};

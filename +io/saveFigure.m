@@ -1,4 +1,11 @@
 function saveFigure(fig, folder, filename)
+%SAVEFIGURE   Save Matlab figure in matlab, jpeg, and epsc format, then
+%close figure.
+
+% INPUTS
+% fig       figure handle
+% folder    path to folder to save figure
+% filename  filename for saving, without suffix
 
 fMatlab = fullfile(folder, 'matlab');
 if ~isfolder(fMatlab)

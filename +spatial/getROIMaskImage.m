@@ -1,4 +1,18 @@
 function map = getROIMaskImage(masks, fovPix, fovBoundaries)
+%GETROIMASKIMAGE   Create image with ROI masks from mask indices.
+
+% INPUTS
+% masks         [ROIs x pixels], linear indices of each ROI mask within image
+%               of same size as map
+% fovPix        [1 x 2], (numRows, numColumns) of field of view to place
+%               ROI masks
+% fovBoundaries [1 x 4], (top bottom left right)
+%               pixels relative to full imaged FOV, pixels outside these
+%               boundaries were disregarded for ROI detection as the edges
+%               were not always visible
+
+% OUTPUTS
+% map           [rows x columns], image with ROI masks
 
 map = zeros(fovPix);
 % for each ROI, mark mask pixels with ROI ID (row in masks)
