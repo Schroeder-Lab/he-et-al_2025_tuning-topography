@@ -48,6 +48,8 @@ h(1) = plot(x, ySm, 'r-', 'LineWidth', 2);
 fill([x flip(x)], [yNullSm(:,1); flip(yNullSm(:,3))], 'b', ...
     'FaceAlpha', 0.3, 'EdgeColor', 'none')
 h(2) = plot(x, yNullSm(:,2), 'b-', 'LineWidth', 2);
-legend(h, 'mean', 'mean of null data')
+l = legend(h, 'mean', 'mean of null data');
+l.Box = "off";
+set(gca, 'box', 'off')
 xlabel('Distance (um)')
 ylabel('\DeltaPreference')

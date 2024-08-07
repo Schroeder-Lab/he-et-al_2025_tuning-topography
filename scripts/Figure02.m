@@ -6,8 +6,10 @@ sets = {'boutons', 'neurons'};
 maxP = 0.05; % p-value threshold for response kernel and 
              % direction/orientation selectivity
 minROIs = 15;
-binSize = [10, 5];
-stepSize = [5, 2.5];
+binSize = [5, 20];
+stepSize = [2.5, 5];
+xLims = [50 500];
+fovLims = [20 160; 400 900];
 numPerm = 1000;
 
 %% Examples
@@ -26,43 +28,45 @@ if ~isfolder(fPlot)
 end
 
 %% Example maps showing preferences of ROIs
-% for s = 1:2 % boutons and neurons
-%     str = sets{s};
-%     f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
-%     % load data
-%     [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-%     data = io.getCalciumData(f);
-%     planes = data.planes;
-%     data = io.getRecordingInfo(f);
-%     masks = data.roiMasks;
-%     fovPix = data.fovPix;
-%     fovM = data.fovMicrons;
-% 
-%     indP = planes == ex{s,3};
-%     tuning.plotOrientationMap(dirTuning.preference(indP), ...
-%         dirTuning.pValue(indP) < maxP, 'dir', masks(indP,:), ...
-%         fovPix(ex{s,3},:), fovM(ex{s,3},:));
-%     io.saveFigure(gcf, fPlot, sprintf('example_%s_directionMap_%s_%s_plane%02d', ...
-%         str, ex{s,1}, ex{s,2}, ex{s,3}))
-%     tuning.plotOrientationMap(oriTuning.preference(indP), ...
-%         oriTuning.pValue(indP) < maxP, 'ori', masks(indP,:), ...
-%         fovPix(ex{s,3},:), fovM(ex{s,3},:));
-%     io.saveFigure(gcf, fPlot, sprintf('example_%s_orientationMap_%s_%s_plane%02d', ...
-%         str, ex{s,1}, ex{s,2}, ex{s,3}))
-% end
+for s = 1:2 % boutons and neurons
+    str = sets{s};
+    f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
+    % load data
+    [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+    data = io.getCalciumData(f);
+    planes = data.planes;
+    data = io.getRecordingInfo(f);
+    masks = data.roiMasks;
+    fovPix = data.fovPix;
+    fovM = data.fovMicrons;
+
+    indP = planes == ex{s,3};
+    tuning.plotOrientationMap(dirTuning.preference(indP), ...
+        dirTuning.pValue(indP) < maxP, 'dir', masks(indP,:), ...
+        fovPix(ex{s,3},:), fovM(ex{s,3},:));
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_directionMap_%s_%s_plane%02d', ...
+        str, ex{s,1}, ex{s,2}, ex{s,3}))
+    tuning.plotOrientationMap(oriTuning.preference(indP), ...
+        oriTuning.pValue(indP) < maxP, 'ori', masks(indP,:), ...
+        fovPix(ex{s,3},:), fovM(ex{s,3},:));
+    io.saveFigure(gcf, fPlot, sprintf('example_%s_orientationMap_%s_%s_plane%02d', ...
+        str, ex{s,1}, ex{s,2}, ex{s,3}))
+end
 
 %% Plot pairwise distance in brain versus difference in tuning preference
 for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    dist = {};
+    dirDist = {};
     dirDiff = {};
     dirDiffNull = {};
     dirDiffRelative = {};
     distBinnedDir = {};
+    oriDist = {};
     oriDiff = {};
     oriDiffNull = {};
     oriDiffRelative = {};
     distBinnedOri = {};
+    fovSize = [];
     rec = 1;
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
@@ -81,73 +85,97 @@ for s = 1:2 % boutons and neurons
             planes = data.planes;
             data = io.getRecordingInfo(f);
             roiPos = data.roiPositions(:,1:2);
+            fovs = data.fovMicrons;
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
             dp = dirTuning.preference;
-            op = oriTuning.preference;
             validDir = ~isnan(dp) & dirTuning.pValue < maxP;
-            validOri = ~isnan(op) & oriTuning.pValue < maxP;
-            indValid = validDir | validOri;
-            if sum(indValid) < minROIs
-                continue
-            end
             if sum(validDir) < minROIs
-                dp = NaN;
+                dirDist{rec} = [];
+                dirDiff{rec} = [];
+                dirDiffNull{rec} = [];
+                dirDiffRelative{rec} = [];
+                distBinnedDir{rec} = [];
             else
-                dp = dp(indValid);
+                % for all unit pairs, determine distance in brain (ignore
+                % depth);
+                ddist = spatial.determineDistance(roiPos(validDir,1), ...
+                    roiPos(validDir,2));
+                dp = dp(validDir);
+                % for all unit pairs, determine difference between preferred
+                % directions
+                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
+                % permute preferences to test significance
+                ddiffPermuted = NaN(length(ddiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(dp));
+                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
+                end
+                % collect results
+                dirDist{rec} = ddist;
+                dirDiff{rec} = ddiff;
+                dirDiffNull{rec} = ddiffPermuted;
+
+                % difference in preference relative to null distribution
+                [dirDiffRelative{rec}, distBinnedDir{rec}] = ...
+                    spatial.getPrefDiffsRelativeNull(ddist, ddiff, ddiffPermuted, ...
+                    binSize(s), stepSize(s));
             end
+            op = oriTuning.preference;
+            validOri = ~isnan(op) & oriTuning.pValue < maxP;
             if sum(validOri) < minROIs
-                op = NaN;
+                oriDist{rec} = [];
+                oriDiff{rec} = [];
+                oriDiffNull{rec} = [];
+                oriDiffRelative{rec} = [];
+                distBinnedOri{rec} = [];
             else
-                op = op(indValid);
-            end
+                % for all unit pairs, determine distance in brain (ignore
+                % depth);
+                odist = spatial.determineDistance(roiPos(validOri,1), ...
+                    roiPos(validOri,2));
+                op = op(validOri);
+                % for all unit pairs, determine difference between preferred
+                % orientations
+                odiff = tuning.determinePreferenceDiff(op, 'ori');
+                % permute preferences to test significance
+                odiffPermuted = NaN(length(odiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(op));
+                    odiffPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
+                end
+                % collect results
+                oriDist{rec} = odist;
+                oriDiff{rec} = odiff;
+                oriDiffNull{rec} = odiffPermuted;
 
-            % for all unit pairs, determine difference between preferred
-            % directions/orientations
-            dd = tuning.determinePreferenceDiff(dp, 'dir');
-            od = tuning.determinePreferenceDiff(op, 'ori');
-            % for all unit pairs, determine distance in brain (ignore
-            % depth);
-            d = spatial.determineDistance(roiPos(indValid,1), ...
-                roiPos(indValid,2));
-            % permute preferences to test significance
-            ddPermuted = NaN(length(dd), numPerm);
-            odPermuted = NaN(length(od), numPerm);
-            rng('default');
-            for k = 1:numPerm
-                order = randperm(length(dp));
-                ddPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
-                odPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
+                % difference in preference relative to null distribution
+                [oriDiffRelative{rec}, distBinnedOri{rec}] = ...
+                    spatial.getPrefDiffsRelativeNull(odist, odiff, odiffPermuted, ...
+                    binSize(s), stepSize(s));
             end
-            % collect results
-            dist{rec} = d;
-            dirDiff{rec} = dd;
-            oriDiff{rec} = od;
-            dirDiffNull{rec} = ddPermuted;
-            oriDiffNull{rec} = odPermuted;
-
-            % difference in preference relative to null distribution
-            [dirDiffRelative{rec}, distBinnedDir{rec}] = ...
-                spatial.getPrefDiffsRelativeNull(d, dd, ddPermuted, ...
-                binSize(s), stepSize(s));
-            [oriDiffRelative{rec}, distBinnedOri{rec}] = ...
-                spatial.getPrefDiffsRelativeNull(d, od, odPermuted, ...
-                binSize(s), stepSize(s));
+            fovSize(rec) = mean(sqrt(sum(fovs.^2,2)));
 
             rec = rec + 1;
         end
     end
 
     % plot across all datasets
-    fig = spatial.plotPrefDiffVsDist(cat(1, dist{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
         cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    xlim([0 xLims(s)])
+    ylim([0 180])
     title('\DeltaDirection pref. vs \Deltaposition')
     io.saveFigure(fig, fPlot, ...
         sprintf('distanceAll_%s_direction', sets{s}))
-    fig = spatial.plotPrefDiffVsDist(cat(1, dist{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    xlim([0 xLims(s)])
+    ylim([0 90])
     title('\DeltaOrientation pref. vs \Deltaposition')
     io.saveFigure(fig, fPlot, ...
         sprintf('distanceAll_%s_orientation', sets{s}))
@@ -159,6 +187,9 @@ for s = 1:2 % boutons and neurons
     x = mini:0.5:maxi;
     y = NaN(length(x), length(dirDiffRelative));
     for rec = 1:length(dirDiffRelative)
+        if all(isnan(dirDiffRelative{rec}))
+            continue
+        end
         ind1 = find(x >= min(distBinnedDir{rec}), 1);
         ind2 = find(x <= max(distBinnedDir{rec}), 1, 'last');
         y(ind1:ind2,rec) = interp1(distBinnedDir{rec}, ...
@@ -168,10 +199,13 @@ for s = 1:2 % boutons and neurons
     plot(x, y)
     set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)))
     hold on
-    plot(x, median(y,2,"omitnan"), 'k', "LineWidth", 2)
+    % plot(x, median(y,2,"omitnan"), 'k', "LineWidth", 2)
+    plot(x, smoothdata(median(y,2,"omitnan"), "movmean", 5) , 'k', "LineWidth", 2)
     plot([0 maxi],[1 1].*0.025, 'k')
+    plot([0 maxi],[1 1].*0.05, 'k')
     plot([0 maxi],[1 1].*0.975, 'k')
-    xlim([0 maxi])
+    xlim([0 xLims(s)])
+    ylim([0 1])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
     title('\DeltaDirection pref. vs \Deltaposition')
@@ -179,27 +213,55 @@ for s = 1:2 % boutons and neurons
         sprintf('distancePerDataset_%s_direction', sets{s}))
     % plot orientation preference difference relative to null distribution (per
     % dataset)
-    mini = ceil(min(cat(1, distBinnedDir{:})) / 2) * 2;
-    maxi = floor(max(cat(1, distBinnedDir{:})) / 2) * 2;
+    mini = ceil(min(cat(1, distBinnedOri{:})) / 2) * 2;
+    maxi = floor(max(cat(1, distBinnedOri{:})) / 2) * 2;
     x = mini:0.5:maxi;
-    y = NaN(length(x), length(dirDiffRelative));
-    for rec = 1:length(dirDiffRelative)
-        ind1 = find(x >= min(distBinnedDir{rec}), 1);
-        ind2 = find(x <= max(distBinnedDir{rec}), 1, 'last');
-        y(ind1:ind2,rec) = interp1(distBinnedDir{rec}, ...
-            dirDiffRelative{rec}, x(ind1:ind2), "pchip");
+    y = NaN(length(x), length(oriDiffRelative));
+    for rec = 1:length(oriDiffRelative)
+        if all(isnan(oriDiffRelative{rec}))
+            continue
+        end
+        ind1 = find(x >= min(distBinnedOri{rec}), 1);
+        ind2 = find(x <= max(distBinnedOri{rec}), 1, 'last');
+        y(ind1:ind2,rec) = interp1(distBinnedOri{rec}, ...
+            oriDiffRelative{rec}, x(ind1:ind2), "pchip");
     end
     figure
     plot(x, y)
     set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)))
     hold on
-    plot(x, median(y,2,"omitnan"), 'k', "LineWidth", 2)
+    plot(x, smoothdata(median(y,2,"omitnan"), "movmean", 5), 'k', "LineWidth", 2)
     plot([0 maxi],[1 1].*0.025, 'k')
+    plot([0 maxi],[1 1].*0.05, 'k')
     plot([0 maxi],[1 1].*0.975, 'k')
-    xlim([0 maxi])
+    xlim([0 xLims(s)])
+    ylim([0 1])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
     title('\DeltaOrientation pref. vs \Deltaposition')
     io.saveFigure(gcf, fPlot, ...
         sprintf('distancePerDataset_%s_orientation', sets{s}))
+
+    % plot mean preference difference for each dataset against size of 
+    % imaged field-of-view
+    figure
+    scatter(fovSize, cellfun(@mean, dirDiff, ...
+        repmat({"omitnan"},1,length(dirDiff))), 36, 'k', 'filled')
+    xlim(fovLims(s,:))
+    ylim([0 90])
+    xlabel('FOV diagonal (um)')
+    ylabel('Mean \Deltadirection')
+    title(sprintf('%s', sets{s}))
+    io.saveFigure(gcf, fPlot, ...
+        sprintf('prefDiffPerDataset_%s_direction', sets{s}))
+    figure
+    scatter(fovSize, cellfun(@mean, oriDiff, ...
+        repmat({"omitnan"},1,length(oriDiff))), 36, 'k', 'filled')
+    xlim(fovLims(s,:))
+    ylim([0 45])
+    xlabel('FOV diagonal (um)')
+    ylabel('Mean \Deltaorientation')
+    title(sprintf('%s', sets{s}))
+    io.saveFigure(gcf, fPlot, ...
+        sprintf('prefDiffPerDataset_%s_orientation', sets{s}))
 end

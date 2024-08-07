@@ -6,5 +6,9 @@ function [prefDiffsRelative, meanDist] = getPrefDiffsRelativeNull(distances, ...
 
 % express actual preference differences in terms of percentiles in null
 % distribution
-prefDiffsRelative = sum(meanDiff > meanDiffPerm, 2) ./ ...
-    size(meanDiffPerm,2);
+if all(isnan(prefDiffs))
+    prefDiffsRelative = NaN(size(meanDiff));
+else
+    prefDiffsRelative = sum(meanDiff > meanDiffPerm, 2) ./ ...
+        size(meanDiffPerm,2);
+end

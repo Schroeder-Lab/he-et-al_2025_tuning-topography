@@ -14,9 +14,9 @@ function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, fovMicro
 % OUTPUTS
 % fig       int, handle to figure
 
-% colors used for plotting: black: background, dark gray: not responsive,
-% lighter gray: not tuned, colors: represent angle
-colors = [hsv(360); 0.4 0.4 0.4; 0.2 0.2 0.2; 0 0 0];
+% colors used for plotting: white: background, light gray: not responsive,
+% darker gray: not tuned, colors: represent angle
+colors = [hsv(360); 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1];
 % create image of FOV (all black)
 map = ones(fovPix) .* 363;
 % set directions/orientations to range 1-360/1-180
