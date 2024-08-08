@@ -28,30 +28,30 @@ if ~isfolder(fPlot)
 end
 
 %% Example maps showing preferences of ROIs
-for s = 1:2 % boutons and neurons
-    str = sets{s};
-    f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
-    % load data
-    [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-    data = io.getCalciumData(f);
-    planes = data.planes;
-    data = io.getRecordingInfo(f);
-    masks = data.roiMasks;
-    fovPix = data.fovPix;
-    fovM = data.fovMicrons;
-
-    indP = planes == ex{s,3};
-    tuning.plotOrientationMap(dirTuning.preference(indP), ...
-        dirTuning.pValue(indP) < maxP, 'dir', masks(indP,:), ...
-        fovPix(ex{s,3},:), fovM(ex{s,3},:));
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_directionMap_%s_%s_plane%02d', ...
-        str, ex{s,1}, ex{s,2}, ex{s,3}))
-    tuning.plotOrientationMap(oriTuning.preference(indP), ...
-        oriTuning.pValue(indP) < maxP, 'ori', masks(indP,:), ...
-        fovPix(ex{s,3},:), fovM(ex{s,3},:));
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_orientationMap_%s_%s_plane%02d', ...
-        str, ex{s,1}, ex{s,2}, ex{s,3}))
-end
+% for s = 1:2 % boutons and neurons
+%     str = sets{s};
+%     f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
+%     % load data
+%     [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+%     data = io.getCalciumData(f);
+%     planes = data.planes;
+%     data = io.getRecordingInfo(f);
+%     masks = data.roiMasks;
+%     fovPix = data.fovPix;
+%     fovM = data.fovMicrons;
+% 
+%     indP = planes == ex{s,3};
+%     tuning.plotOrientationMap(dirTuning.preference(indP), ...
+%         dirTuning.pValue(indP) < maxP, 'dir', masks(indP,:), ...
+%         fovPix(ex{s,3},:), fovM(ex{s,3},:));
+%     io.saveFigure(gcf, fPlot, sprintf('example_%s_directionMap_%s_%s_plane%02d', ...
+%         str, ex{s,1}, ex{s,2}, ex{s,3}))
+%     tuning.plotOrientationMap(oriTuning.preference(indP), ...
+%         oriTuning.pValue(indP) < maxP, 'ori', masks(indP,:), ...
+%         fovPix(ex{s,3},:), fovM(ex{s,3},:));
+%     io.saveFigure(gcf, fPlot, sprintf('example_%s_orientationMap_%s_%s_plane%02d', ...
+%         str, ex{s,1}, ex{s,2}, ex{s,3}))
+% end
 
 %% Plot pairwise distance in brain versus difference in tuning preference
 for s = 1:2 % boutons and neurons
@@ -199,7 +199,6 @@ for s = 1:2 % boutons and neurons
     plot(x, y)
     set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)))
     hold on
-    % plot(x, median(y,2,"omitnan"), 'k', "LineWidth", 2)
     plot(x, smoothdata(median(y,2,"omitnan"), "movmean", 5) , 'k', "LineWidth", 2)
     plot([0 maxi],[1 1].*0.025, 'k')
     plot([0 maxi],[1 1].*0.05, 'k')

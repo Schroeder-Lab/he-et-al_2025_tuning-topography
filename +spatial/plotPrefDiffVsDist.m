@@ -18,9 +18,13 @@ fig = [];
 
 [meanDist, meanDiff, meanDiffPerm] = spatial.getMeanPrefDiffPerDistBin( ...
     distances, prefDiffs, prefDiffsPermuted, binSize, stepSize);
-if all(isnan(meanDist))
+if length(meanDist)<2 || all(isnan(meanDist))
     return
 end
+% remove duplicates
+[meanDist, ind] = unique(meanDist, 'stable');
+meanDiff = meanDiff(ind);
+meanDiffPerm = meanDiffPerm(ind,:);
 % determine median and confidence interval of null distribution (permuted
 % data)
 meanDiffNull = prctile(meanDiffPerm, [2.5 50 97.5], 2);

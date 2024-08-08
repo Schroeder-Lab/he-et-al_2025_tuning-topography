@@ -6,25 +6,35 @@
 getFolders;
 
 %% Parameters
-binSize = [10, 5];
-stepSize = [5, 2.5];
+maxP = 0.05; % p-value threshold for response kernel and 
+             % direction/orientation selectivity
+minROIs = 15;
+binSize = [5, 20];
+stepSize = [2.5, 5];
 numPerm = 1000;
 
+%% Add paths
+addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
+addpath(fullfile(folders.repo))
+
 %% Plot pairwise distance in brain versus difference in tuning preference
-sets = {'neurons', 'boutons'};
-stimTypes = {'gratingsDrifting', 'gratingsStatic', 'bars'};
-for s = 2 % neurons and boutons
+sets = {'boutons', 'neurons'};
+for s = 1:2 % neurons and boutons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    distPlane = {};
-    distRec = {};
+    dirDistPlane = {};
     dirDiffPlane = {};
-    dirDiffRec = {};
     dirDiffPlaneNull = {};
+    dirDistRec = {};
+    dirDiffRec = {};
     dirDiffRecNull = {};
+
+    oriDistPlane = {};
     oriDiffPlane = {};
-    oriDiffRec = {};
     oriDiffPlaneNull = {};
+    oriDistRec = {};
+    oriDiffRec = {};
     oriDiffRecNull = {};
+    
     rec = 1;
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
@@ -56,59 +66,72 @@ for s = 2 % neurons and boutons
             for p = 1:length(uniquePlanes)
                 indPlanes(:,p) = planes == uniquePlanes(p);
             end
-            distPlane{rec} = [];
+            dirDistPlane{rec} = [];
             dirDiffPlane{rec} = [];
-            oriDiffPlane{rec} = [];
-            distRec{rec} = [];
-            dirDiffRec{rec} = [];
-            oriDiffRec{rec} = [];
             dirDiffPlaneNull{rec} = [];
+            dirDistRec{rec} = [];
+            dirDiffRec{rec} = [];
             dirDiffRecNull{rec} = [];
+
+            oriDistPlane{rec} = [];
+            oriDiffPlane{rec} = [];
             oriDiffPlaneNull{rec} = [];
+            oriDistRec{rec} = [];
+            oriDiffRec{rec} = [];
             oriDiffRecNull{rec} = [];
             for p = 1:size(indPlanes,2)
                 % get tuning preferences of ROIs within plane
-                dp = dirTuning.preference(indPlanes(:,p));
-                op = oriTuning.preference(indPlanes(:,p));
-                % ignore untuned ROIs
-                % TODO: check p-value! ----------------------------------
-                indValid1 = ~(isnan(dp) & isnan(op));
-                dp = dp(indValid1);
-                op = op(indValid1);
-                % get indices of tuned ROIs within plane
-                indValid2 = find(indPlanes(:,p));
-                indValid2 = indValid2(indValid1);
-
-                % for all unit pairs, determine difference between preferred
-                % directions/orientations
-                dd = tuning.determinePreferenceDiff(dp, 'dir');
-                od = tuning.determinePreferenceDiff(op, 'ori');
+                validDir = indPlanes(:,p) & dirTuning.pValue < maxP;
                 % for all unit pairs, determine distance in brain (ignore
                 % depth);
-                d = spatial.determineDistance(roiPos(indValid2,1), ...
-                    roiPos(indValid2,2));
+                ddist = spatial.determineDistance(roiPos(validDir,1), ...
+                    roiPos(validDir,2));
+                dp = dirTuning.preference(validDir);
+                % for all unit pairs, determine difference between preferred
+                % directions/orientations
+                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
                 % permute preferences to test significance
-                ddPermuted = NaN(length(dd), numPerm);
-                odPermuted = NaN(length(od), numPerm);
+                ddiffPermuted = NaN(length(ddiff), numPerm);
                 rng('default');
                 for k = 1:numPerm
                     order = randperm(length(dp));
-                    ddPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
-                    odPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
+                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff( ...
+                        dp(order), 'dir');
                 end
+
+                validOri = indPlanes(:,p) & oriTuning.pValue < maxP;
+                % for all unit pairs, determine distance in brain (ignore
+                % depth);
+                odist = spatial.determineDistance(roiPos(validOri,1), ...
+                    roiPos(validOri,2));
+                op = oriTuning.preference(validOri);
+                % for all unit pairs, determine difference between preferred
+                % orientations
+                odiff = tuning.determinePreferenceDiff(op, 'ori');
+                % permute preferences to test significance
+                odiffPermuted = NaN(length(odiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(op));
+                    odiffPermuted(:,k) = tuning.determinePreferenceDiff( ...
+                        op(order), 'ori');
+                end
+
                 % collect results
                 if p < size(indPlanes,2) % for each plane
-                    distPlane{rec} = [distPlane{rec}; d];
-                    dirDiffPlane{rec} = [dirDiffPlane{rec}; dd];
-                    oriDiffPlane{rec} = [oriDiffPlane{rec}; od];
-                    dirDiffPlaneNull{rec} = [dirDiffPlaneNull{rec}; ddPermuted];
-                    oriDiffPlaneNull{rec} = [oriDiffPlaneNull{rec}; odPermuted];
+                    dirDistPlane{rec} = [dirDistPlane{rec}; ddist];
+                    dirDiffPlane{rec} = [dirDiffPlane{rec}; ddiff];
+                    dirDiffPlaneNull{rec} = [dirDiffPlaneNull{rec}; ddiffPermuted];
+                    oriDistPlane{rec} = [oriDistPlane{rec}; odist];
+                    oriDiffPlane{rec} = [oriDiffPlane{rec}; odiff];
+                    oriDiffPlaneNull{rec} = [oriDiffPlaneNull{rec}; odiffPermuted];
                 else % across all planes
-                    distRec{rec} = [distRec{rec}; d];
-                    dirDiffRec{rec} = [dirDiffRec{rec}; dd];
-                    oriDiffRec{rec} = [oriDiffRec{rec}; od];
-                    dirDiffRecNull{rec} = [dirDiffRecNull{rec}; ddPermuted];
-                    oriDiffRecNull{rec} = [oriDiffRecNull{rec}; odPermuted];
+                    dirDistRec{rec} = [dirDistRec{rec}; ddist];
+                    dirDiffRec{rec} = [dirDiffRec{rec}; ddiff];
+                    dirDiffRecNull{rec} = [dirDiffRecNull{rec}; ddiffPermuted];
+                    oriDistRec{rec} = [oriDistRec{rec}; odist];
+                    oriDiffRec{rec} = [oriDiffRec{rec}; odiff];
+                    oriDiffRecNull{rec} = [oriDiffRecNull{rec}; odiffPermuted];
                 end
                 
                 % plot results per recording (each + across planes)
@@ -119,14 +142,14 @@ for s = 2 % neurons and boutons
                     strDir = 'Direction_allPlanes.jpg';
                     strOri = 'Orientation_allPlanes.jpg';
                 end
-                fig = spatial.plotPrefDiffVsDist(d, dd, ddPermuted, ...
+                fig = spatial.plotPrefDiffVsDist(ddist, ddiff, ddiffPermuted, ...
                     binSize(s), stepSize(s), true);
                 if ~isempty(fig)
                     title('\DeltaDirection pref. vs \Deltaposition')
                     saveas(gcf, fullfile(fPlots, strDir))
                     close gcf
                 end
-                fig = spatial.plotPrefDiffVsDist(d, od, odPermuted, ...
+                fig = spatial.plotPrefDiffVsDist(odist, odiff, odiffPermuted, ...
                     binSize(s), stepSize(s), true);
                 if ~isempty(fig)
                     title('\DeltaOrientation pref. vs \Deltaposition')
@@ -141,7 +164,7 @@ for s = 2 % neurons and boutons
     % plot across all datasets
     fPlots = fullfile(folders.plots, ...
         'PreferenceDiffVsBrainDistance', sets{s});
-    fig = spatial.plotPrefDiffVsDist(cat(1, distPlane{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, dirDistPlane{:}), ...
         cat(1, dirDiffPlane{:}), cat(1, dirDiffPlaneNull{:}), ...
         binSize(s), stepSize(s), false);
     if ~isempty(fig)
@@ -149,7 +172,7 @@ for s = 2 % neurons and boutons
         saveas(gcf, fullfile(fPlots, 'Direction_withinPlanes.jpg'))
         close gcf
     end
-    fig = spatial.plotPrefDiffVsDist(cat(1, distPlane{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, oriDistPlane{:}), ...
         cat(1, oriDiffPlane{:}), cat(1, oriDiffPlaneNull{:}), ...
         binSize(s), stepSize(s), false);
     if ~isempty(fig)
@@ -157,17 +180,17 @@ for s = 2 % neurons and boutons
         saveas(gcf, fullfile(fPlots, 'Orientation_withinPlanes.jpg'))
         close gcf
     end
-    fig = spatial.plotPrefDiffVsDist(cat(1, distRec{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, dirDistRec{:}), ...
         cat(1, dirDiffRec{:}), cat(1, dirDiffRecNull{:}), ...
-        binSize(s), stepSize(s));
+        binSize(s), stepSize(s), false);
     if ~isempty(fig)
         title('\DeltaDirection pref. vs \Deltaposition (across planes)')
         saveas(gcf, fullfile(fPlots, 'Direction_acrossPlanes.jpg'))
         close gcf
     end
-    fig = spatial.plotPrefDiffVsDist(cat(1, distRec{:}), ...
+    fig = spatial.plotPrefDiffVsDist(cat(1, oriDistRec{:}), ...
         cat(1, oriDiffRec{:}), cat(1, oriDiffRecNull{:}), ...
-        binSize(s), stepSize(s));
+        binSize(s), stepSize(s), false);
     if ~isempty(fig)
         title('\DeltaOrientation pref. vs \Deltaposition (across planes)')
         saveas(gcf, fullfile(fPlots, 'Orientation_acrossPlanes.jpg'))

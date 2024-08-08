@@ -1,4 +1,5 @@
-function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, fovMicron)
+function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, ...
+    fovMicron)
 %PLOTORIENTATIONMAP   Plot ROI masks within imaging FOV with preferred
 %direction/orientation color coded.
 

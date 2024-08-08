@@ -23,10 +23,6 @@ for bin = 1:length(binEdges)
     meanDiff(bin) = mean(prefDiffs(ind), 'omitnan');
     meanDiffPerm(bin,:) = mean(prefDiffsPermuted(ind,:), 1, 'omitnan');
 end
-% if not enough data, return
-if sum(binValid) < 2
-    return
-end
 % ignore bins with insufficient pairs
 meanDist = meanDist(binValid);
 meanDiff = meanDiff(binValid);
