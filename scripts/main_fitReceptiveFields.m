@@ -16,13 +16,15 @@ RFlimits = [0.2 0.4]; % time range of stimulus before neural response
                       % considered for RF
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 
-% % for evaluation of receptive fields (significance/goodness)
+% for evaluation of receptive fields (significance/goodness)
 minEV = 0.005; % minimum explained variance to plot RF
 minPeak = 3.5; % minimum peak of RF (compared to noise) to plot RF
 
+% plotting RFs
 % colormaps
 [cm_ON, cm_OFF] = colmaps.getRFMaps;
 cms = cat(3, cm_ON, cm_OFF);
+signs = [1 -1];
 
 titles = {'ON field','OFF field'};
 
@@ -31,8 +33,8 @@ addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
 addpath(fullfile(folders.repo))
 
 %% Fit RFs and get cross-validated explained variance
-sets = {'neurons', 'boutons'};
-for s = 1:2 % neurons and boutons
+sets = {'boutons', 'neurons'};
+for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
@@ -68,8 +70,8 @@ for s = 1:2 % neurons and boutons
             % are above horizon/monitor centre
             stimPos(3:4) = -stimPos(3:4);
 
-            % if stimulus covers both hemifields, only
-            % consider right hemifield (affected datasets all recorded in left
+            % if stimulus covers both hemifields, only consider left 
+            % hemifield (affected datasets (boutons) all recorded in right
             % hemisphere)
             % width and height of visual noise pixels
             squW = diff(stimPos(1:2)) / size(stimMaps,3);
@@ -77,9 +79,9 @@ for s = 1:2 % neurons and boutons
             if stimPos(1) * stimPos(2) < 0
                 % determine left edge of all pixel columns
                 leftEdges = stimPos(1) + (0:size(stimMaps,3)-1) .* squW;
-                validPix = leftEdges >= 0;
+                validPix = leftEdges < 0;
                 stimMaps = stimMaps(:,:,validPix);
-                stimPos(1) = leftEdges(find(validPix,1));
+                stimPos(2) = leftEdges(find(validPix,1,'last')) + squW;
             end
             % make meshgrid for plotting fitted RF contour (later)
             [x0, y0] = meshgrid(linspace(stimPos(1), stimPos(2), 100), ...
@@ -112,6 +114,8 @@ for s = 1:2 % neurons and boutons
                 tr, time_tr, stimFrames, time_stim, ...
                 RFtimesInFrames, lambdasStim);
             % [rows x columns x time x ON/OFF x units]
+            % NOTE: OFF subfield: positive pixel -> suppressed by black
+            % negative pixel -> driven by black
 
             % fit Gaussian
             % parameters of fitted Gaussian
@@ -195,7 +199,7 @@ for s = 1:2 % neurons and boutons
                         % STA
                         imagesc([stimPos(1)+squW/2 stimPos(2)-squW/2], ...
                             [stimPos(3)-squH/2 stimPos(4)+squH/2], ...
-                            rf_T(:,:,sf),[-mx mx])
+                            rf_T(:,:,sf).*signs(sf),[-mx mx])
                         hold on
                         % contour of fitted 2D Gaussian
                         fitRF = rf.D2GaussFunctionRot(fitPars(iUnit,:), cat(3, x0, y0));
