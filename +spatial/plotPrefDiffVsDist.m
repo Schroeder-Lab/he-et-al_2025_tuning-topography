@@ -4,15 +4,17 @@ function fig = plotPrefDiffVsDist(distances, prefDiffs, prefDiffsPermuted, ...
 %direction/orientation preferences.
 
 % INPUTS
-% distance      [pairs x 1], pairwise distances
+% distances     [pairs x 1], pairwise distances
 % prefDiffs     [pairs x 1], pairwise tuning differences
 % prefDiffsPermuted [pairs x permutations], tuning differences of permuted
 %               ROIs
 % binSize       int, bin size to determine average differences
 % stepSize      int, step size for moving average
+% doSmooth      true/false, if true smooth the mean preference differences
+%               across x-axis (brain distance)
 
 % OUTPUTS
-% fig       int, handle to figure
+% fig           int, handle to figure
 
 fig = [];
 
