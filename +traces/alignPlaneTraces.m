@@ -27,7 +27,7 @@ for d = 1:length(delays)
         nanInd1 = isnan(traces(:,n));
         tracesNew(:,n) = interp1(time(~nanInd1) + delays(d), ...
             traces(~nanInd1,n), timeNew, 'pchip');
-        nanInd2 = reshape(repmat(nanInd1, 1, upsample), [], 1);
+        nanInd2 = reshape(repmat(nanInd1, 1, upsample)', [], 1);
         tracesNew(nanInd2,n) = NaN;
     end
 end
