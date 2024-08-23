@@ -1,10 +1,17 @@
 function [x, y, preferences, consistencies, counts] = ...
-    makeSmoothMap(rfPos, directions, binSize, radius)
+    makeSmoothMap(rfPos, directions, binSize, radius, limits)
 
 valid = ~any(isnan([rfPos, directions]), 2);
 
-x = (floor(min(rfPos(valid,1))/binSize) : ceil(max(rfPos(valid,1))/binSize)) .* binSize;
-y = (floor(min(rfPos(valid,2))/binSize) : ceil(max(rfPos(valid,2))/binSize)) .* binSize;
+if nargin < 5
+    x = (floor(min(rfPos(valid,1))/binSize) : ...
+        ceil(max(rfPos(valid,1))/binSize)) .* binSize;
+    y = (floor(min(rfPos(valid,2))/binSize) : ...
+        ceil(max(rfPos(valid,2))/binSize)) .* binSize;
+else
+    x = limits(1):binSize:limits(2);
+    y = limits(3):binSize:limits(4);
+end
 [x,y] = meshgrid(x,y);
 
 % transform preferred directions into vectors

@@ -180,6 +180,11 @@ for s = 1:2 % boutons and neurons
     io.saveFigure(fig, fPlot, ...
         sprintf('distanceAll_%s_orientation', sets{s}))
 
+
+    % TODO: plot preference difference relative to null distribution using
+    % the mean and STD of the null distribution, not percentiles (as done
+    % in the following plots)
+
     % plot direction preference difference relative to null distribution (per
     % dataset)
     mini = ceil(min(cat(1, distBinnedDir{:})) / 2) * 2;
