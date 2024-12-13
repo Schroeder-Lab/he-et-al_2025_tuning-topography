@@ -1,5 +1,5 @@
-function [prediction, explainedVar] = predictFromRF(trace, traceTimes, ...
-    stimFrames, stimTimes, RFtimesInFrames, spatTempRF)
+function [prediction, explainedVar] = predictFromRF(caTraces, t_ca, ...
+    toeplitz, t_toeplitz, spatTempRF)
 %PREDICTFROMRF   Predict response trace from stimulus and receptive field.
 
 % INPUTS
@@ -15,37 +15,33 @@ function [prediction, explainedVar] = predictFromRF(trace, traceTimes, ...
 % prediction        [t], predicted trace
 % explainedVar      double, explained variance
 
-% generate toplitz matrix for stimulus
-[stim, time, ~, stimBin] = ...
-    rf.makeStimToeplitz(stimFrames, stimTimes, RFtimesInFrames);
-
 % get neural response sampled at stimulus frame times
-traceBin = median(diff(traceTimes));
-numBins = round(stimBin / traceBin);
-trace = smoothdata(trace, 1, 'movmean', numBins, 'omitnan');
-trace = interp1(traceTimes, trace, time);
+tBin_ca = median(diff(t_ca));
+tBin_stim = median(diff(t_toeplitz));
+numBins = round(tBin_stim / tBin_ca);
+caTraces = smoothdata(caTraces, 1, 'movmean', numBins, 'omitnan');
+caTraces = interp1(t_ca, caTraces, t_toeplitz);
 % z-score neural response
-zTrace = (trace - mean(trace,1,'omitnan')) ./ std(trace,0,1,'omitnan');
+zTrace = (caTraces - mean(caTraces,1,'omitnan')) ./ std(caTraces,0,1,'omitnan');
 
 % delete stim frames for which neuron has NaN
 ind = isnan(zTrace);
-stim(ind,:) = [];
+toeplitz(ind,:) = [];
 zTrace(ind,:) = [];
 
 % duplicate stimulus matrix to predict ON part (1st half) and OFF
 % part (2nd half)
-s = stim;
-s(stim < 0) = 0;
-stim2 = s;
-s = stim;
-s(stim > 0) = 0;
-stim2 = [stim2, s];
+s = toeplitz;
+s(toeplitz < 0) = 0;
+stim = s;
+s = toeplitz;
+s(toeplitz > 0) = 0;
+stim = [stim, s];
 % normalise each column of stimulus matrix
-stim2 = (stim2 - mean(stim2(:),'omitnan')) ./ std(stim2(:),'omitnan');
-clear sdesl
+stim = (stim - mean(stim(:),'omitnan')) ./ std(stim(:),'omitnan');
 
 prediction = NaN(size(ind));
 % multiply stimulus with RF to predict response
-prediction(~ind) = stim2 * spatTempRF(:);
+prediction(~ind) = stim * spatTempRF(:);
 % get explained variance of prediction
 explainedVar = 1 - sum((zTrace - prediction(~ind)).^2, 1) ./ sum(zTrace.^2, 1);

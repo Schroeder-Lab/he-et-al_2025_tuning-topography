@@ -12,22 +12,27 @@ function fitRF = sampleGaussianAtPixelPos(rfSize, stimPos, fitPars)
 % fitRF     [numRows x numColumns], Gaussian map
 
 % target samle coordinates
-[x0, y0] = meshgrid(1:rfSize(2), 1:rfSize(1));
+[x0, y0] = meshgrid((1:rfSize(2))-0.5, (1:rfSize(1))-0.5);
+% [x0, y0] = meshgrid(1:rfSize(2), 1:rfSize(1));
 
 % vectors x1 and y1 specify gridpoints with distance of 1
 % degree (diff(stimPos(...))); values match position of
 % gridpoints in pixels of stimulus row/column; all
 % locations within edges of stimulus are included (no cropping)
-x1 = linspace(0.5, rfSize(2)+0.5, diff(stimPos(1:2)));
-y1 = linspace(0.5, rfSize(1)+0.5, -diff(stimPos(3:4)));
-[x1, y1] = meshgrid(x1, y1);
+x1 = linspace(0, rfSize(2), diff(stimPos(1:2)));
+y1 = linspace(0, rfSize(1), -diff(stimPos(3:4)));
+% x1 = linspace(0.5, rfSize(2)+0.5, diff(stimPos(1:2)));
+% y1 = linspace(0.5, rfSize(1)+0.5, -diff(stimPos(3:4)));
 
 % fitted Gaussian was based on cropped, upsampled RF (using
 % size of x2 (y2)); need to add points beyond edges of x2 (y2)
 % to match grid size and relative location of x1 (y1)
-[x3, y3] = meshgrid((1:size(x1,2)) - sum(x1(1,:)<1), ...
-    (1:size(y1,1)) - sum(y1(:,1)<1));
+[x3, y3] = meshgrid((0:length(x1)-1) - sum(x1<x0(1)), ...
+    (0:length(y1)-1) - sum(y1<y0(1)));
+% [x3, y3] = meshgrid((1:size(x1,2)) - sum(x1(1,:)<1), ...
+%     (1:size(y1,1)) - sum(y1(:,1)<1));
 fitRF = rf.D2GaussFunctionRot(fitPars, cat(3, x3, y3));
 
 % sample fitted RF at positions measured for original RF map
+[x1, y1] = meshgrid(x1, y1);
 fitRF = interp2(x1, y1, fitRF, x0, y0);

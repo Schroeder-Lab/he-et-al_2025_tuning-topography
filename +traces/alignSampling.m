@@ -1,5 +1,5 @@
-function [tracesNew, timeNew] = alignPlaneTraces(traces, time, delays, planes)
-%ALIGNPLANETRACES   Upsample and align traces of different imaging planes
+function [newTraces, newTime] = alignSampling(traces, time, delayIDs, delays)
+%ALIGNSAMPLING   Upsample and align traces of different imaging planes
 %to a common time axis.
 
 % INPUTS
@@ -13,21 +13,30 @@ function [tracesNew, timeNew] = alignPlaneTraces(traces, time, delays, planes)
 % tracesNew     [t_new x ROIs], aligned traces
 % time_new      [t_new], new time axis
 
+if length(delays) <= 1
+    newTraces = traces;
+    newTime = time;
+    return
+end
+
 % upsample time trace to include delays of all planes
 timeBin = median(diff(time));
 delta_t = median(diff(delays));
 upsample = round(timeBin / delta_t);
 timeBin = timeBin / upsample;
-timeNew = reshape((time + (0:upsample-1) * timeBin)', [], 1);
+newTime = reshape((time + (0:upsample-1) * timeBin)', [], 1);
 % interpolate traces to new time axis; take care of NaN values
-tracesNew = NaN(length(timeNew), size(traces,2));
+newTraces = NaN(length(newTime), size(traces,2));
 for d = 1:length(delays)
-    indUnits = find(planes == d & ~all(isnan(traces),1)');
+    indUnits = find(delayIDs == d);
     for n = indUnits'
+        if sum(isnan(traces(:,n)))/size(traces,1) > 0.8
+            continue
+        end
         nanInd1 = isnan(traces(:,n));
-        tracesNew(:,n) = interp1(time(~nanInd1) + delays(d), ...
-            traces(~nanInd1,n), timeNew, 'pchip');
+        newTraces(:,n) = interp1(time(~nanInd1) + delays(d), ...
+            traces(~nanInd1,n), newTime, 'pchip');
         nanInd2 = reshape(repmat(nanInd1, 1, upsample)', [], 1);
-        tracesNew(nanInd2,n) = NaN;
+        newTraces(nanInd2,n) = NaN;
     end
 end

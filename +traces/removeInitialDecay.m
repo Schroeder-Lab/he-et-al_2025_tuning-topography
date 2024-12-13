@@ -1,5 +1,5 @@
-function tracesNew = removeInitialDecay(traces, time, decayWin, ...
-    decayThresh)
+function newTraces = removeInitialDecay(traces, time, window_decay, ...
+    threshold)
 %REMOVEINITIALDECAY   Fit and remove exponential decay from trace.
 
 % INPUTS
@@ -12,11 +12,11 @@ function tracesNew = removeInitialDecay(traces, time, decayWin, ...
 % OUTPUTS
 % tracesNew     [t x ROIs], corrected traces
 
-tracesNew = traces;
+newTraces = traces;
 timeBin = median(diff(time));
 % identify traces with decay
-indUnits = find(mean(traces(1:round(decayWin / timeBin),:),1,'omitnan') > ...
-    mean(traces,1,'omitnan') + decayThresh .* std(traces,0,1,'omitnan'));
+indUnits = find(mean(traces(1:round(window_decay / timeBin),:),1,'omitnan') > ...
+    mean(traces,1,'omitnan') + threshold .* std(traces,0,1,'omitnan'));
 for iUnit = 1:length(indUnits)
     y = traces(:, indUnits(iUnit));
     y = fillmissing(y, 'linear');
@@ -24,8 +24,8 @@ for iUnit = 1:length(indUnits)
     f = fit((1:length(y))', y, ...
         @(a,b,c,d,e,x) a + b .* exp(-x ./ c) + d .* exp(-x ./ e), ...
         'Lower', [0 0 0 0 0], ...
-        'Upper', [max(y) max(y) 500 max(y) 500], ...
+        'Upper', [max(y) max(y) length(y) max(y) length(y)], ...
         'StartPoint', [min(y) mean(y) 50 mean(y) 5]);
     % remove fit
-    tracesNew(:, indUnits(iUnit)) = y - f(1:size(traces,1)) + f.a;
+    newTraces(:, indUnits(iUnit)) = y - f(1:size(traces,1)) + f.a;
 end

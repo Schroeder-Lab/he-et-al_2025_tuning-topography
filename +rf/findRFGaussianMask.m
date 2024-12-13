@@ -54,3 +54,4 @@ for sub = 1:3
         end
     end
 end
+RFsigns(3) = [];

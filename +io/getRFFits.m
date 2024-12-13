@@ -8,7 +8,8 @@ function data = getRFFits(f)
 % data
 %   .maps           [ROIs x rows x columns x t_rf x type], spatio-temporal
 %                   RF for ON (type=1) and OFF (type=2) subfields
-%   .types          {ROIs}, 'ON', 'OFF', or 'ON+OFF'
+%   .bestSubFields  [ROIs], 1: 'ON', 2: 'OFF', or 3: 'ON+OFF'
+%   .subFieldSigns  [ROIs x 2], sings of ON and OFF fields
 %   .fitParameters  [ROIs x parameters], (amplitude, xCenter, xSTD,
 %                   yCenter, ySTD, rotation)
 %   .peaks          [ROIs], amplitude of RF peak (of best type) in STD of
@@ -29,7 +30,8 @@ function data = getRFFits(f)
 %   .time_RF        [t_rf], sample times of spatio-temporal RFs
 
 data.maps = readNPY(fullfile(f, '_ss_rf.maps.npy'));
-data.types = readcell(fullfile(f, '_ss_rf.type.csv'));
+data.bestSubFields = readNPY(fullfile(f, '_ss_rf.bestSubField.npy'));
+data.subFieldSigns = readNPY(fullfile(f, '_ss_rf.subFieldSigns.npy'));
 data.fitParameters = readNPY(fullfile(f, '_ss_rf.gaussFitPars.npy'));
 data.peaks = readNPY(fullfile(f, '_ss_rf.peak.npy'));
 data.gaussMasks = readNPY(fullfile(f, '_ss_rf.gaussMask.npy'));
