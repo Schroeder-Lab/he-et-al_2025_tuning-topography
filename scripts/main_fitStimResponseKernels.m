@@ -1,19 +1,11 @@
+function main_fitStimResponseKernels(folders)
 % Given the pre-processed calcium traces, fit response kernels, response
 % amplitudes (per trial), and kernel shift (per stimulus, in case of bar 
 % stimuli) to calcium responses to drifting gratings, static gratings, and
 % moving bars.
 
-%% Folders
-getFolders;
-
 %% Parameters
-doPlot = 1; % if 1, plot results for each cell: kernel fit and trial 
-            % amplitudes
 kernelLength = 10; % length of kernel in sec
-
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
 
 %% Fit kernels
 sets = {'neurons', 'boutons'};

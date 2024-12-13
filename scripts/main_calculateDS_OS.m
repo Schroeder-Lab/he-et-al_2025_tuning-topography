@@ -1,11 +1,9 @@
+function main_calculateDS_OS(folders)
 % Given the fitted response kernels (from main_fitStimResponseKernels.m),
 % use vector averaging to determine preferred direction and orientation 
 % (direction of final vector) as well as direction and orientation 
 % selectivity (length of final vector). Use permutation test to determine
 % significance of direction and orientation selectivity.
-
-%% Folders
-getFolders;
 
 %% Parameters
 numShuffles = 1000; % number of permutations for testing significance of 
@@ -17,10 +15,6 @@ minR2 = 0; % threshold for explained variance for response kernel
 % colors for plotting
 cols = [1 0 0; 1 0.8 0.8];
 phaseCols = lines(6);
-
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
 
 %% Plot kernel, direction and orientation tuning curves
 sets = {'neurons', 'boutons'};

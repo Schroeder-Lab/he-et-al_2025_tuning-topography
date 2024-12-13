@@ -1,5 +1,4 @@
-%% Folders
-getFolders;
+function Figure02(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -16,10 +15,6 @@ numPerm = 1000;
 ex = cell(2,3); % rows: (1) bouton, (2) neuron
 ex(1,:) = {'SS078', '2017-09-28', 1};
 ex(2,:) = {'SS044', '2015-04-28', 3};
-
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
 
 %% For all plots
 fPlot = fullfile(folders.plots, 'Figure02');

@@ -1,5 +1,4 @@
-%% Folders
-getFolders;
+function Figure01(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -30,10 +29,6 @@ ex(2,:) = {'SS044', '2015-04-28', 3, [258 227 256 281 328 369]};
 % best OS neurons
 % ex(2,:) = {'SS044', '2015-04-28', 3, [227 240]};
 
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
-
 %% For all plots
 fPlot = fullfile(folders.plots, 'Figure01');
 if ~isfolder(fPlot)
@@ -41,7 +36,7 @@ if ~isfolder(fPlot)
 end
 
 %% Example mean frames, calcium traces and tuning curves
-Figure01_examples;
+Figure01_examples(folders, sets, ex);
 
 %% Population direction tuning curves
-Figure01_tuning_prefs_selectivity;
+Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex);

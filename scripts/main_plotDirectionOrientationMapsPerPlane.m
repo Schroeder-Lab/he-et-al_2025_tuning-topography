@@ -1,18 +1,9 @@
+function main_plotDirectionOrientationMapsPerPlane(folders)
 % Plot the location of all units per recorded plane (using ROI masks) and
 % color code preferred orientation or direction.
 
-%% Folders
-getFolders;
-
 %% Parameters
 maxP = 0.05;
-
-types = {'dir','ori'};
-strings = {'Direction','Orientation'};
-
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
 
 %% Plot direction and orientation maps
 sets = {'neurons', 'boutons'};

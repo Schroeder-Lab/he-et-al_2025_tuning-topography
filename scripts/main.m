@@ -1,0 +1,67 @@
+%% Folder definitions
+% Define locations of data, plots, and code.
+% folders.data:     raw data; subfolders: [neurons/boutons]/[animal]/[date]
+% folders.tools:    code repositories
+% folders.repo:     current repository
+% folders.plots:    to save plots
+
+% Mac
+% folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
+% folders.tools = '/Users/ss2302/dev/toolboxes';
+% folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
+% folders.plots = '/Users/ss2302/Documents/Results/OrientationColumns_Plots';
+
+% PC on campus
+folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+folders.tools = 'C:\dev\toolboxes';
+folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
+folders.plots = 'D:\Results\OrientationColumns_Plots';
+
+%% Add paths
+addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
+addpath(genpath(fullfile(folders.repo)))
+
+%% Fit response kernels (gratings + bars)
+% Given the pre-processed calcium traces, fit response kernels, response
+% amplitudes (per trial), and kernel shift (per stimulus, in case of bar 
+% stimuli) to calcium responses to drifting gratings, static gratings, and
+% moving bars.
+main_fitStimResponseKernels(folders)
+
+%% Determine direction and orientation selectivity
+% Given the fitted response kernels (from main_fitStimResponseKernels.m),
+% use vector averaging to determine preferred direction and orientation 
+% (direction of final vector) as well as direction and orientation 
+% selectivity (length of final vector). Use permutation test to determine
+% significance of direction and orientation selectivity.
+main_calculateDS_OS(folders)
+
+%% Plot direction and orientation maps (at brain position)
+% Plot the location of all units per recorded plane (using ROI masks) and
+% color code preferred orientation or direction.
+main_plotDirectionOrientationMapsPerPlane(folders)
+
+%% Plot preference difference depending on brain distance
+% Plot pairwise differences in preferred direction or orientation against
+% the distance of ROIs in the brain. Consider only ROIs within the same
+% plane or ROIs across all planes (ignoring distances in depth).
+main_plotBrainDistanceVersusPreferenceDifference(folders)
+
+%% Map receptive fields
+% Given the calcium responses to the visual noise stimulus, fit spatial
+% receptive fields (ON and OFF fields).
+main_fitReceptiveFields(folders)
+
+%% Fit retinotopy (relatioship: brain position - RF position)
+% Find mapping between RF position and brain position (retinotopy). Then
+% infer RF position of units where RF could not be mapped.
+main_mapRFposToRetinotopy(folders)
+
+%% Figures
+Figure01(folders)
+
+Figure02(folders)
+
+Figure03(folders)
+
+Figure04(folders)

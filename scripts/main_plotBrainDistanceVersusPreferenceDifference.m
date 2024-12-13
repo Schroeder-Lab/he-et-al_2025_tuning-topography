@@ -1,9 +1,7 @@
+function main_plotBrainDistanceVersusPreferenceDifference(folders)
 % Plot pairwise differences in preferred direction or orientation against
 % the distance of ROIs in the brain. Consider only ROIs within the same
 % plane or ROIs across all planes (ignoring distances in depth).
-
-%% Folders
-getFolders;
 
 %% Parameters
 maxP = 0.05; % p-value threshold for response kernel and 
@@ -12,10 +10,6 @@ minROIs = 15;
 binSize = [5, 20];
 stepSize = [2.5, 5];
 numPerm = 1000;
-
-%% Add paths
-addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(fullfile(folders.repo))
 
 %% Plot pairwise distance in brain versus difference in tuning preference
 sets = {'boutons', 'neurons'};
