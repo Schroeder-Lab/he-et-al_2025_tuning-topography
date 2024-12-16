@@ -1,5 +1,5 @@
-function [prediction, explainedVar] = predictFromRF(caTraces, t_ca, ...
-    toeplitz, t_toeplitz, spatTempRF)
+function [prediction, explainedVar] = predictFromRF(zTrace, toeplitz, ...
+    spatTempRF)
 %PREDICTFROMRF   Predict response trace from stimulus and receptive field.
 
 % INPUTS
@@ -14,15 +14,6 @@ function [prediction, explainedVar] = predictFromRF(caTraces, t_ca, ...
 % OUTPUTS
 % prediction        [t], predicted trace
 % explainedVar      double, explained variance
-
-% get neural response sampled at stimulus frame times
-tBin_ca = median(diff(t_ca));
-tBin_stim = median(diff(t_toeplitz));
-numBins = round(tBin_stim / tBin_ca);
-caTraces = smoothdata(caTraces, 1, 'movmean', numBins, 'omitnan');
-caTraces = interp1(t_ca, caTraces, t_toeplitz);
-% z-score neural response
-zTrace = (caTraces - mean(caTraces,1,'omitnan')) ./ std(caTraces,0,1,'omitnan');
 
 % delete stim frames for which neuron has NaN
 ind = isnan(zTrace);

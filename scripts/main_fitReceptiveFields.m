@@ -10,6 +10,9 @@ function main_fitReceptiveFields(folders)
 % - no crossvalidation
 % - lambda is fixed
 % - spatiotemporal RF is not interpolated before fitting the 2D Gaussian
+% - best subfield is found by MSE of Gaussian fitted to RF map (either only
+%   ON, only OFF, or both) (instead of comparing ratios of ON and OFF
+%   peaks)
 % - explained variance determined from prediction based on Gaussian fit
 %   (not from cross-validation)
 
@@ -110,14 +113,24 @@ for s = 1:2 % boutons and neurons
             % generate toplitz matrix for stimulus
             [toeplitz, t_toeplitz] = ...
                 rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+
+            % resample neural response at stimulus times
+            tBin_ca = median(diff(t_ca));
+            tBin_stim = median(diff(t_toeplitz));
+            numBins = round(tBin_stim / tBin_ca);
+            zTraces = smoothdata(caTraces, 1, 'movmean', numBins, 'omitnan');
+            zTraces = interp1(t_ca, zTraces, t_toeplitz);
+            % z-score neural response
+            zTraces = (zTraces - mean(zTraces,1,'omitnan')) ./ ...
+                std(zTraces,0,1,'omitnan');
+
             %--------------------------------------------------------------
             % Comment if RFs are already mapped and only Gaussian fit is
             % needed.
             % map RF
             % rFields: [rows x columns x time x ON/OFF x units]
             rFields = rf.getReceptiveField( ...
-                caTraces, t_ca, toeplitz, t_toeplitz, stimSize, ...
-                rfBins, lambda);
+                zTraces, toeplitz, stimSize, rfBins, lambda);
             % NOTE: OFF subfield: positive pixel -> suppressed by black
             % negative pixel -> driven by black
 
@@ -132,7 +145,7 @@ for s = 1:2 % boutons and neurons
             % fit Gaussian
             % parameters of fitted Gaussian:
             % [amplitude, xCenter, xStd, yCenter, yStd, rotation]
-            rfGaussPars = NaN(size(caTraces,2), 6); 
+            rfGaussPars = NaN(size(caTraces,2), 7); 
             % fitted 2D Gaussian map (one for ON and OFF)
             fitGaussians = NaN(size(caTraces,2), size(rFields,1), size(rFields,2), 2);
             fitWeights = NaN(size(caTraces,2), length(rfBins));
@@ -153,6 +166,7 @@ for s = 1:2 % boutons and neurons
                 % average across time
                 rf_tmp = squeeze(mean(rfield,3));
 
+                % fitRFs: Gaussian masks with best sign (pos or neg)
                 [fitRFs, RFsigns, MSEs] = rf.findRFGaussianMask(rf_tmp);
                 [~, bestSubField] = min(MSEs);
                 bestSubFields(iUnit) = bestSubField;
@@ -167,8 +181,8 @@ for s = 1:2 % boutons and neurons
                 end
 
                 % fit Gaussian
-                [rfGaussPars(iUnit,:), rf_gauss] = rf.fit2dGaussRF(rf_sub, false, ...
-                    gridX, gridY);
+                [rfGaussPars(iUnit,:), rf_gauss] = rf.fit2dGaussRF(...
+                    rf_sub, false, gridX, gridY);
                 % mirror RF orientation to account for flipped y-axis direction
                 % (top is positive)
                 rfGaussPars(iUnit,6) = -rfGaussPars(iUnit,6);
@@ -186,13 +200,15 @@ for s = 1:2 % boutons and neurons
                 % temporal weights
                 spatTempMask = reshape(fitRFs(:,:,:,bestSubField), [], 1) * ...
                     weights; % [pix x t]
+                % spatTempMas: [rows x cols x t x ON/OFF]
                 spatTempMask = permute(reshape(spatTempMask, size(fitRFs,1), ...
-                    size(fitRFs,2), 2, length(weights)), [1 2 4 3]); % [rows x cols x t x ON/OFF]
+                    size(fitRFs,2), 2, length(weights)), [1 2 4 3]);
+                spatTempMask(:,:,:,2) = -spatTempMask(:,:,:,2);
                 % predict calcium trace based on generated spatio-temporal
                 % RF
                 [predictions(:, iUnit), EVs(iUnit)] = ...
-                    rf.predictFromRF(caTraces(:,iUnit), t_ca, toeplitz, ...
-                    t_toeplitz, spatTempMask);
+                    rf.predictFromRF(zTraces(:,iUnit), toeplitz, ...
+                    spatTempMask);
                 fitWeights(iUnit,:) = weights;
             end
 
@@ -250,6 +266,8 @@ for s = 1:2 % boutons and neurons
                     end
                     % rf_tmp: [rows x columns x subfield]
                     rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
+                    rf_tmp(:,:,2) = -rf_tmp(:,:,2);
+                    mx = max(abs(rf_tmp),[],"all");
                     rfGaussPars = results.fitParameters(iUnit,:);
                     figure('Position', [75 195 1470 475])
                     for sf = 1:2
@@ -257,8 +275,7 @@ for s = 1:2 % boutons and neurons
                         % STA
                         imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
                             [edges(3)-gridH/2 edges(4)+gridH/2], ...
-                            rf_tmp(:,:,sf) .* ...
-                            results.subFieldSigns(iUnit,sf),[-mx mx])
+                            rf_tmp(:,:,sf),[-mx mx])
                         hold on
                         if ismember(results.bestSubFields(iUnit), [sf 3])
                             % ellipse at 2 STD (x and y), not rotated, not shifted
@@ -286,7 +303,7 @@ for s = 1:2 % boutons and neurons
                         colorbar
                     end
                     sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
-                        iUnit, results.EV(iUnit), results.peak(iUnit), ...
+                        iUnit, results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}))
 
                     saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));

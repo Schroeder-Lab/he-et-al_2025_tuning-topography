@@ -1,5 +1,5 @@
-function receptiveFields = getReceptiveField(caTraces, t_ca, ...
-    toeplitz, t_toeplitz, stimSize, rfBins, lambda)
+function receptiveFields = getReceptiveField(zTraces, toeplitz, ...
+    stimSize, rfBins, lambda)
 %GETRECEPTIVEFIELD   Return response-triggered spatiotemporal receptive field.
 
 % INPUTS
@@ -18,23 +18,13 @@ function receptiveFields = getReceptiveField(caTraces, t_ca, ...
 %                     calcium response, for each unit and ON/OFF response; 
 %                     ridge regression is performed using lambda
 
-% get neural response
-tBin_ca = median(diff(t_ca));
-tBin_stim = median(diff(t_toeplitz));
-numBins = round(tBin_stim / tBin_ca);
-caTraces = smoothdata(caTraces, 1, 'movmean', numBins, 'omitnan');
-% resample neural response at stimulus times
-caTraces = interp1(t_ca, caTraces, t_toeplitz);
-% z-score neural response
-zTraces = (caTraces - mean(caTraces,1,'omitnan')) ./ std(caTraces,0,1,'omitnan');
-
 % clean up neural traces (delete times where all traces are NaN; if NaN 
 % values < 10% in a neuron, exchange NaNs for 0; skip neurons that have only 
 % NaN values)
 validTimes = ~all(isnan(zTraces),2);
 toeplitz(~validTimes,:) = [];
 zTraces(~validTimes,:) = [];
-% if NaN values < 5% in a neuron, exchange NaNs for 0
+% if NaN values < 10% in a neuron, exchange NaNs for 0
 ind = any(isnan(zTraces),1) & sum(isnan(zTraces),1)/size(zTraces,1) <= 0.1;
 if sum(ind) > 0
     zTraces(:,ind) = fillmissing(zTraces(:,ind),'constant',0);
@@ -73,4 +63,4 @@ y_train = gpuArray(padarray(zTraces(:,validUnits), ...
 receptiveFields = gather(A \ y_train);
 
 receptiveFields = reshape(receptiveFields, ...
-    [stimSize, length(rfBins), 2, size(caTraces,2)]);
+    [stimSize, length(rfBins), 2, size(zTraces,2)]);

@@ -23,13 +23,19 @@ xdata = cat(3, x, y);
 [indY, indX] = find(rfield == max(rfield(:)),1);
 maxX = xcoords(indX);
 maxY = ycoords(indY);
-x0 = [1, maxX, mean(diff(xcoords))*5, maxY, mean(diff(ycoords))*5, 0];
+% x0 = [1, maxX, mean(diff(xcoords))*5, maxY, mean(diff(ycoords))*5, 0];
+x0 = [1, maxX, mean(diff(xcoords))*5, maxY, mean(diff(ycoords))*5, 0, 0];
 
 % lower and upper bounds of parameters
-lb = [0, min(xcoords), 0, min(ycoords), 0, -pi/4];
+% lb = [0, min(xcoords), 0, min(ycoords), 0, -pi/4];
+% mx_std = max(range(xcoords(:)), range(ycoords(:))) / 4;
+% ub = [2 * max(rfield(:)), max(xcoords), mx_std, max(ycoords), ...
+%     mx_std, pi/4];
+lb = [0, min(xcoords), 0, min(ycoords), 0, -pi/4, ...
+    min(rfield(:))-0.1*range(rfield(:))];
 mx_std = max(range(xcoords(:)), range(ycoords(:))) / 4;
 ub = [2 * max(rfield(:)), max(xcoords), mx_std, max(ycoords), ...
-    mx_std, pi/4];
+    mx_std, pi/4, max(rfield(:))];
 options = optimoptions('lsqcurvefit', 'Display', 'off');
 % run fitting procedure to retrieve parameters
 parameters = lsqcurvefit(@rf.D2GaussFunctionRot, x0, xdata, ...
