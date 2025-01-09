@@ -11,96 +11,86 @@ minPeak = 5;
 sets = {'boutons', 'neurons'};
 
 %% Use linear regression to fit RF based on brain position 
-% (one model for azimuth and elevation separately)
-% for s = 1:2 % boutons and neurons
-%     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-%     for subj = 1:length(subjDirs) % animals
-%         name = subjDirs(subj).name;
-%         fprintf('%s\n', name)
-%         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-%         for dt = 1:length(dateDirs) %dates
-%             date = dateDirs(dt).name;
-%             fprintf('  %s\n', date)
-%             f = fullfile(folders.data, sets{s}, name, date);
-%             % ignore session if visual noise stimuolus was not present
-%             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-%                 continue
-%             end
-% 
-%             % load data
-%             data = io.getRecordingInfo(f);
-%             brainPos = data.roiPositions; % (x,y,z) in microns
-%             brainPos(:,3) = [];
-%             data = io.getRFFits(f);
-%             fits = data.fitParameters;
-%             rfPos = fits(:, [2 4]); % (azimuth, elevation) in visual degrees
-%             ev_rf = data.EV;
-%             rf_peaks = data.peaks;
-% 
-%             % only consider significant RFs
-%             valid = ev_rf >= minEV & rf_peaks >= minPeak;
-%             % valid = (ev_rf > minEV(1) & rf_peaks > minPeak(1)) | ...
-%             %     (ev_rf > minEV(2) & rf_peaks > minPeak(2));
-%             if sum(valid) < minUnits
-%                 continue
-%             end
-% 
-%             % find outliers
-%             outliers = false(length(valid),1);
-%             outliers(valid) = any(isoutlier(rfPos(valid,:), ...
-%                 "ThresholdFactor", 5),2);
-%             valid = valid & ~outliers;
-% 
-%             ft = fittype( @(a1, b1, c1, a2, k2, x) ...
-%                 rf.brainToRFPos(x, a1, b1, c1, a2, k2));
-%             % ft = fittype('rf.brainToRFPos(brainPos, a1, b1, c1, a2, k2)', ...
-%             %     'independent', 'brainPos');
-%             fit_rf = fit(reshape(brainPos(valid,:),[],1), ...
-%                 reshape(rfPos(valid,:),[],1), ft, ...
-%                 'StartPoint', [0 1 1 0 1], ...
-%                 'Weights', repmat(ev_rf(valid),2,1));
-% 
-%             % % for all units with a significant RF, use linear regression to
-%             % % model:
-%             % % rf_x = a1 + b1 * brain_x + c1 * brain_y
-%             % % rf_y = a2 + b2 * brain_x + c2 * brain_y
-%             % fit_rf_x = fit(brainPos(valid,:), rfPos(valid,1), 'poly11', ...
-%             %     'Weights', ev_rf(valid));
-%             % fit_rf_y = fit(brainPos(valid,:), rfPos(valid,2), 'poly11', ...
-%             %     'Weights', ev_rf(valid));
-% 
-%             % % to directly check fitting, do those plots:
-%             % figure
-%             % plot(fit_rf_x, brainPos(valid,:), rfPos(valid,1))
-%             % xlabel('Brain in X')
-%             % ylabel('Brain in Y')
-%             % zlabel('RF azimuth')
-%             % title('Fit horizontal RF position')
-%             % figure
-%             % plot(fit_rf_y, brainPos(valid,:), rfPos(valid,2))
-%             % xlabel('Brain in X')
-%             % ylabel('Brain in Y')
-%             % zlabel('RF elevation')
-%             % title('Fit vertical RF position')
-% 
-%             predict_rf = fit_rf(reshape(brainPos,[],1));
-%             predict_rf = reshape(predict_rf, [], 2);
-% 
-%             % predict_rf_x = fit_rf_x(brainPos);
-%             % predict_rf_y = fit_rf_y(brainPos);
-% 
-%             % save results
-%             writeNPY(outliers, fullfile(f, '_ss_rf.outliers.npy'))
-%             writeNPY(predict_rf, fullfile(f, '_ss_rf.posRetinotopy.npy'))
-%             % writeNPY([predict_rf_x, predict_rf_y], ...
-%             %     fullfile(f, '_ss_rf.posRetinotopy.npy'))
-%             writeNPY(coeffvalues(fit_rf), ...
-%                 fullfile(f, "_ss_rfRetinotopy.model.npy"))
-%             % writeNPY([coeffvalues(fit_rf_x); coeffvalues(fit_rf_y)], ...
-%             %     fullfile(f, "_ss_rfRetinotopy.model.npy"))
-%         end
-%     end
-% end
+% fit a single model for azimuth and elevation; enforce that direction of
+% azimuth and direction of elevation within brain are orthogonal to each
+% other (results for neurons were close to this constraint anyway without
+% enforcing it; results for boutons are more impacted by constraint)
+for s = 1:2 % boutons and neurons
+    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+    for subj = 1:length(subjDirs) % animals
+        name = subjDirs(subj).name;
+        fprintf('%s\n', name)
+        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+        for dt = 1:length(dateDirs) %dates
+            date = dateDirs(dt).name;
+            fprintf('  %s\n', date)
+            f = fullfile(folders.data, sets{s}, name, date);
+            % ignore session if visual noise stimuolus was not present
+            if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+                continue
+            end
+
+            % load data
+            data = io.getRecordingInfo(f);
+            brainPos = data.roiPositions; % (x,y,z) in microns
+            brainPos(:,3) = [];
+            data = io.getRFFits(f);
+            fits = data.fitParameters;
+            rfPos = fits(:, [2 4]); % (azimuth, elevation) in visual degrees
+            ev_rf = data.EV;
+            rf_peaks = data.peaks;
+
+            % only consider significant RFs
+            valid = ev_rf >= minEV & rf_peaks >= minPeak;
+            if sum(valid) < minUnits
+                continue
+            end
+
+            % find outliers
+            outliers = false(length(valid),1);
+            outliers(valid) = any(isoutlier(rfPos(valid,:), ...
+                "ThresholdFactor", 5),2);
+            valid = valid & ~outliers;
+
+            % default starting points
+            ft = fittype( @(a1, b1, c1, a2, k2, x) ...
+                rf.brainToRFPos(x, a1, b1, c1, a2, k2));
+            [fit_rf0, gof0] = fit(reshape(brainPos(valid,:),[],1), ...
+                reshape(rfPos(valid,:),[],1), ft, ...
+                'StartPoint', [0 1 1 0 1], ...
+                'Weights', repmat(ev_rf(valid),2,1));
+
+            % estimate starting point from independent models for azimuth
+            % and elevation
+            fit_rf_x = fit(brainPos(valid,:), rfPos(valid,1), 'poly11', ...
+                'Weights', ev_rf(valid));
+            cx = coeffvalues(fit_rf_x);
+            fit_rf_y = fit(brainPos(valid,:), rfPos(valid,2), 'poly11', ...
+                'Weights', ev_rf(valid));
+            cy = coeffvalues(fit_rf_y);
+
+            [fit_rf1, gof1] = fit(reshape(brainPos(valid,:),[],1), ...
+                reshape(rfPos(valid,:),[],1), ft, ...
+                'StartPoint', [cx(1) cx(2) cx(3) cy(1) vecnorm(cy(2:3))], ...
+                'Weights', repmat(ev_rf(valid),2,1));
+
+            if gof1.sse < gof0.sse
+                fit_rf = fit_rf1;
+            else
+                fit_rf = fit_rf0;
+            end
+
+            predict_rf = fit_rf(reshape(brainPos,[],1));
+            predict_rf = reshape(predict_rf, [], 2);
+
+            % save results
+            writeNPY(outliers, fullfile(f, '_ss_rf.outliers.npy'))
+            writeNPY(predict_rf, fullfile(f, '_ss_rf.posRetinotopy.npy'))
+            writeNPY(coeffvalues(fit_rf), ...
+                fullfile(f, "_ss_rfRetinotopy.model.npy"))
+        end
+    end
+end
 
 %% Plot retinotopic maps
 for s = 1:2 % boutons and neurons
@@ -144,14 +134,10 @@ for s = 1:2 % boutons and neurons
             model = readNPY(fullfile(f, "_ss_rfRetinotopy.model.npy"));
             fit_rfPos = @(x) rf.brainToRFPos(x, model(1), model(2), ...
                 model(3), model(4), model(5));
-            % fit_x = @(x,y) model(1,1) + model(1,2).*x + model(1,3).*y;
-            % fit_y = @(x,y) model(2,1) + model(2,2).*x + model(2,3).*y;
             
             % only consider significant RFs
             valid = ev_rf >= minEV & rf_peaks >= minPeak;
             valid = valid & ~outliers;
-            % valid = (ev_rf > minEV(1) & rf_peaks > minPeak(1)) | ...
-            %     (ev_rf > minEV(2) & rf_peaks > minPeak(2));
             if sum(valid) < minUnits
                 continue
             end
@@ -176,8 +162,6 @@ for s = 1:2 % boutons and neurons
             rfXY = fit_rfPos([x(:); y(:)]);
             rfX = reshape(rfXY(1:3600),60,60);
             rfY = reshape(rfXY(3601:end),60,60);
-            % rfX = fit_x(x,y);
-            % rfY = fit_y(x,y);
             plotLimits = brainLimits + 0.1.*[-brainRange(1), brainRange(1), ...
                 -brainRange(2), brainRange(2)];
             contourLimits = fit_rfPos([plotLimits([1 1 2 2]), ...
@@ -188,7 +172,6 @@ for s = 1:2 % boutons and neurons
 
             nexttile
             hold on
-            % contourLimits = fit_x(plotLimits([1 1 2 2]), plotLimits([3 4 3 4]));
             cLimits = [min([contourLimits(1:4) visualLimits(1)]), ...
                 max([contourLimits(1:4) visualLimits(2)])];
             [~,c] = contourf(x, y, rfX, floor(cLimits(1)):floor(cLimits(2)));
@@ -208,7 +191,6 @@ for s = 1:2 % boutons and neurons
 
             nexttile
             hold on
-            % contourLimits = fit_y(plotLimits([1 1 2 2]), plotLimits([3 4 3 4]));
             cLimits = [min([contourLimits(5:end) visualLimits(3)]), ...
                 max([contourLimits(5:end) visualLimits(4)])];
             [~,c] = contourf(x, y, rfY, floor(cLimits(1)):floor(cLimits(2)));
