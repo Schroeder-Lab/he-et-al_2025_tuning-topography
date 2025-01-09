@@ -1,8 +1,8 @@
 function rfPos = brainToRFPos(brain, a1, b1, c1, a2, k2)
 
-nUnits = length(brain) / 2;
-brainX = brain(1:nUnits);
-brainY = brain(nUnits+1:end);
+nUnits = floor(length(brain) / 2);
+brainX = brain(1 : nUnits);
+brainY = brain(nUnits+1 : 2*nUnits);
 rfPos = NaN(size(brain));
 rfPos(1:nUnits) = a1 + b1 .* brainX + c1 .* brainY;
 
@@ -20,4 +20,4 @@ else
 end
 b2 = b2 * k2;
 c2 = c2 * k2;
-rfPos(nUnits+1:end) = a2 + b2 * brainX + c2 * brainY;
+rfPos(nUnits+1 : 2*nUnits) = a2 + b2 * brainX + c2 * brainY;
