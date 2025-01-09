@@ -15,7 +15,7 @@ numPerm = 1000;
 ex = cell(2,3); % rows: (1) bouton, (2) neuron
 % boutons:
 % good retinotopic maps: SS077 2017-10-03, SS078_2017-10-05
-ex(1,:) = {'SS078', '2017-09-28', 1};
+ex(1,:) = {'SS078', '2017-10-05', 1};
 ex(2,:) = {'SS044', '2015-04-28', 3};
 
 %% For all plots

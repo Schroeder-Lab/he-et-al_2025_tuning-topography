@@ -36,7 +36,7 @@ if ~isfolder(fPlot)
 end
 
 %% Example mean frames, calcium traces and tuning curves
-Figure01_examples(folders, sets, ex);
+Figure01_examples(folders, sets, ex, fPlot);
 
 %% Population direction tuning curves
-Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex);
+Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlot);

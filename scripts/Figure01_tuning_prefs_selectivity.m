@@ -1,4 +1,4 @@
-function Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex)
+function Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlot)
 % Population tuning curves, preference histograms, DS vs OS
 minUnits = 20;
 
