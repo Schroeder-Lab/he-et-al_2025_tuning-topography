@@ -17,9 +17,11 @@ function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, ...
 
 % colors used for plotting: white: background, light gray: not responsive,
 % darker gray: not tuned, colors: represent angle
-colors = [hsv(360); 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1];
+% colors = [hsv(360); 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1];
+colors = colmaps.colorcet('C7'); % has 256 entries/colours
+colors = [colors; 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1]; % add 3 colours --> 259
 % create image of FOV (all black)
-map = ones(fovPix) .* 363;
+map = ones(fovPix) .* 259;
 % set directions/orientations to range 1-360/1-180
 if strcmp(type, 'ori')
     angles = round(mod(angles(:,1),180)*2);
@@ -31,12 +33,27 @@ elseif strcmp(type, 'dir')
     labels = 0:30:360;
 end
 angles(angles == 0) = 360;
+% transform 360 angles to 256 colours
+angles = round(angles/360*256);
 % set untuned ROIs to light gray
-angles(~isTuned & ~isnan(angles)) = 361;
+angles(~isTuned & ~isnan(angles)) = 257;
 % set unresponsive ROIs to dark gray
-angles(isnan(angles)) = 362;
+angles(isnan(angles)) = 258;
 % for each ROI, mark mask in color of preferred direction/orientation
-for roi = 1:size(angles,1)
+% first, plot non-responsive ROIs
+for roi = find(angles == 258)'
+    m = masks(roi,:);
+    m(isnan(m)) = [];
+    map(m) = 258;
+end
+% second, plot non-tuned ROIs
+for roi = find(angles == 257)'
+    m = masks(roi,:);
+    m(isnan(m)) = [];
+    map(m) = 257;
+end
+% third, plot tuned ROIs
+for roi = find(angles < 257)'
     m = masks(roi,:);
     m(isnan(m)) = [];
     map(m) = angles(roi);
@@ -52,11 +69,11 @@ xlabel('FOV position (um)')
 title([str ' map'])
 % plot color map
 ax(2) = subplot(1,2,2);
-image((1:360)')
+image((1:256)')
 colormap(colors);
 ylabel(str)
 % rescale plots
 set(ax(2), 'Position', [0.85 0.11 0.05 0.82], 'YAxisLocation', 'right', ...
-    'YTick', 1:30:360, 'YTickLabel', labels, 'XTick', [], 'box', 'off')
+    'YTick', (1:30:360)./360.*256, 'YTickLabel', labels, 'XTick', [], 'box', 'off')
 set(ax(1), 'Position', [0.13 0.11 0.7 0.82])
 axis(ax(1), 'equal')
