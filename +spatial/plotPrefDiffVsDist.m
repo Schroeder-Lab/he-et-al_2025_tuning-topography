@@ -31,7 +31,15 @@ meanDiffPerm = meanDiffPerm(ind,:);
 % data)
 meanDiffNull = prctile(meanDiffPerm, [2.5 50 97.5], 2);
 % interpolate data to equal-distant brain distances
-x = ceil(meanDist(1):2:floor(meanDist(end)));
+d = median(diff(meanDist));
+if d < 0.5
+    d = 0.1;
+elseif d < 1.5
+    d = 0.5;
+else
+    d = 2;
+end
+x = (ceil(meanDist(1)/d):floor(meanDist(end)/d))  .* d;
 y = interp1(meanDist, meanDiff, x);
 yNull = interp1(meanDist, meanDiffNull, x);
 if doSmooth
@@ -45,15 +53,20 @@ end
 
 h = [0 0];
 fig = figure;
+% density of data points
+dens = ksdensity([distances, prefDiffs], [distances, prefDiffs]);
 % scatterplot
-plot(distances, prefDiffs, 'k.')
+scatter(distances, prefDiffs, 10, dens, "filled")
+colormap(gca, "hot")
+c = colorbar;
+c.Label.String = 'Density';
 hold on
 % moving average of real data
-h(1) = plot(x, ySm, 'r-', 'LineWidth', 2);
+h(1) = plot(x, ySm, 'b-', 'LineWidth', 2);
 % moving average of null data and confidence interval
-fill([x flip(x)], [yNullSm(:,1); flip(yNullSm(:,3))], 'b', ...
+fill([x flip(x)], [yNullSm(:,1); flip(yNullSm(:,3))], 'c', ...
     'FaceAlpha', 0.3, 'EdgeColor', 'none')
-h(2) = plot(x, yNullSm(:,2), 'b-', 'LineWidth', 2);
+h(2) = plot(x, yNullSm(:,2), 'c-', 'LineWidth', 2);
 l = legend(h, 'mean', 'mean of null data');
 l.Box = "off";
 set(gca, 'box', 'off')

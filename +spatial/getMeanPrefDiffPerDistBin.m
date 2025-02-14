@@ -24,17 +24,17 @@ function [meanDist, meanDiff, meanDiffPerm] = ...
 minSamples = 6; % minimum number of pairs per bin for moving average
 
 numPerm = size(prefDiffsPermuted,2);
-binEdges = 0:stepSize:max(distances);
-binValid = true(length(binEdges),1);
-meanDist = NaN(length(binEdges),1);
-meanDiff = NaN(length(binEdges),1);
-meanDiffPerm = NaN(length(binEdges), numPerm);
+binCentres = 0:stepSize:max(distances);
+binValid = true(length(binCentres),1);
+meanDist = NaN(length(binCentres),1);
+meanDiff = NaN(length(binCentres),1);
+meanDiffPerm = NaN(length(binCentres), numPerm);
 
 % loop over bins to determine moving average (of tuning differences and
 % brain distances)
-for bin = 1:length(binEdges)
-    ind = distances > binEdges(bin)-binSize/2 & ...
-        distances <= binEdges(bin)+binSize/2;
+for bin = 1:length(binCentres)
+    ind = distances > binCentres(bin)-binSize/2 & ...
+        distances <= binCentres(bin)+binSize/2;
     meanDist(bin) = mean(distances(ind));
     meanDiff(bin) = mean(prefDiffs(ind), 'omitnan');
     meanDiffPerm(bin,:) = mean(prefDiffsPermuted(ind,:), 1, 'omitnan');
