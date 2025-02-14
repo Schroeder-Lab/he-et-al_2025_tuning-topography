@@ -8,18 +8,21 @@ minROIs = 15;
 binSize = [5, 20];
 stepSize = [2.5, 5];
 xLims = [50 500];
+cLims = [0.0006 0.00005];
 fovLims = [20 160; 400 900];
 numPerm = 1000;
 
 %% Examples
-ex = cell(2,3); % rows: (1) bouton, (2) neuron
-ex(1,:) = {'SS078', '2017-09-28', 1};
-ex(2,:) = {'SS044', '2015-04-28', 3};
+ex = cell(2,2); % rows: (1) bouton, (2) neuron
+ex(1,:) = {'SS078', '2017-10-05'};
+% ex(1,:) = {'SS078', '2017-09-28', 1};
+ex(2,:) = {'SS041', '2015-04-11'};
+% ex(2,:) = {'SS044', '2015-04-28', 3};
 
 %% For all plots
-fPlot = fullfile(folders.plots, 'Figure02');
-if ~isfolder(fPlot)
-    mkdir(fPlot)
+fPlots = fullfile(folders.plots, 'Figures', 'Figure02');
+if ~isfolder(fPlots)
+    mkdir(fPlots)
 end
 
 %% Example maps showing preferences of ROIs
@@ -28,24 +31,19 @@ for s = 1:2 % boutons and neurons
     f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
     % load data
     [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-    data = io.getCalciumData(f);
-    planes = data.planes;
     data = io.getRecordingInfo(f);
     masks = data.roiMasks;
     fovPix = data.fovPix;
     fovM = data.fovMicrons;
 
-    indP = planes == ex{s,3};
-    tuning.plotOrientationMap(dirTuning.preference(indP), ...
-        dirTuning.pValue(indP) < maxP, 'dir', masks(indP,:), ...
-        fovPix(ex{s,3},:), fovM(ex{s,3},:));
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_directionMap_%s_%s_plane%02d', ...
-        str, ex{s,1}, ex{s,2}, ex{s,3}))
-    tuning.plotOrientationMap(oriTuning.preference(indP), ...
-        oriTuning.pValue(indP) < maxP, 'ori', masks(indP,:), ...
-        fovPix(ex{s,3},:), fovM(ex{s,3},:));
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_orientationMap_%s_%s_plane%02d', ...
-        str, ex{s,1}, ex{s,2}, ex{s,3}))
+    tuning.plotOrientationMap(dirTuning.preference, ...
+        dirTuning.pValue < maxP, 'dir', masks, fovPix(1,:), fovM(1,:));
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_directionMap_%s_%s', ...
+        str, ex{s,1}, ex{s,2}))
+    tuning.plotOrientationMap(oriTuning.preference, ...
+        oriTuning.pValue < maxP, 'ori', masks, fovPix(1,:), fovM(1,:));
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_orientationMap_%s_%s', ...
+        str, ex{s,1}, ex{s,2}))
 end
 
 %% Plot pairwise distance in brain versus difference in tuning preference
@@ -63,6 +61,7 @@ for s = 1:2 % boutons and neurons
     distBinnedOri = {};
     fovSize = [];
     rec = 1;
+    exRecs = [0 0];
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
         fprintf('%s\n', name)
@@ -76,8 +75,6 @@ for s = 1:2 % boutons and neurons
             end
                 
             % load data
-            data = io.getCalciumData(f);
-            planes = data.planes;
             data = io.getRecordingInfo(f);
             roiPos = data.roiPositions(:,1:2);
             fovs = data.fovMicrons;
@@ -115,7 +112,7 @@ for s = 1:2 % boutons and neurons
                 % difference in preference relative to null distribution
                 [dirDiffRelative{rec}, distBinnedDir{rec}] = ...
                     spatial.getPrefDiffsRelativeNull(ddist, ddiff, ddiffPermuted, ...
-                    binSize(s), stepSize(s));
+                    binSize(s), stepSize(s), 'zscore');
             end
             op = oriTuning.preference;
             validOri = ~isnan(op) & oriTuning.pValue < maxP;
@@ -149,36 +146,38 @@ for s = 1:2 % boutons and neurons
                 % difference in preference relative to null distribution
                 [oriDiffRelative{rec}, distBinnedOri{rec}] = ...
                     spatial.getPrefDiffsRelativeNull(odist, odiff, odiffPermuted, ...
-                    binSize(s), stepSize(s));
+                    binSize(s), stepSize(s), 'zscore');
             end
             fovSize(rec) = mean(sqrt(sum(fovs.^2,2)));
 
+            if strcmp(name,ex{s,1}) && strcmp(date,ex{s,2})
+                exRecs(s) = rec;
+            end
             rec = rec + 1;
         end
     end
 
-    % plot across all datasets
+    % plot distance vs tuning difference across all datasets
+    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
         cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
         binSize(s), stepSize(s), false);
     xlim([0 xLims(s)])
     ylim([0 180])
-    title('\DeltaDirection pref. vs \Deltaposition')
-    io.saveFigure(fig, fPlot, ...
+    clim([0 cLims(s)/2])
+    title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
         sprintf('distanceAll_%s_direction', sets{s}))
+    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
         binSize(s), stepSize(s), false);
     xlim([0 xLims(s)])
     ylim([0 90])
-    title('\DeltaOrientation pref. vs \Deltaposition')
-    io.saveFigure(fig, fPlot, ...
+    clim([0 cLims(s)])
+    title(['\DeltaOrientation pref. vs \Deltaposition (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
         sprintf('distanceAll_%s_orientation', sets{s}))
-
-
-    % TODO: plot preference difference relative to null distribution using
-    % the mean and STD of the null distribution, not percentiles (as done
-    % in the following plots)
 
     % plot direction preference difference relative to null distribution (per
     % dataset)
@@ -196,19 +195,22 @@ for s = 1:2 % boutons and neurons
             dirDiffRelative{rec}, x(ind1:ind2), "pchip");
     end
     figure
-    plot(x, y)
-    set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)))
     hold on
+    fill([0 maxi maxi 0], [-3 -3 3 3], 'k', 'FaceColor', 'k', ...
+        'FaceAlpha', 0.2, 'EdgeColor', 'none')
+    plot([0 maxi],[0 0], 'k')
+    p = plot(x, y);
+    p(exRecs(s)).LineWidth = 2;
+    legend(p,'Location','bestoutside')
+    set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)), ...
+        "YTick", -12:3:12)
     plot(x, smoothdata(median(y,2,"omitnan"), "movmean", 5) , 'k', "LineWidth", 2)
-    plot([0 maxi],[1 1].*0.025, 'k')
-    plot([0 maxi],[1 1].*0.05, 'k')
-    plot([0 maxi],[1 1].*0.975, 'k')
     xlim([0 xLims(s)])
-    ylim([0 1])
+    ylim([-12 12])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
     title('\DeltaDirection pref. vs \Deltaposition')
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('distancePerDataset_%s_direction', sets{s}))
     % plot orientation preference difference relative to null distribution (per
     % dataset)
@@ -226,41 +228,46 @@ for s = 1:2 % boutons and neurons
             oriDiffRelative{rec}, x(ind1:ind2), "pchip");
     end
     figure
-    plot(x, y)
-    set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)))
     hold on
+    fill([0 maxi maxi 0], [-3 -3 3 3], 'k', 'FaceColor', 'k', ...
+        'FaceAlpha', 0.2, 'EdgeColor', 'none')
+    plot([0 maxi],[0 0], 'k')
+    p = plot(x, y);
+    p(exRecs(s)).LineWidth = 2;
+    legend(p,'Location','bestoutside')
+    set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)), ...
+        "YTick", -12:3:12)
     plot(x, smoothdata(median(y,2,"omitnan"), "movmean", 5), 'k', "LineWidth", 2)
-    plot([0 maxi],[1 1].*0.025, 'k')
-    plot([0 maxi],[1 1].*0.05, 'k')
-    plot([0 maxi],[1 1].*0.975, 'k')
     xlim([0 xLims(s)])
-    ylim([0 1])
+    ylim([-12 12])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
     title('\DeltaOrientation pref. vs \Deltaposition')
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('distancePerDataset_%s_orientation', sets{s}))
 
     % plot mean preference difference for each dataset against size of 
     % imaged field-of-view
     figure
+    c = zeros(length(fovSize),3);
+    c(exRecs(s),:) = [1 0 0];
     scatter(fovSize, cellfun(@mean, dirDiff, ...
-        repmat({"omitnan"},1,length(dirDiff))), 36, 'k', 'filled')
+        repmat({"omitnan"},1,length(dirDiff))), 36, c, 'filled');
     xlim(fovLims(s,:))
     ylim([0 90])
     xlabel('FOV diagonal (um)')
     ylabel('Mean \Deltadirection')
     title(sprintf('%s', sets{s}))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('prefDiffPerDataset_%s_direction', sets{s}))
     figure
     scatter(fovSize, cellfun(@mean, oriDiff, ...
-        repmat({"omitnan"},1,length(oriDiff))), 36, 'k', 'filled')
+        repmat({"omitnan"},1,length(oriDiff))), 36, c, 'filled')
     xlim(fovLims(s,:))
     ylim([0 45])
     xlabel('FOV diagonal (um)')
     ylabel('Mean \Deltaorientation')
     title(sprintf('%s', sets{s}))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('prefDiffPerDataset_%s_orientation', sets{s}))
 end
