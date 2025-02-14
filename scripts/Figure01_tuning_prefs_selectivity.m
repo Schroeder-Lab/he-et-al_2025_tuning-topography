@@ -1,4 +1,4 @@
-function Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlot)
+function Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlots)
 % Population tuning curves, preference histograms, DS vs OS
 minUnits = 20;
 
@@ -135,7 +135,7 @@ for s = 1:2 % boutons and neurons
     set(gca, "Box", "off", "XTick", 1:6:length(dirBinsFine), "XTickLabel", dirBinsCoarse)
     xlabel('Direction (deg)')
     ylabel(sets{s})
-    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_directionHeatmap', sets{s}));
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_directionHeatmap', sets{s}));
     % plot orientation tuning curves
     figure('Position', [600 50 485 945])
     imagesc(oriCurves, [0 1])
@@ -146,7 +146,7 @@ for s = 1:2 % boutons and neurons
     set(gca, "Box", "off", "XTick", 1:6:length(oriBinsFine), "XTickLabel", oriBinsCoarse)
     xlabel('Orientation (deg)')
     ylabel(sets{s})
-    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_orientationHeatmap', sets{s}));
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_orientationHeatmap', sets{s}));
 
     % plot direction preference histogram
     figure
@@ -164,7 +164,7 @@ for s = 1:2 % boutons and neurons
     set(gca, "Box", "off", "XTick", 0:90:360)
     xlabel('Direction (deg)')
     ylabel(sets{s})
-    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_directionPrefHist', sets{s}));
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_directionPrefHist', sets{s}));
     % plot orientation preference histogram
     figure
     n1 = histcounts(oriPreferences(R2>minR2 & oriTuned & dirTuned), oriEdges);
@@ -181,7 +181,7 @@ for s = 1:2 % boutons and neurons
     set(gca, "Box", "off", "XTick", 0:90:180)
     xlabel('Orientation (deg)')
     ylabel(sets{s})
-    io.saveFigure(gcf, fPlot, sprintf('tuning_%s_orientationPrefHist', sets{s}));
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_orientationPrefHist', sets{s}));
 
     % plot direction preference histogram (mean/SEM per dataset)
     nDir = histcounts(dataset(R2>minR2 & dirTuned), 0.5:max(dataset)+1);
@@ -228,7 +228,7 @@ for s = 1:2 % boutons and neurons
     xlabel('Direction (deg)')
     ylabel(sprintf('Proportion %s', sets{s}))
     title(sprintf('Direction preference per dataset (n=%d)', sum(indSetsDir)))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_directionPrefHistPerDataset', sets{s}));
 
     % plot orientation preference histogram (mean/SEM per dataset)
@@ -253,7 +253,7 @@ for s = 1:2 % boutons and neurons
     xlabel('Orientation (deg)')
     ylabel(sprintf('Proportion %s', sets{s}))
     title(sprintf('Orientation preference per dataset (n=%d)', sum(indSetsOri)))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_orientationPrefHistPerDataset', sets{s}));
 
     % plot DS vs OS scatterplot
@@ -276,7 +276,7 @@ for s = 1:2 % boutons and neurons
     xlabel('Direction selectivity')
     ylabel('Orientation selectivity')
     title(sprintf('%s', sets{s}))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_selectivityDirVsOri', sets{s}));
 
     % plot DS and OS histograms (per dataset)
@@ -311,7 +311,7 @@ for s = 1:2 % boutons and neurons
     xlabel('Selectivity index')
     ylabel(sprintf('Proportion %s', sets{s}))
     title(sprintf('Direction selectivity per dataset (n=%d)', sum(indSetsDir)))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_directionSelectivityPerDataset', sets{s}));
     % plot orientation
     figure
@@ -327,6 +327,6 @@ for s = 1:2 % boutons and neurons
     xlabel('Selectivity index')
     ylabel(sprintf('Proportion %s', sets{s}))
     title(sprintf('Orientation selectivity per dataset (n=%d)', sum(indSetsOri)))
-    io.saveFigure(gcf, fPlot, ...
+    io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_orientationSelectivityPerDataset', sets{s}));
 end

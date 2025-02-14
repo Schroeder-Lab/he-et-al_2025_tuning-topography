@@ -1,4 +1,4 @@
-function Figure01_examples(folders, sets, ex, fPlot)
+function Figure01_examples(folders, sets, ex, fPlots)
 % Example mean frames, calcium traces and tuning curves
 buffer = 1; % in sec (before and after stim period)
 for s = 1:2 % boutons and neurons
@@ -117,13 +117,13 @@ for s = 1:2 % boutons and neurons
         ylabel('\DeltaF/F (kernel amplitude)')
         title(sprintf('ROI %03d: Orientation tuning', units(iUnit)))
 
-        io.saveFigure(f1, fPlot, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
+        io.saveFigure(f1, fPlots, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
-        io.saveFigure(f2, fPlot, sprintf('example_%s_kernel_%s_%s_%03d', ...
+        io.saveFigure(f2, fPlots, sprintf('example_%s_kernel_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
-        io.saveFigure(f3, fPlot, sprintf('example_%s_dirTuningCurve_%s_%s_%03d', ...
+        io.saveFigure(f3, fPlots, sprintf('example_%s_dirTuningCurve_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
-        io.saveFigure(f4, fPlot, sprintf('example_%s_oriTuningCurve_%s_%s_%03d', ...
+        io.saveFigure(f4, fPlots, sprintf('example_%s_oriTuningCurve_%s_%s_%03d', ...
             str, ex{s,1}, ex{s,2}, units(iUnit)))
     end
 
@@ -133,7 +133,7 @@ for s = 1:2 % boutons and neurons
     b = recInfo.fovBoundaries(ex{s,3},:);
     map = spatial.getROIMaskImage(masks, recInfo.fovPix(ex{s,3},:), b);
     colors = spatial.plotROIMaskImage(map, masks, true);
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasks_%s_%s_plane%02d', ...
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_roiMasks_%s_%s_plane%02d', ...
         str, ex{s,1}, ex{s,2}, ex{s,3}))
 
     % plot ROI masks on mean image
@@ -142,7 +142,7 @@ for s = 1:2 % boutons and neurons
     figure
     imshow(imMasks)
     set(gcf, 'Position', [680 50 1050 945])
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_roiMasksOnImage_%s_%s_plane%02d', ...
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_roiMasksOnImage_%s_%s_plane%02d', ...
         str, ex{s,1}, ex{s,2}, ex{s,3}))
 
     % plot mean frame
@@ -152,6 +152,6 @@ for s = 1:2 % boutons and neurons
     imagesc(imadjust(im))
     colormap(colmaps.getGCaMPMap)
     axis image off
-    io.saveFigure(gcf, fPlot, sprintf('example_%s_meanFrame_%s_%s_plane%02d', ...
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_meanFrame_%s_%s_plane%02d', ...
         str, ex{s,1}, ex{s,2}, ex{s,3}))
 end

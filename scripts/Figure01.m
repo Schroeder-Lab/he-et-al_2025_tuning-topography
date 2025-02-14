@@ -30,13 +30,13 @@ ex(2,:) = {'SS044', '2015-04-28', 3, [258 227 256 281 328 369]};
 % ex(2,:) = {'SS044', '2015-04-28', 3, [227 240]};
 
 %% For all plots
-fPlot = fullfile(folders.plots, 'Figure01');
-if ~isfolder(fPlot)
-    mkdir(fPlot)
+fPlots = fullfile(folders.plots, 'Figures', 'Figure01');
+if ~isfolder(fPlots)
+    mkdir(fPlots)
 end
 
 %% Example mean frames, calcium traces and tuning curves
-Figure01_examples(folders, sets, ex, fPlot);
+Figure01_examples(folders, sets, ex, fPlots);
 
 %% Population direction tuning curves
-Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlot);
+Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlots);
