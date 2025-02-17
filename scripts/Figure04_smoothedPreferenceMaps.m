@@ -13,7 +13,7 @@ colors = colmaps.colorcet('C7');
 
 %% Create smoothed maps and surrogate maps
 maps = struct('x', cell(2,1), 'y', [], 'direction', [], 'orientation', []);
-limits = [-134 -94 -16 40];
+limits = [-132 -84 -16 38];
 for s = 1:2
     % direction
     [x, y, preferences, consistencies, counts] = ...

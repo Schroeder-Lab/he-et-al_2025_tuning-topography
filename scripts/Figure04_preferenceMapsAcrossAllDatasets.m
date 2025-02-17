@@ -2,7 +2,7 @@ function Figure04_preferenceMapsAcrossAllDatasets(data, fPlots, sets, ...
     retinotopyRF)
 
 colors = colmaps.colorcet('C7');
-limits = [-135 -85 -17 42];
+limits = [-132 -84 -16 38];
 for s = 1:2
     if retinotopyRF(s)
         str = 'retinoptopic';

@@ -9,8 +9,8 @@ if nargin < 5
     y = (floor(min(rfPos(valid,2))/binSize) : ...
         ceil(max(rfPos(valid,2))/binSize)) .* binSize;
 else
-    x = limits(1):binSize:limits(2);
-    y = limits(3):binSize:limits(4);
+    x = limits(1)+binSize/2 : binSize : limits(2)-binSize/2;
+    y = limits(3)+binSize/2 : binSize : limits(4)-binSize/2;
 end
 [x,y] = meshgrid(x,y);
 
