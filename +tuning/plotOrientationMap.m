@@ -17,8 +17,11 @@ function fig = plotOrientationMap(angles, isTuned, type, masks, fovPix, ...
 
 % colors used for plotting: white: background, light gray: not responsive,
 % darker gray: not tuned, colors: represent angle
-% colors = [hsv(360); 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1];
-colors = colmaps.colorcet('C7'); % has 256 entries/colours
+if strcmp(type, 'ori')
+    colors = colmaps.colorcet('C1'); % has 256 entries/colours
+else
+    colors = colmaps.colorcet('C7'); % has 256 entries/colours
+end
 colors = [colors; 0.6 0.6 0.6; 0.8 0.8 0.8; 1 1 1]; % add 3 colours --> 259
 % create image of FOV (all black)
 map = ones(fovPix) .* 259;

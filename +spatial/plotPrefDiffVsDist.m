@@ -57,12 +57,12 @@ fig = figure;
 dens = ksdensity([distances, prefDiffs], [distances, prefDiffs]);
 % scatterplot
 scatter(distances, prefDiffs, 10, dens, "filled")
-colormap(gca, "hot")
+colormap(gca, "gray")
 c = colorbar;
 c.Label.String = 'Density';
 hold on
 % moving average of real data
-h(1) = plot(x, ySm, 'b-', 'LineWidth', 2);
+h(1) = plot(x, ySm, 'r-', 'LineWidth', 2);
 % moving average of null data and confidence interval
 fill([x flip(x)], [yNullSm(:,1); flip(yNullSm(:,3))], 'c', ...
     'FaceAlpha', 0.3, 'EdgeColor', 'none')

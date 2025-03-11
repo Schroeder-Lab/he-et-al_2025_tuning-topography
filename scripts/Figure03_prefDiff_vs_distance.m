@@ -9,10 +9,10 @@ maxP = 0.05; % p-value threshold for direction/orientation selectivity
 % for plotting
 minROIs = 15;
 
-% CONTINUE WITH: choose best binSize, stepSize, xLims for boutons and neurons
 binSize = [1, 2];
 stepSize = [0.2, 1];
 xLims = [15 40];
+cLims = [0.005 0.0008];
 % for testing
 numPerm = 1000;
 
@@ -119,6 +119,7 @@ for s = 1:2 % boutons and neurons
         binSize(s), stepSize(s), false);
     xlim([0 xLims(s)])
     ylim([0 180])
+    clim([0 cLims(s)/2])
     xlabel('Distance (vis. deg.)')
     title('\DeltaDirection pref. vs \DeltaRF-position')
     io.saveFigure(fig, fPlots, ...
@@ -128,6 +129,8 @@ for s = 1:2 % boutons and neurons
         binSize(s), stepSize(s), false);
     xlim([0 xLims(s)])
     ylim([0 90])
+    clim([0 cLims(s)])
+    xlabel('Distance (vis. deg.)')
     title('\DeltaOrientation pref. vs \DeltaRF-position')
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_orientation', sets{s}))
