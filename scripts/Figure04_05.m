@@ -1,4 +1,4 @@
-function Figure04(folders)
+function Figure04_05(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -24,8 +24,8 @@ Figure04_preferenceMapsAcrossAllDatasets(data, fPlots, sets, retinotopyRF)
 maps = Figure04_smoothedPreferenceMaps(data, fPlots, sets, retinotopyRF);
 
 %% Plot histograms + scatters: consistencies compared to null distribution
-Figure04_consistenciesAll(maps, fPlots, sets, retinotopyRF, measures)
+Figure05_consistenciesAll(maps, fPlots, sets, retinotopyRF, measures)
 
 %% Plot consistencies compared to null distribution, per dataset
-Figure04_consistenciesPerDataset(data, fPlots, sets, retinotopyRF, ...
+Figure05_consistenciesPerDataset(data, fPlots, sets, retinotopyRF, ...
     measures)

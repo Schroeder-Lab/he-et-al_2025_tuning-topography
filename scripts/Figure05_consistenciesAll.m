@@ -1,14 +1,17 @@
-function Figure04_consistenciesAll(maps, fPlots, sets, retinotopyRF, ...
+function Figure05_consistenciesAll(maps, fPlots, sets, retinotopyRF, ...
     measures)
 
 %% Parameters
 % create surrogate global maps of direction/orientation tuning
 numPerm = 1000;
-% plotting
+% plotting histograms
 binEdges = 0:0.05:1;
 bins = binEdges(2:end) - 0.025;
 binsSmooth = linspace(bins(1), bins(end), 100);
+yLimH = 0.09;
+% plotting scatterplots
 bins2 = 0.01:0.02:1;
+yLimS = [200 120];
 
 %% Plot histograms + scatters: consistencies compared to null distribution
 for s = 1:2
@@ -40,6 +43,7 @@ for s = 1:2
         h(1) = plot(binsSmooth, confIntv(:,2), 'k', "LineWidth", 1);
         h(2) = plot(binsSmooth, n, 'r', "LineWidth", 1);
         legend(h, 'null', 'original')
+        ylim([0 yLimH])
         xlabel('Consistency')
         ylabel('Probability')
         title(sprintf('%s consistency (%s RFs) - %s', ...
@@ -60,6 +64,7 @@ for s = 1:2
         hold on
         scatter(maps(s).(measures{m}).consistencies, ...
             maps(s).(measures{m}).counts, 15, 'r', 'filled')
+        ylim([0 yLimS(s)])
         xlabel('Consistency')
         ylabel('#units per patch')
         title(sprintf('%s consistency (%s RFs) - %s', measures{m}, str, sets{s}))

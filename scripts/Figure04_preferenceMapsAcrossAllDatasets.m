@@ -1,7 +1,6 @@
 function Figure04_preferenceMapsAcrossAllDatasets(data, fPlots, sets, ...
     retinotopyRF)
 
-colors = colmaps.colorcet('C7');
 limits = [-132 -84 -16 38];
 for s = 1:2
     if retinotopyRF(s)
@@ -10,10 +9,14 @@ for s = 1:2
         str = 'measured';
     end
     % direction
+    colors = colmaps.colorcet('C7'); % has 256 entries/colours
+    % set directions to range 1-360
+    angles = round(mod(data(s).dirPref,360));
+    angles(angles == 0) = 360;
     figure
     ind = ~any(isnan(data(s).rfPos),2) & ~isnan(data(s).dirPref);
     scatter(data(s).rfPos(ind,1), data(s).rfPos(ind,2), [], ...
-        data(s).dirPref(ind), "filled")
+        angles(ind), "filled")
     clim([0 360])
     colormap(colors)
     c = colorbar;
@@ -31,10 +34,14 @@ for s = 1:2
         sets{s}, str))
 
     % orientation
+    colors = colmaps.colorcet('C1');
+    % set orientations to range 1-180
+    angles = round(mod(data(s).oriPref,180));
+    angles(angles == 0) = 180;
     figure
-    ind = ~any(isnan(data(s).rfPos),2) & ~isnan(data(s).dirPref);
+    ind = ~any(isnan(data(s).rfPos),2) & ~isnan(data(s).oriPref);
     scatter(data(s).rfPos(ind,1), data(s).rfPos(ind,2), [], ...
-        data(s).oriPref(ind), "filled")
+        angles(ind), "filled")
     clim([0 180])
     colormap(colors)
     c = colorbar;

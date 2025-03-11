@@ -9,7 +9,8 @@ numPerm = 1000;
 gridDist = 2;
 gridRadius = 5;
 threshTransparent = 20;
-colors = colmaps.colorcet('C7');
+colorsDir = colmaps.colorcet('C7'); % has 256 entries/colours
+colorsOri = colmaps.colorcet('C1'); % has 256 entries/colours
 
 %% Create smoothed maps and surrogate maps
 maps = struct('x', cell(2,1), 'y', [], 'direction', [], 'orientation', []);
@@ -70,16 +71,18 @@ for s = 1:2
     % direction
     transparency = maps(s).direction.counts./threshTransparent;
     transparency(transparency>1) = 1;
+    angles = maps(s).direction.preferences;
+    angles(angles < 1) = 360;
+    angles = round(angles / 360 * 256);
     % preferences
     figure
-    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), ...
-        maps(s).direction.preferences, ...
-        'AlphaData', transparency, [0 360])
-    colormap([[1 1 1]; colors])
+    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), angles, ...
+        'AlphaData', transparency, [0 256])
+    colormap([[1 1 1]; colorsDir])
     c = colorbar;
     c.Label.String = 'Preferred Direction';
-    c.Limits = [1 360];
-    c.Ticks = [1 45:45:360];
+    c.Limits = [0 256];
+    c.Ticks = (0:45:360) ./ 360 ./ 256;
     c.Box = "off";
     axis image
     set(gca, "Box", "off", "YDir", "normal")
@@ -92,8 +95,8 @@ for s = 1:2
     figure
     cons = maps(s).direction.consistencies;
     cons(isnan(cons)) = 0;
-    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), cons)
-    colormap(gray)
+    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), cons, [0 1])
+    colormap(flip(gray))
     c = colorbar;
     c.Label.String = 'Consistency';
     c.Limits = [0 1];
@@ -113,7 +116,7 @@ for s = 1:2
     prefs = round(prefs/360*256);
     ind = ~isnan(prefs);
     im = ones([size(prefs), 3]) .* 0.5;
-    im(ind,1,:) = colors(prefs(ind),:);
+    im(ind,1,:) = colorsDir(prefs(ind),:);
     im(ind,1,:) = maps(s).direction.consistencies(ind) .* im(ind,1,:) + ...
         (1-maps(s).direction.consistencies(ind)) .* ...
         ones(size(prefs(ind))) .* 0.5;
@@ -132,16 +135,17 @@ for s = 1:2
     % orientation
     transparency = maps(s).orientation.counts./threshTransparent;
     transparency(transparency>1) = 1;
+    angles = maps(s).orientation.preferences;
+    angles(angles < 1) = 180;
     % preferences
     figure
-    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), ...
-        maps(s).orientation.preferences,...
+    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), angles, ...
         'AlphaData', transparency, [0 180])
-    colormap([[1 1 1]; colors])
+    colormap([[1 1 1]; colorsOri])
     c = colorbar;
     c.Label.String = 'Preferred Orientation';
-    c.Limits = [1 180];
-    c.Ticks = [1 45:45:180];
+    c.Limits = [0 180];
+    c.Ticks = 0:45:180;
     c.Box = "off";
     axis image
     set(gca, "Box", "off", "YDir", "normal")
@@ -154,8 +158,8 @@ for s = 1:2
     figure
     cons = maps(s).orientation.consistencies;
     cons(isnan(cons)) = 0;
-    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), cons)
-    colormap(gray)
+    imagesc(maps(s).x([1 end]), maps(s).y([1 end]), cons, [0 1])
+    colormap(flip(gray))
     c = colorbar;
     c.Label.String = 'Consistency';
     c.Limits = [0 1];
@@ -175,7 +179,7 @@ for s = 1:2
     prefs(prefs==0) = 256;
     ind = ~isnan(prefs);
     im = ones([size(prefs), 3]) .* 0.5;
-    im(ind,1,:) = colors(round(prefs(ind)),:);
+    im(ind,1,:) = colorsOri(round(prefs(ind)),:);
     im(ind,1,:) = maps(s).orientation.consistencies(ind) .* im(ind,1,:) + ...
         (1-maps(s).orientation.consistencies(ind)) .* ...
         ones(size(prefs(ind))) .* 0.5;
