@@ -28,6 +28,8 @@ if any(strcmp(type, {'gratingsDrifting', 'bars'}))
         sprintf('_ss_%sTuning.directionPValue.npy', type)));
     dirTuning.responseSign = readNPY(fullfile(folder, ...
         sprintf('_ss_%sTuning.directionSign.npy', type)));
+else
+    dirTuning = [];
 end
 oriTuning.preference = readNPY(fullfile(folder, ...
     sprintf('_ss_%sTuning.orientationPreference.npy', type)));

@@ -75,17 +75,19 @@ for s = 1:2 % boutons and neurons
         end
     end
     indEx = zeros(size(dataset));
-    indEx(indExamples) = 1;
+    for k = 1:length(indExamples)
+        indEx(indExamples(k)) = k;
+    end
 
     % direction tuning curves: direction selective units (sorted by pref.
     % dir.) + gap + non-selective units
     dc = curves(dirTuned & R2>minR2,:);
     [~, order] = sort(dirPreferences(dirTuned & R2>minR2));
     dirCurves = [dc(order,:); zeros(100,length(stimAll))];
-    indExTuned = find(indEx(dirTuned & R2>minR2));
-    indExOrderedDir = NaN(size(indExTuned));
-    for k = 1:length(indExTuned)
-        indExOrderedDir(k) = find(order == indExTuned(k));
+    indExDir = indEx(dirTuned & R2>minR2);
+    indExOrderedDir = NaN(size(indExamples));
+    for k = 1:length(indExamples)
+        indExOrderedDir(k) = find(order == find(indExDir == k));
     end
     dc = curves(~dirTuned & R2>minR2,:);
     [~, order] = sort(dirPreferences(~dirTuned & R2>minR2));
@@ -102,10 +104,10 @@ for s = 1:2 % boutons and neurons
     oc = oCurves(oriTuned & R2>minR2,:);
     [~, order] = sort(oriPreferences(oriTuned & R2>minR2));
     oriCurves = [oc(order,:); NaN(100, size(oc,2))];
-    indExTuned = find(indEx(oriTuned & R2>minR2));
-    indExOrderedOri = NaN(size(indExTuned));
-    for k = 1:length(indExTuned)
-        indExOrderedOri(k) = find(order == indExTuned(k));
+    indExOri = indEx(oriTuned & R2>minR2);
+    indExOrderedOri = NaN(size(indExamples));
+    for k = 1:length(indExamples)
+        indExOrderedOri(k) = find(order == find(indExOri == k));
     end
     oc = oCurves(~oriTuned & R2>minR2,:);
     [~, order] = sort(oriPreferences(~oriTuned & R2>minR2));
@@ -329,4 +331,23 @@ for s = 1:2 % boutons and neurons
     title(sprintf('Orientation selectivity per dataset (n=%d)', sum(indSetsOri)))
     io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_%s_orientationSelectivityPerDataset', sets{s}));
+
+    % plot direction vs orientation preference scatterplot
+    dotCols = lines(length(indExamples));
+    ind = R2>minR2 & dirTuned & oriTuned;
+    figure
+    hold on
+    plot([0 180], [0 180], 'Color', [1 1 1].*0.5)
+    plot([180 360], [0 180], 'Color', [1 1 1].*0.5)
+    scatter(dirPreferences(ind), oriPreferences(ind), 15, 'k', 'filled')
+    scatter(dirPreferences(indExamples), oriPreferences(indExamples), ...
+        20, dotCols, 'filled')
+    axis equal
+    xlim([-20 380])
+    ylim([-20 200])
+    set(gca, "Box", "off", "XTick", 0:90:360, "YTick", 0:90:180)
+    xlabel('Direction (deg)')
+    ylabel('Orientation (deg)')
+    title(sprintf('%s (n=%d)', sets{s}, sum(ind)))
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_dirVsOriScatter', sets{s}));
 end
