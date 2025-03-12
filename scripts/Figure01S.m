@@ -1,13 +1,20 @@
 function Figure01S(folders)
 
 %% Parameters
+% for example traces
+buffer = 1; % in sec (before and after stim period)
+
+% for tuning curves
+yLims = [-1.1 14.7; -0.8 6.0; -1.6 13.1; -0.4 7.1];
+
 maxP = 0.05;
 minR2 = 0.02;
 exp = {'gratingsDrifting', 'bars', 'gratingsStatic'};
 
 %% Examples
 % datasets with drifting gratings, static gratings, and bars
-ex = {'SS044', '2015-05-15', [205 382 5 401 431 126 422]};
+ex = {'SS044', '2015-05-15', [205 382 5 422]};
+% ex = {'SS044', '2015-05-15', [205 382 5 401 431 126 422]};
     %'SS047', '2015-12-03'; 'SS048', '2015-11-09'
 
 %% For all plots
@@ -18,16 +25,134 @@ end
 
 %% Example calcium traces and tuning curves
 f = fullfile(folders.data, 'neurons', ex{1,1}, ex{1,2});
-krnlFits = cell(1,3);
-P_ex = [];
-R2_ex = [];
+% load data
+calc = io.getCalciumData(f);
+units = ex{3};
 for k = 1:3
-    krnlFits{k} = io.getStimResponseFits(f, exp{k});
-    P_ex = [P_ex, krnlFits{k}.pValue];
-    R2_ex = [R2_ex, krnlFits{k}.R2];
+    stim = io.getGratingInfo(f, exp{k});
+    ind = calc.time >= stim.times(1)-1 & calc.time <= stim.times(end)+1;
+    % subtract 8th percentile of each trace
+    tr = calc.traces(:,units) - prctile(calc.traces(ind,units), 8, 1);
+
+    krnlFits = io.getStimResponseFits(f, exp{k});
+    [dirTuning, oriTuning] = io.getTuningResults(f, exp{k});
+    % stim. duration and non-gray stimuli
+    stimDur = median(diff(stim.times,1,2));
+    if k < 3
+        stimPars = stim.directions;
+    else
+        stimPars = stim.orientations;
+    end
+    validStims = find(~isnan(stimPars));
+
+    % align calcium trace to stimuli
+    [alignedTrace, t] = traces.getAlignedTraces( ...
+        tr, calc.time, ...
+        stim.times(:,1), [-buffer stimDur+buffer]);
+    % align predicted trace to stimuli
+    alignedPredicted = traces.getAlignedTraces( ...
+        krnlFits.prediction(:,units), krnlFits.time_prediction, ...
+        stim.times(:,1), [-buffer stimDur+buffer]);
+    % loop over all examples
+    for iUnit = 1:length(units)
+        mini = min(alignedTrace(:,:,iUnit), [], "all");
+        maxi = max(alignedTrace(:,:,iUnit), [], "all");
+        figure('Position',[3 570 1915 420]);
+        tiledlayout(1, length(validStims), "TileSpacing", "tight", ...
+            "Padding", "tight")
+        % loop over all stimuli
+        for st = 1:length(validStims)
+            indSt = stim.ids == validStims(st);
+            nexttile
+            hold on
+            % mark time of stimulus
+            fill([0 0 stimDur stimDur], [mini maxi maxi mini], 'k', ...
+                'FaceColor', [1 1 1].*0.9, 'EdgeColor', 'none')
+            % single trial traces
+            plot(t, alignedTrace(:,indSt,iUnit), ...
+                "Color", [1 1 1].*0.5);
+            % mean predicted traces (from kernel fit)
+            plot(t, mean(alignedPredicted(:,indSt,iUnit), 2, "omitnan"), ...
+                'k', "LineWidth", 1)
+            set(gca, "Box", "off")
+            xlim(t([1 end]))
+            ylim([mini maxi])
+            if st == 1
+                xlabel('Time (s)')
+                ylabel('\DeltaF/F')
+            end
+            if k < 3
+                title(sprintf('%d deg', stimPars(validStims(st))))
+            else
+                title(sprintf('%d deg (phase: %d deg)', ...
+                    stimPars(validStims(st)), stim.phases(validStims(st))))
+            end
+        end
+        sgtitle(sprintf('ROI %03d', units(iUnit)))
+        io.saveFigure(gcf, fPlots, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
+            exp{k}, ex{1}, ex{2}, units(iUnit)))
+
+        % plot direction tuning curve
+        if k < 3
+            amps = krnlFits.amplitudes(:, validStims([1:end 1]), units(iUnit));
+            drct = [stimPars(validStims); 360]';
+            figure('Position', [700 150 475 325]);
+            hold on
+            plot(drct + randn(size(amps)).*3, ...
+                amps, '.', 'Color', [1 1 1].*0.5, 'MarkerSize', 10);
+            plot(drct, mean(amps,1,'omitnan'), ...
+                'k.-', 'MarkerSize', 30, 'LineWidth', 1);
+            if dirTuning.pValue(units(iUnit)) < maxP
+                plot(dirTuning.preference(units(iUnit)), maxi, 'v', 'MarkerSize', 8, ...
+                    'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none');
+            end
+            set(gca, 'box', 'off', 'XTick', 0:90:360)
+            xlim([-10 370])
+            ylim(yLims(k,:))
+            xlabel('Direction (deg)')
+            ylabel('\DeltaF/F (kernel amplitude)')
+            title(sprintf('ROI %03d: Direction tuning', units(iUnit)))
+            io.saveFigure(gcf, fPlots, ...
+                sprintf('example_%s_dirTuningCurve_%s_%s_%03d', ...
+                exp{k}, ex{1}, ex{2}, units(iUnit)))
+        end
+
+        % plot orientation tuning curve
+        amps = krnlFits.amplitudes(:, validStims, units(iUnit));
+        if k < 3
+            amps = reshape(amps, size(amps,1), size(amps,2)/2, 2);
+            amps = reshape(permute(amps, [1 3 2]), size(amps,1)*2, []);
+            ortn = [stimPars(validStims(1:length(validStims)/2)); 180]';
+        else
+            stimUni = unique(stimPars(validStims));
+            tmp = [];
+            for j = 1:length(stimUni)
+                tmp = [tmp, reshape(amps(:,stimPars==stimUni(j)),[],1)];
+            end
+            amps = tmp;
+            ortn = [stimUni; 180]';
+        end
+        amps = amps(:,[1:end 1]);
+        figure('Position', [1250 150 475 325]);
+        hold on
+        plot(ortn + randn(size(amps)).*3, ...
+            amps, '.', 'Color', [1 1 1].*0.5, 'MarkerSize', 10);
+        plot(ortn, mean(amps,1,'omitnan'), ...
+            'k.-', 'MarkerSize', 30, 'LineWidth', 1);
+        if oriTuning.pValue(units(iUnit)) < maxP
+            plot(oriTuning.preference(units(iUnit)), maxi, 'v', 'MarkerSize', 8, ...
+                'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none');
+        end
+        set(gca, 'box', 'off', 'XTick', 0:45:180)
+        xlim([-10 190])
+        ylim(yLims(k,:))
+        xlabel('Orientation (deg)')
+        ylabel('\DeltaF/F (kernel amplitude)')
+        title(sprintf('ROI %03d: Orientation tuning', units(iUnit)))
+        io.saveFigure(gcf, fPlots, sprintf('example_%s_oriTuningCurve_%s_%s_%03d', ...
+            exp{k}, ex{1}, ex{2}, units(iUnit)))
+    end
 end
-R2_ex(P_ex > maxP) = -100;
-[R2_sorted, order] = sort(mean(R2_ex,2), "descend");
 
 %% Preferences across stimulus paradigms
 % Collect data
@@ -75,16 +200,14 @@ for subj = 1:length(subjDirs) % animals
         dirTuned = [dirTuned; dt];
         oriTuned = [oriTuned; ot];
 
-        % if strcmp(name, ex{s,1}) && strcmp(date, ex{s,2})
-        %     indExamples = NaN(length(ex{s,4}),1);
-        %     unitsResponsive = find(unitsResponsive);
-        %     n = length(dataset) - length(unitsResponsive);
-        %     for k = 1:length(indExamples)
-        %         indExamples(k) = n + find(ex{s,4}(k) == unitsResponsive);
-        %     end
-        % end
+        if strcmp(name, ex{1}) && strcmp(date, ex{2})
+            n = length(R2) - numUnits;
+            indExamples = n + ex{3};
+        end
     end
 end
+
+dotCols = lines(length(ex{3}));
 
 % Scatterplot: preferred direction from drifting gratings vs bars
 ind = all(R2(:,[1 2]) > minR2, 2) & all(dirTuned(:, [1 2]), 2);
@@ -98,6 +221,8 @@ figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(dirPreferences(ind,1), dirPreferences(ind,2), 15, 'k', 'filled')
+scatter(dirPreferences(indExamples,1), dirPreferences(indExamples,2), ...
+    40, dotCols, 'filled')
 axis equal
 xlim([-10 370])
 ylim([-10 370])
@@ -106,6 +231,7 @@ xlabel(exp{1})
 ylabel(exp{2})
 title(sprintf('Preferred directions (n=%d, <x-y>=%.1f, p=%.3f)', ...
     sum(ind), m, p))
+io.saveFigure(gcf, fPlots, sprintf('prefDir_%s-%s', exp{1}, exp{2}));
 
 % Scatterplot: preferred orientation from drifting gratings vs bars
 ind = all(R2(:,[1 2]) > minR2, 2) & all(oriTuned(:, [1 2]), 2);
@@ -119,6 +245,8 @@ figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,1), oriPreferences(ind,2), 15, 'k', 'filled')
+scatter(oriPreferences(indExamples,1), oriPreferences(indExamples,2), ...
+    40, dotCols, 'filled')
 axis equal
 xlim([-10 190])
 ylim([-10 190])
@@ -127,6 +255,7 @@ xlabel(exp{1})
 ylabel(exp{2})
 title(sprintf('Preferred orientations (n=%d, <x-y>=%.1f, p=%.3f)', ...
     sum(ind), m, p))
+io.saveFigure(gcf, fPlots, sprintf('prefOri_%s-%s', exp{1}, exp{2}));
 
 % Scatterplot: preferred orientation from drifting vs static gratings
 ind = all(R2(:,[1 3]) > minR2, 2) & all(oriTuned(:, [1 3]), 2);
@@ -140,6 +269,8 @@ figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,1), oriPreferences(ind,3), 15, 'k', 'filled')
+scatter(oriPreferences(indExamples,1), oriPreferences(indExamples,3), ...
+    40, dotCols, 'filled')
 axis equal
 xlim([-10 190])
 ylim([-10 190])
@@ -148,6 +279,7 @@ xlabel(exp{1})
 ylabel(exp{3})
 title(sprintf('Preferred orientations (n=%d), <x-y>=%.1f, p=%.3f', ...
     sum(ind), m, p))
+io.saveFigure(gcf, fPlots, sprintf('prefOri_%s-%s', exp{1}, exp{3}));
 
 % Scatterplot: preferred orientation from static gratings vs bars
 ind = all(R2(:,[3 2]) > minR2, 2) & all(oriTuned(:, [3 2]), 2);
@@ -161,6 +293,8 @@ figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,3), oriPreferences(ind,2), 15, 'k', 'filled')
+scatter(oriPreferences(indExamples,3), oriPreferences(indExamples,2), ...
+    40, dotCols, 'filled')
 axis equal
 xlim([-10 190])
 ylim([-10 190])
@@ -169,3 +303,4 @@ xlabel(exp{3})
 ylabel(exp{2})
 title(sprintf('Preferred orientations (n=%d), <x-y>=%.1f, p=%.3f', ...
     sum(ind), m, p))
+io.saveFigure(gcf, fPlots, sprintf('prefOri_%s-%s', exp{3}, exp{2}));
