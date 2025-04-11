@@ -8,7 +8,7 @@ numPerm = 1000;
 binEdges = 0:0.05:1;
 bins = binEdges(2:end) - 0.025;
 binsSmooth = linspace(bins(1), bins(end), 100);
-yLimH = 0.09;
+yLimH = 0.061;
 % plotting scatterplots
 bins2 = 0.01:0.02:1;
 yLimS = [200 120];
@@ -22,8 +22,8 @@ for s = 1:2
     end
     for m = 1:2
         n = histcounts(maps(s).(measures{m}).consistencies(:), binEdges);
-        n = interp1(bins, n, binsSmooth, "pchip");
-        n = n ./ sum(n);
+        ns = interp1(bins, n, binsSmooth, "pchip");
+        ns = ns ./ sum(ns);
         nulls = NaN(length(bins), numPerm);
         for p = 1:numPerm
             nulls(:,p) = histcounts(maps(s).(measures{m}).nullCons(:,:,p), ...
@@ -41,13 +41,13 @@ for s = 1:2
             [confIntv(:,1); flip(confIntv(:,3))], ...
             'k', "FaceColor", 'k', "FaceAlpha", 0.3, "EdgeColor", "none")
         h(1) = plot(binsSmooth, confIntv(:,2), 'k', "LineWidth", 1);
-        h(2) = plot(binsSmooth, n, 'r', "LineWidth", 1);
+        h(2) = plot(binsSmooth, ns, 'r', "LineWidth", 1);
         legend(h, 'null', 'original')
         ylim([0 yLimH])
         xlabel('Consistency')
         ylabel('Probability')
-        title(sprintf('%s consistency (%s RFs) - %s', ...
-            measures{m}, str, sets{s}))
+        title(sprintf('%s consistency (%s RFs) - %s (n = %d)', ...
+            measures{m}, str, sets{s}, sum(n)))
         io.saveFigure(gcf, fPlots, sprintf('consistency_%s_%s_histogram_%sRFs', ...
             sets{s}, measures{m}, str))
 
@@ -67,7 +67,9 @@ for s = 1:2
         ylim([0 yLimS(s)])
         xlabel('Consistency')
         ylabel('#units per patch')
-        title(sprintf('%s consistency (%s RFs) - %s', measures{m}, str, sets{s}))
+        title(sprintf('%s consistency (%s RFs) - %s (n = %d)', ...
+            measures{m}, str, sets{s}, ...
+            sum(~isnan(maps(s).(measures{m}).consistencies), "all")))
         io.saveFigure(gcf, fPlots, sprintf('consistency_%s_%s_scatter-count_%sRFs', ...
             sets{s}, measures{m}, str))
     end
