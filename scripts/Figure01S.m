@@ -8,14 +8,13 @@ buffer = 1; % in sec (before and after stim period)
 yLims = [-1.1 14.7; -0.8 6.0; -1.6 13.1; -0.4 7.1];
 
 maxP = 0.05;
-minR2 = 0.02;
 exp = {'gratingsDrifting', 'bars', 'gratingsStatic'};
 
 %% Examples
 % datasets with drifting gratings, static gratings, and bars
-ex = {'SS044', '2015-05-15', [205 382 5 422]};
-% ex = {'SS044', '2015-05-15', [205 382 5 401 431 126 422]};
-    %'SS047', '2015-12-03'; 'SS048', '2015-11-09'
+ex = {'SS044', '2015-05-15', [176 330 5 364]}; % IDs updated since 
+                                           % duplicate neurons were removed
+% ex = {'SS044', '2015-05-15', [205 382 5 422]}; 
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure01S');
@@ -158,10 +157,16 @@ end
 % Collect data
 subjDirs = dir(fullfile(folders.data, 'neurons', 'SS*'));
 R2 = [];
+P = [];
 dirPreferences = [];
 oriPreferences = [];
 dirTuned = [];
 oriTuned = [];
+nRecorded = [0 0 0];
+nResponsive = [0 0 0];
+nDirTuned = [0 0 0];
+nOriTuned = [0 0 0];
+nSessions = [0 0 0];
 for subj = 1:length(subjDirs) % animals
     name = subjDirs(subj).name;
     dateDirs = dir(fullfile(folders.data, 'neurons', name, '2*'));
@@ -169,6 +174,7 @@ for subj = 1:length(subjDirs) % animals
         date = dateDirs(d).name;
         f = fullfile(folders.data, 'neurons', name, date);
         r2 = [];
+        pKernel = [];
         for k = 1:3
             % ignore session if stimulus was not presented
             if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', exp{k})))
@@ -180,6 +186,7 @@ for subj = 1:length(subjDirs) % animals
             numUnits = length(krnlFits.pValue);
             if isempty(r2)
                 r2 = NaN(numUnits,3);
+                pKernel = NaN(numUnits,3);
                 dp = NaN(numUnits,2);
                 op = NaN(numUnits,3);
                 dt = NaN(numUnits,2);
@@ -187,14 +194,23 @@ for subj = 1:length(subjDirs) % animals
             end
 
             r2(:,k) = krnlFits.R2;
+            pKernel(:,k) = krnlFits.pValue;
             if ~isempty(dirTuning)
                 dp(:,k) = dirTuning.preference;
                 dt(:,k) = dirTuning.pValue < maxP;
+                nDirTuned(k) = nDirTuned(k) + sum(dirTuning.pValue < maxP);
             end
             op(:,k) = oriTuning.preference;
             ot(:,k) = oriTuning.pValue < maxP;
+
+            nRecorded(k) = nRecorded(k) + numUnits;
+            nResponsive(k) = nResponsive(k) + ...
+                sum(krnlFits.pValue < maxP & krnlFits.R2 > 0);
+            nOriTuned(k) = nOriTuned(k) + sum(oriTuning.pValue < maxP);
+            nSessions(k) = nSessions(k) + 1;
         end
         R2 = [R2; r2];
+        P = [P; pKernel];
         dirPreferences = [dirPreferences; dp];
         oriPreferences = [oriPreferences; op];
         dirTuned = [dirTuned; dt];
@@ -207,10 +223,21 @@ for subj = 1:length(subjDirs) % animals
     end
 end
 
+for k = 1:3
+    fprintf('%s:\n', exp{k})
+    fprintf('  %d neurons were recorded across %d sessions\n', ...
+        nRecorded(k), nSessions(k))
+    ind = P(:,k) < maxP & R2(:,k) > 0;
+    fprintf('  Explained variance of kernel-based predictions (mean +- STD): %.4f +- %.4f\n', ...
+        mean(R2(ind, k)), std(R2(ind, k)))
+    fprintf('  Of %d responsive neurons, %d were tuned to direction, %d were tuned to orientation\n', ...
+        nResponsive(k), nDirTuned(k), nOriTuned(k))
+end
+
 dotCols = lines(length(ex{3}));
 
 % Scatterplot: preferred direction from drifting gratings vs bars
-ind = all(R2(:,[1 2]) > minR2, 2) & all(dirTuned(:, [1 2]), 2);
+ind = all(dirTuned(:, [1 2]) == 1, 2);
 diffs = dirPreferences(ind,1) - dirPreferences(ind,2);
 diffs(diffs < -180) = 360 + diffs(diffs < -180);
 diffs(diffs > 180) = diffs(diffs > 180) - 360;
@@ -234,7 +261,7 @@ title(sprintf('Preferred directions (n=%d, <x-y>=%.1f, p=%.3f)', ...
 io.saveFigure(gcf, fPlots, sprintf('prefDir_%s-%s', exp{1}, exp{2}));
 
 % Scatterplot: preferred orientation from drifting gratings vs bars
-ind = all(R2(:,[1 2]) > minR2, 2) & all(oriTuned(:, [1 2]), 2);
+ind = all(oriTuned(:, [1 2]) == 1, 2);
 diffs = oriPreferences(ind,1) - oriPreferences(ind,2);
 diffs(diffs < -90) = 180 + diffs(diffs < -90);
 diffs(diffs > 90) = diffs(diffs > 90) - 180;
@@ -258,7 +285,7 @@ title(sprintf('Preferred orientations (n=%d, <x-y>=%.1f, p=%.3f)', ...
 io.saveFigure(gcf, fPlots, sprintf('prefOri_%s-%s', exp{1}, exp{2}));
 
 % Scatterplot: preferred orientation from drifting vs static gratings
-ind = all(R2(:,[1 3]) > minR2, 2) & all(oriTuned(:, [1 3]), 2);
+ind = all(oriTuned(:, [1 3]) == 1, 2);
 diffs = oriPreferences(ind,1) - oriPreferences(ind,3);
 diffs(diffs < -90) = 180 + diffs(diffs < -90);
 diffs(diffs > 90) = diffs(diffs > 90) - 180;
@@ -282,7 +309,7 @@ title(sprintf('Preferred orientations (n=%d), <x-y>=%.1f, p=%.3f', ...
 io.saveFigure(gcf, fPlots, sprintf('prefOri_%s-%s', exp{1}, exp{3}));
 
 % Scatterplot: preferred orientation from static gratings vs bars
-ind = all(R2(:,[3 2]) > minR2, 2) & all(oriTuned(:, [3 2]), 2);
+ind = all(oriTuned(:, [3 2]) == 1, 2);
 diffs = oriPreferences(ind,3) - oriPreferences(ind,2);
 diffs(diffs < -90) = 180 + diffs(diffs < -90);
 diffs(diffs > 90) = diffs(diffs > 90) - 180;
