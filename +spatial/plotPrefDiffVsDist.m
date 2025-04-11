@@ -57,7 +57,7 @@ fig = figure;
 dens = ksdensity([distances, prefDiffs], [distances, prefDiffs]);
 % scatterplot
 scatter(distances, prefDiffs, 10, dens, "filled")
-colormap(gca, "gray")
+colormap(gca, flip(gray))
 c = colorbar;
 c.Label.String = 'Density';
 hold on

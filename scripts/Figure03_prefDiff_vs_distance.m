@@ -12,7 +12,7 @@ minROIs = 15;
 binSize = [1, 2];
 stepSize = [0.2, 1];
 xLims = [15 40];
-cLims = [0.005 0.0008];
+cLims = [0.004 0.0008];
 % for testing
 numPerm = 1000;
 
@@ -114,24 +114,28 @@ for s = 1:2 % boutons and neurons
     end
 
     % plot across all datasets
+    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
         cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    set(gca, 'YTick', 0:45:180)
     xlim([0 xLims(s)])
     ylim([0 180])
     clim([0 cLims(s)/2])
     xlabel('Distance (vis. deg.)')
-    title('\DeltaDirection pref. vs \DeltaRF-position')
+    title(['\DeltaDirection pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_direction', sets{s}))
+    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    set(gca, 'YTick', 0:45:90)
     xlim([0 xLims(s)])
     ylim([0 90])
     clim([0 cLims(s)])
     xlabel('Distance (vis. deg.)')
-    title('\DeltaOrientation pref. vs \DeltaRF-position')
+    title(['\DeltaOrientation pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_orientation', sets{s}))
 end

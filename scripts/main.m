@@ -19,6 +19,7 @@ folders.plots = 'D:\Results\OrientationColumns_Plots';
 
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
+addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
 addpath(genpath(fullfile(folders.repo)))
 
 %% Fit response kernels (gratings + bars)

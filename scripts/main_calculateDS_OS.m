@@ -33,7 +33,7 @@ for s = 1:2 % neurons and boutons
                 if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', type)))
                     continue
                 end
-                fPlots = fullfile(folders.plots, 'TuningCurves', type, ...
+                fPlots = fullfile(folders.plots, '02_TuningCurves', type, ...
                     sets{s}, name, date);
                 if ~isfolder(fPlots)
                     mkdir(fPlots)

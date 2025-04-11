@@ -9,9 +9,9 @@ dist2edge = 5; % minimum distance of RF centre to monitor edge
 maxP = 0.05;
 
 %% Load data: RF position, tuning preferences
-data = struct('rfPos', cell(2,1), 'dirPref', [], 'DSI', [], ...
+data = struct('rfPos', cell(length(sets),1), 'dirPref', [], 'DSI', [], ...
     'oriPref', [], 'OSI', [], 'set', []);
-for s = 1:2
+for s = 1:length(sets)
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     count = 1;
     for subj = 1:length(subjDirs) % animals

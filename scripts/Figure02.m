@@ -8,7 +8,7 @@ minROIs = 15;
 binSize = [5, 20];
 stepSize = [2.5, 5];
 xLims = [50 500];
-cLims = [0.0006 0.00005];
+cLims = [0.00032 0.00004];
 fovLims = [20 160; 400 900];
 numPerm = 1000;
 
@@ -102,7 +102,8 @@ for s = 1:2 % boutons and neurons
                 rng('default');
                 for k = 1:numPerm
                     order = randperm(length(dp));
-                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
+                    ddiffPermuted(:,k) = ...
+                        tuning.determinePreferenceDiff(dp(order), 'dir');
                 end
                 % collect results
                 dirDist{rec} = ddist;
@@ -162,6 +163,7 @@ for s = 1:2 % boutons and neurons
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
         cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    set(gca, 'YTick', 0:45:180)
     xlim([0 xLims(s)])
     ylim([0 180])
     clim([0 cLims(s)/2])
@@ -172,6 +174,7 @@ for s = 1:2 % boutons and neurons
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    set(gca, 'YTick', 0:45:90)
     xlim([0 xLims(s)])
     ylim([0 90])
     clim([0 cLims(s)])
@@ -209,7 +212,8 @@ for s = 1:2 % boutons and neurons
     ylim([-12 12])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
-    title('\DeltaDirection pref. vs \Deltaposition')
+    title(['\DeltaDirection pref. vs \Deltaposition (n = ' ...
+        num2str(sum(~all(isnan(y),1))) ')'])
     io.saveFigure(gcf, fPlots, ...
         sprintf('distancePerDataset_%s_direction', sets{s}))
     % plot orientation preference difference relative to null distribution (per
@@ -242,7 +246,8 @@ for s = 1:2 % boutons and neurons
     ylim([-12 12])
     xlabel('Distance (um)')
     ylabel('\DeltaPreference (relative to null distribution)')
-    title('\DeltaOrientation pref. vs \Deltaposition')
+    title(['\DeltaOrientation pref. vs \Deltaposition (n = ' ...
+        num2str(sum(~all(isnan(y),1))) ')'])
     io.saveFigure(gcf, fPlots, ...
         sprintf('distancePerDataset_%s_orientation', sets{s}))
 
@@ -251,23 +256,23 @@ for s = 1:2 % boutons and neurons
     figure
     c = zeros(length(fovSize),3);
     c(exRecs(s),:) = [1 0 0];
-    scatter(fovSize, cellfun(@mean, dirDiff, ...
-        repmat({"omitnan"},1,length(dirDiff))), 36, c, 'filled');
+    m = cellfun(@mean, dirDiff, repmat({"omitnan"},1,length(dirDiff)));
+    scatter(fovSize, m, 36, c, 'filled');
     xlim(fovLims(s,:))
     ylim([0 90])
     xlabel('FOV diagonal (um)')
     ylabel('Mean \Deltadirection')
-    title(sprintf('%s', sets{s}))
+    title(sprintf('%s (n = %d)', sets{s}, sum(~isnan(m))))
     io.saveFigure(gcf, fPlots, ...
         sprintf('prefDiffPerDataset_%s_direction', sets{s}))
     figure
-    scatter(fovSize, cellfun(@mean, oriDiff, ...
-        repmat({"omitnan"},1,length(oriDiff))), 36, c, 'filled')
+    m = cellfun(@mean, oriDiff, repmat({"omitnan"},1,length(oriDiff)));
+    scatter(fovSize, m, 36, c, 'filled')
     xlim(fovLims(s,:))
     ylim([0 45])
     xlabel('FOV diagonal (um)')
     ylabel('Mean \Deltaorientation')
-    title(sprintf('%s', sets{s}))
+    title(sprintf('%s (n = %d)', sets{s}, sum(~isnan(m))))
     io.saveFigure(gcf, fPlots, ...
         sprintf('prefDiffPerDataset_%s_orientation', sets{s}))
 end
