@@ -7,7 +7,7 @@ numPerm = 1000;
 
 % plotting global maps of direction/orientation tuning
 gridDist = 2;
-gridRadius = 5;
+patchRadius = 5;
 threshTransparent = 20;
 colorsDir = colmaps.colorcet('C7'); % has 256 entries/colours
 colorsOri = colmaps.colorcet('C1'); % has 256 entries/colours
@@ -19,7 +19,7 @@ for s = 1:2
     % direction
     [x, y, preferences, consistencies, counts] = ...
         spatial.makeSmoothMap(data(s).rfPos, data(s).dirPref, ...
-        gridDist, gridRadius, limits);
+        gridDist, patchRadius, limits);
     maps(s).x = x;
     maps(s).y = y;
     maps(s).direction.preferences = preferences;
@@ -34,16 +34,16 @@ for s = 1:2
         order = randperm(length(valid));
         [~, ~, prefs, cons] = spatial.makeSmoothMap(...
             data(s).rfPos(valid,:), data(s).dirPref(valid(order)), ...
-            gridDist, gridRadius, limits);
+            gridDist, patchRadius, limits);
         maps(s).direction.nullPrefs(:,:,p) = prefs;
         maps(s).direction.nullCons(:,:,p) = cons;
     end
 
     % orientation
     [~, ~, preferences, consistencies, counts] = ...
-        spatial.makeSmoothMap(data(s).rfPos, data(s).oriPref, ...
-        gridDist, gridRadius, limits);
-    maps(s).orientation.preferences = preferences;
+        spatial.makeSmoothMap(data(s).rfPos, data(s).oriPref .* 2, ...
+        gridDist, patchRadius, limits);
+    maps(s).orientation.preferences = preferences ./ 2;
     maps(s).orientation.consistencies = consistencies;
     maps(s).orientation.counts = counts;
     maps(s).orientation.nullPrefs = NaN([size(preferences) numPerm]);
@@ -54,9 +54,9 @@ for s = 1:2
     for p = 1:numPerm
         order = randperm(length(valid));
         [~, ~, prefs, cons] = spatial.makeSmoothMap(...
-            data(s).rfPos(valid,:), data(s).oriPref(valid(order)), ...
-            gridDist, gridRadius, limits);
-        maps(s).orientation.nullPrefs(:,:,p) = prefs;
+            data(s).rfPos(valid,:), data(s).oriPref(valid(order)) .* 2, ...
+            gridDist, patchRadius, limits);
+        maps(s).orientation.nullPrefs(:,:,p) = prefs ./ 2;
         maps(s).orientation.nullCons(:,:,p) = cons;
     end
 end
@@ -82,15 +82,18 @@ for s = 1:2
     c = colorbar;
     c.Label.String = 'Preferred Direction';
     c.Limits = [0 256];
-    c.Ticks = (0:45:360) ./ 360 ./ 256;
+    c.Ticks = (0:45:360) ./ 360 .* 256;
+    c.TickLabels = 0:45:360;
     c.Box = "off";
     axis image
     set(gca, "Box", "off", "YDir", "normal")
     xlabel('Azimuth (deg)')
     ylabel('Elevation (deg)')
     title(sprintf('Global direction map for %s (%s RFs)', sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_direction_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_direction_%sRFs', ...
+            sets{s}, str))
+    end
     % consistency
     figure
     cons = maps(s).direction.consistencies;
@@ -107,8 +110,10 @@ for s = 1:2
     ylabel('Elevation (deg)')
     title(sprintf('Global direction consistency map for %s (%s RFs)', ...
         sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_consistency-of-direction_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_consistency-of-direction_%sRFs', ...
+            sets{s}, str))
+    end
     % preference * consistency
     prefs = round(maps(s).direction.preferences(:));
     prefs(prefs==0) = 360;
@@ -129,8 +134,10 @@ for s = 1:2
     ylabel('Elevation (deg)')
     title(sprintf('Global direction * consistency map for %s (%s RFs)', ...
         sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_direction-x-consistency_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_direction-x-consistency_%sRFs', ...
+            sets{s}, str))
+    end
 
     % orientation
     transparency = maps(s).orientation.counts./threshTransparent;
@@ -152,8 +159,10 @@ for s = 1:2
     xlabel('Azimuth (deg)')
     ylabel('Elevation (deg)')
     title(sprintf('Global orientation map for %s (%s RFs)', sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation_%sRFs', ...
+            sets{s}, str))
+    end
     % consistency
     figure
     cons = maps(s).orientation.consistencies;
@@ -170,8 +179,10 @@ for s = 1:2
     ylabel('Elevation (deg)')
     title(sprintf('Global orientation consistency map for %s (%s RFs)', ...
         sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_consistency-of-orientation_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_consistency-of-orientation_%sRFs', ...
+            sets{s}, str))
+    end
     % preference * consistency
     prefs = round(maps(s).orientation.preferences(:));
     % transform 180 angles to 256 colours
@@ -192,6 +203,8 @@ for s = 1:2
     ylabel('Elevation (deg)')
     title(sprintf('Global orientation * consistency map for %s (%s RFs)', ...
         sets{s}, str))
-    io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation-x-consistency_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation-x-consistency_%sRFs', ...
+            sets{s}, str))
+    end
 end
