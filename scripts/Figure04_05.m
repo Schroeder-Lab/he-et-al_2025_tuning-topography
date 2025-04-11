@@ -20,8 +20,17 @@ data = Figure04_loadData(folders, sets, retinotopyRF);
 %% Scatterplot showing preferred direction/orientation of each unit
 Figure04_preferenceMapsAcrossAllDatasets(data, fPlots, sets, retinotopyRF)
 
+%% Polar histograms of preferences per visual patch
+Figure04_polarHists(data, fPlots, sets)
+
 %% Plot smoothed preference maps pooling datasets
 maps = Figure04_smoothedPreferenceMaps(data, fPlots, sets, retinotopyRF);
+
+%% For all plots
+fPlots = fullfile(folders.plots, 'Figures', 'Figure05');
+if ~isfolder(fPlots)
+    mkdir(fPlots)
+end
 
 %% Plot histograms + scatters: consistencies compared to null distribution
 Figure05_consistenciesAll(maps, fPlots, sets, retinotopyRF, measures)
