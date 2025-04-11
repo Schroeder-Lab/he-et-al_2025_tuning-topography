@@ -4,7 +4,7 @@ function Figure01(folders)
 sets = {'boutons', 'neurons'};
 maxP = 0.05; % p-value threshold for response kernel and 
              % direction/orientation selectivity
-minR2 = 0.02; % threshold for explained variance for response kernel
+minR2 = 0; % threshold for explained variance for response kernel
 
 %% Examples
 ex = cell(2,4); % rows: (1) bouton, (2) neuron
