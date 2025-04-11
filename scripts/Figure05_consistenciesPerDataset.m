@@ -26,7 +26,7 @@ for s = 1:2
             prefs = data(s).(strPrefs{m})(indRec);
             rfs = data(s).rfPos(indRec,:);
             [x,y,~,consistencies] = ...
-                spatial.makeSmoothMap(rfs, prefs, gridDist, gridRadius);
+                spatial.makeSmoothMap(rfs, prefs .* m, gridDist, gridRadius);
             % only consider datasets where RF positions span a distance of
             % at least gridRadius (otherwhise the permuted null data will
             % give the same results as the original data)
@@ -43,7 +43,7 @@ for s = 1:2
             for p = 1:numPerm
                 order = randperm(length(valid));
                 [~, ~,~, cons] = spatial.makeSmoothMap(...
-                    rfs(valid,:), prefs(valid(order)), ...
+                    rfs(valid,:), prefs(valid(order)) .* m, ...
                     gridDist, gridRadius);
                 consistency(s).(measures{m}).null{d}(:,:,p) = cons;
             end
