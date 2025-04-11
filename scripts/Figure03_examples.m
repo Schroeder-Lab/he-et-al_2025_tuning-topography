@@ -137,7 +137,8 @@ for s = 1:2 % boutons and neurons
     axis(edges_rf([1 2 4 3]))
     xlabel('Azimuth (visual degrees)')
     ylabel('Elevation (visual degrees)')
-    title(sprintf('%s %s', ex{s,1}, ex{s,2}))
+    n = sum(EVs >= minEV & peakNoiseRatio >= minPeak);
+    title(sprintf('%s %s (n = %d)', ex{s,1}, ex{s,2}, n))
     io.saveFigure(gcf, fPlots, sprintf('example_%s_RFoutlines_%s_%s', ...
         str, ex{s,1}, ex{s,2}))
 
@@ -199,7 +200,7 @@ for s = 1:2 % boutons and neurons
     set(gca, "Box", "off", "YDir", "reverse")
     xlabel('Brain ML (\mum)')
     ylabel('Brain AP (\mum)')
-    title('Brain position vs RF azimuth')
+    title(sprintf('Brain position vs RF azimuth (n = %d)', sum(valid)))
 
     nexttile
     hold on
