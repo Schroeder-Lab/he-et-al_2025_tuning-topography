@@ -17,7 +17,9 @@ if ~isfolder(fJpeg)
 end
 savefig(fig, fullfile(fMatlab, filename), 'compact')
 saveas(fig, fullfile(fJpeg, filename), 'jpeg')
-fig.Renderer = 'painters';
-saveas(fig, fullfile(folder, filename), 'epsc')
+% fig.Renderer = 'painters';
+% saveas(fig, fullfile(folder, filename), 'epsc')
+exportgraphics(fig, fullfile(folder, [filename '.eps']), "ContentType", "vector")
+% saveas(fig, fullfile(folder, filename), 'pdf')
 
 close(fig)
