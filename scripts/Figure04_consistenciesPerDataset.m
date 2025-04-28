@@ -1,4 +1,4 @@
-function Figure05_consistenciesPerDataset(data, fPlots, sets, ...
+function Figure04_consistenciesPerDataset(data, fPlots, sets, ...
     retinotopyRF, measures)
 
 %% Parameters
@@ -7,9 +7,6 @@ numPerm = 1000;
 % plotting
 gridDist = 2;
 gridRadius = 5;
-binEdges = 0:0.1:1;
-bins = binEdges(2:end) - 0.05;
-binsSmooth = linspace(bins(1), bins(end), 100);
 
 %% Determine consistencies and null distributions for each dataset
 consistency = struct('direction', cell(2,1), 'orientation', []);
@@ -59,68 +56,8 @@ for s = 1:2
         str = 'measured';
     end
     for m = 1:2
-        probs = NaN(length(bins), ...
-            length(consistency(s).(measures{m}).original));
-        probsNull = NaN(length(bins), ...
-            length(consistency(s).(measures{m}).original));
-        probsNullDistr = NaN(length(bins), ...
-            length(consistency(s).(measures{m}).original), numPerm);
-        for d = 1:length(consistency(s).(measures{m}).original)
-            if isempty(consistency(s).(measures{m}).original{d})
-                continue
-            end
-            probs(:,d) = histcounts( ...
-                consistency(s).(measures{m}).original{d}, binEdges, ...
-                "Normalization", "probability");
-            probsNull(:,d) = histcounts( ...
-                consistency(s).(measures{m}).null{d}, binEdges, ...
-                "Normalization", "probability");
-            for p = 1:numPerm
-                probsNullDistr(:,d,p) = histcounts( ...
-                consistency(s).(measures{m}).null{d}(:,:,p), binEdges, ...
-                "Normalization", "probability");
-            end
-        end
-        valid = ~any(isnan(probs),1);
+        valid = ~cellfun(@isempty, consistency(s).(measures{m}).original);
         lineColors = turbo(length(valid));
-
-        % consistencies of null data
-        smNull = NaN(length(binsSmooth), length(valid));
-        smNull(:,valid) = interp1(bins, probsNull(:,valid), ...
-            binsSmooth, "pchip");
-        smNull = smNull ./ sum(smNull,1);
-        % consistencies of original data
-        smOrig = NaN(length(binsSmooth), length(valid));
-        smOrig(:,valid) = interp1(bins, probs(:,valid), ...
-            binsSmooth, "pchip");
-        smOrig = smOrig ./ sum(smOrig,1);
-        figure
-        hold on
-        for v = 1:length(valid)
-            if ~valid(v)
-                continue
-            end
-            % consistencies of null data
-            plot(binsSmooth, smNull(:,v), ':', "LineWidth", 1, ...
-                "Color", lineColors(v,:));
-            % consistencies of original data
-            plot(binsSmooth, smOrig(:,v), "LineWidth", 1, ...
-                "Color", lineColors(v,:));
-        end
-        h = [0 0];
-        h(1) = plot(binsSmooth, mean(smNull,2,"omitnan"), 'k:', ...
-            "LineWidth", 2);
-        h(2) = plot(binsSmooth, mean(smOrig,2,"omitnan"), 'k', ...
-            "LineWidth", 2);
-        set(gca, "Box", "off")
-        legend(h, 'null', 'original')
-        xlabel(sprintf('Consistency of %s preferences', measures{m}))
-        ylabel('Probability')
-        title(sprintf('%s consistency (%sRFs) - %s', ...
-            measures{m}, str, sets{s}))
-        io.saveFigure(gcf, fPlots, sprintf(...
-            'consistency_%s_%s_histograms-per-dataset_%sRFs', ...
-            sets{s}, measures{m}, str))
 
         % mean consistencies compared to null distribution of mean
         mn = cellfun(@mean, consistency(s).(measures{m}).original, ...

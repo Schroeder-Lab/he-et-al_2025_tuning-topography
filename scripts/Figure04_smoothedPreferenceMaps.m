@@ -183,28 +183,28 @@ for s = 1:2
         io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_consistency-of-orientation_%sRFs', ...
             sets{s}, str))
     end
-    % preference * consistency
-    prefs = round(maps(s).orientation.preferences(:));
-    % transform 180 angles to 256 colours
-    prefs = round(prefs/180*256);
-    prefs(prefs==0) = 256;
-    ind = ~isnan(prefs);
-    im = ones([size(prefs), 3]) .* 0.5;
-    im(ind,1,:) = colorsOri(round(prefs(ind)),:);
-    im(ind,1,:) = maps(s).orientation.consistencies(ind) .* im(ind,1,:) + ...
-        (1-maps(s).orientation.consistencies(ind)) .* ...
-        ones(size(prefs(ind))) .* 0.5;
-    im = reshape(im, size(maps(s).orientation.preferences,1), [], 3);
-    figure
-    image(maps(s).x([1 end]), maps(s).y([1 end]), im)
-    axis image
-    set(gca, "Box", "off", "YDir", "normal")
-    xlabel('Azimuth (deg)')
-    ylabel('Elevation (deg)')
-    title(sprintf('Global orientation * consistency map for %s (%s RFs)', ...
-        sets{s}, str))
-    if ~isempty(fPlots)
-        io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation-x-consistency_%sRFs', ...
-            sets{s}, str))
-    end
+    % % preference * consistency
+    % prefs = round(maps(s).orientation.preferences(:));
+    % % transform 180 angles to 256 colours
+    % prefs = round(prefs/180*256);
+    % prefs(prefs==0) = 256;
+    % ind = ~isnan(prefs);
+    % im = ones([size(prefs), 3]) .* 0.5;
+    % im(ind,1,:) = colorsOri(round(prefs(ind)),:);
+    % im(ind,1,:) = maps(s).orientation.consistencies(ind) .* im(ind,1,:) + ...
+    %     (1-maps(s).orientation.consistencies(ind)) .* ...
+    %     ones(size(prefs(ind))) .* 0.5;
+    % im = reshape(im, size(maps(s).orientation.preferences,1), [], 3);
+    % figure
+    % image(maps(s).x([1 end]), maps(s).y([1 end]), im)
+    % axis image
+    % set(gca, "Box", "off", "YDir", "normal")
+    % xlabel('Azimuth (deg)')
+    % ylabel('Elevation (deg)')
+    % title(sprintf('Global orientation * consistency map for %s (%s RFs)', ...
+    %     sets{s}, str))
+    % if ~isempty(fPlots)
+    %     io.saveFigure(gcf, fPlots, sprintf('globalMap_%s_orientation-x-consistency_%sRFs', ...
+    %         sets{s}, str))
+    % end
 end
