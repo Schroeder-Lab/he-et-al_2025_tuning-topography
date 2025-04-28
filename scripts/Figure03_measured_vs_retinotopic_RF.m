@@ -8,8 +8,21 @@ minPeak = 5;
 minUnits = 10;
 maxDist = 20;
 maxDiam = 30;
+colSets = lines(2);
+edgesDist = 0:0.5:maxDist;
+edgesSize = 0:0.5:maxDiam;
 
-%% Plot histogram of distances
+%% Plot histogram of RF sizes and distances (mapped vs retinotopic)
+figDist = figure;
+hold on
+hDist = [0 0];
+mDist = [0 0];
+numDist = [0 0];
+figSize = figure;
+hold on
+hSize = [0 0];
+mSize = [0 0];
+numSize = [0 0];
 for s = 1:2 % boutons and neurons
     dist_rf_pred = [];
     diam_rf = []; % = 2 STDs (STD is mean across x and y)
@@ -53,33 +66,49 @@ for s = 1:2 % boutons and neurons
         end
     end
 
-    m = mean(dist_rf_pred);
+    mDist(s) = mean(dist_rf_pred);
+    numDist(s) = length(dist_rf_pred);
     dist_rf_pred(dist_rf_pred > maxDist) = maxDist;
-    figure
-    h = histogram(dist_rf_pred, 0:0.5:maxDist);
-    h.FaceColor = [1 1 1] .* 0.5;
-    hold on
-    plot(m, 5, 'v')
-    xlabel('Distance: mapped vs. retinotopic (visual degrees)')
-    ylabel(sprintf('%s', sets{s}))
-    xlim([-.2 maxDist+.2])
-    set(gca, "Box", "off")
-    title(sprintf('mean: %.2f, n = %d', m, length(dist_rf_pred)))
-    io.saveFigure(gcf, fPlots, ...
-        sprintf('rf_%s_distance-mapped_retinotopic', sets{s}))
+    figure(figDist)
+    n = histcounts(dist_rf_pred, edgesDist, "Normalization", "probability");
+    hDist(s) = plot(edgesDist(1:end-1)+0.25, n, "Color", colSets(s,:), "LineWidth", 2);
+    % hSize(s) = histogram(dist_rf_pred, 0:0.5:maxDist, "EdgeColor", colSets(s,:), ...
+    %     "Normalization", "probability", "DisplayStyle", "stairs");
+    % h.FaceColor = [1 1 1] .* 0.5;
+    plot(mDist(s), 0.14, 'v', "MarkerFaceColor", colSets(s,:), ...
+        "MarkerEdgeColor", "none")
 
-    m = mean(diam_rf);
+    mSize(s) = mean(diam_rf);
+    numSize(s) = length(diam_rf);
     diam_rf(diam_rf > maxDiam) = maxDiam;
-    figure
-    h = histogram(diam_rf, 0:0.5:maxDiam);
-    h.FaceColor = [1 1 1] .* 0.5;
-    hold on
-    plot(m, 5, 'v')
-    xlabel('RF diameter (visual degrees)')
-    ylabel(sprintf('%s', sets{s}))
-    xlim([-.2 maxDiam+.2])
-    set(gca, "Box", "off")
-    title(sprintf('mean: %.2f, n = %d', m, length(dist_rf_pred)))
-    io.saveFigure(gcf, fPlots, ...
-        sprintf('rf_%s_diameter', sets{s}))
+    figure(figSize)
+    n = histcounts(diam_rf, edgesSize, "Normalization", "probability");
+    hSize(s) = plot(edgesSize(1:end-1)+0.25, n, "Color", colSets(s,:), "LineWidth", 2);
+    % hSize(s) = histogram(diam_rf, binsSize, "EdgeColor", colSets(s,:), ...
+    %     "Normalization", "probability", "DisplayStyle", "stairs");
+    % h.FaceColor = [1 1 1] .* 0.5;
+    plot(mSize(s), 0.12, 'v', "MarkerFaceColor", colSets(s,:), ...
+        "MarkerEdgeColor", "none")
 end
+
+figure(figDist)
+xlim([-.2 maxDist+.2])
+set(gca, "Box", "off")
+l = legend(hDist, ...
+    sprintf('%s (mean: %.2f, n = %d)', sets{1}, mDist(1), numDist(1)), ...
+    sprintf('%s (mean: %.2f, n = %d)', sets{2}, mDist(2), numDist(2)));
+l.Box = "off";
+xlabel('Distance: mapped vs. retinotopic (visual degrees)')
+ylabel('Proportion of units')
+io.saveFigure(gcf, fPlots, 'rf_distance-mapped_retinotopic')
+
+figure(figSize)
+xlim([-.2 maxDiam+.2])
+set(gca, "Box", "off")
+l = legend(hSize, ...
+    sprintf('%s (mean: %.2f, n = %d)', sets{1}, mSize(1), numSize(1)), ...
+    sprintf('%s (mean: %.2f, n = %d)', sets{2}, mSize(2), numSize(2)));
+l.Box = "off";
+xlabel('RF diameter (visual degrees)')
+ylabel('Proportion of units')
+io.saveFigure(gcf, fPlots, 'rf_diameter')
