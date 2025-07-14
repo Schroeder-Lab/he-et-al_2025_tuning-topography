@@ -2,6 +2,10 @@ function Figure05(folders)
 
 %% Parameters
 [ds_trans, os_long, os_lat] = algebra.getDsOsAxes();
+sets = {'boutons', 'neurons'};
+retinotopyRF = [false true]; % true: use RF positions estimated from 
+                             % retinotopic mapping;
+                             % false: use RF positions from RF mapping
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure05');
@@ -48,6 +52,10 @@ algebra.plotLatitudes([0 90], 1, 'k')
 algebra.plotLatitudes([0 0], 1, 'k')
 view([-62, 25])
 io.saveFigure(gcf, fPlots, 'cartoon_orientationLatitudeVectors');
+
+%% Load data: RF position, tuning preferences
+% data: .rfPos, .oriPref, .OSI, .dirPref, .DSI, .set
+data = Figure04_loadData(folders, sets, retinotopyRF);
 
 %% Polar histograms of preferences per visual patch
 Figure05_polarHists(data, fPlots, sets)

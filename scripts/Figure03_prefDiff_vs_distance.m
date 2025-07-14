@@ -17,6 +17,14 @@ cLims = [0.004 0.0008];
 numPerm = 1000;
 
 %% Plot pairwise distance in brain versus difference in tuning preference
+numDirTuned = [0 0];
+numOriTuned = [0 0];
+numRFDirTuned = [0 0];
+numRFOriTuned = [0 0];
+numSessionsDir = [0 0];
+numAnimalsDir = [0 0];
+numSessionsOri = [0 0];
+numAnimalsOri = [0 0];
 for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     dirDist = {};
@@ -34,6 +42,7 @@ for s = 1:2 % boutons and neurons
         name = subjDirs(subj).name;
         fprintf('%s\n', name)
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+        tmp = [0 0];
         for dt = 1:length(dateDirs) %dates
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
@@ -53,6 +62,12 @@ for s = 1:2 % boutons and neurons
             dp = dirTuning.preference;
             valid = ~isnan(dp) & dirTuning.pValue < maxP & ...
                 ev_rf >= minEV & rf_peaks >= minPeak;
+            numDirTuned(s) = numDirTuned(s) + ...
+                sum(~isnan(dp) & dirTuning.pValue < maxP);
+            numRFDirTuned(s) = numRFDirTuned(s) + sum(valid);
+            if sum(~isnan(dp) & dirTuning.pValue < maxP) > 0
+                tmp(1) = tmp(1) + 1;
+            end
             if sum(valid) < minROIs
                 dirDist{rec} = [];
                 dirDiff{rec} = [];
@@ -79,9 +94,16 @@ for s = 1:2 % boutons and neurons
                 dirDiff{rec} = ddiff;
                 dirDiffNull{rec} = ddiffPermuted;
             end
+
             op = oriTuning.preference;
             valid = ~isnan(op) & oriTuning.pValue < maxP & ...
                 ev_rf >= minEV & rf_peaks >= minPeak;
+            numOriTuned(s) = numOriTuned(s) + ...
+                sum(~isnan(op) & oriTuning.pValue < maxP);
+            numRFOriTuned(s) = numRFOriTuned(s) + sum(valid);
+            if sum(~isnan(op) & oriTuning.pValue < maxP) > 0
+                tmp(2) = tmp(2) + 1;
+            end
             if sum(valid) < minROIs
                 oriDist{rec} = [];
                 oriDiff{rec} = [];
@@ -111,6 +133,14 @@ for s = 1:2 % boutons and neurons
 
             rec = rec + 1;
         end
+        if tmp(1) > 0
+            numSessionsDir(s) = numSessionsDir(s) + tmp(1);
+            numAnimalsDir(s) = numAnimalsDir(s) + 1;
+        end
+        if tmp(2) > 0
+            numSessionsOri(s) = numSessionsOri(s) + tmp(2);
+            numAnimalsOri(s) = numAnimalsOri(s) + 1;
+        end
     end
 
     % plot across all datasets
@@ -139,3 +169,19 @@ for s = 1:2 % boutons and neurons
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_orientation', sets{s}))
 end
+
+fprintf('Number of tuned units with significant RF:\n')
+fprintf('  Direction:\n')
+fprintf('    Boutons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFDirTuned(1), numDirTuned(1), numRFDirTuned(1)/numDirTuned(1)*100, ...
+    numSessionsDir(1), numAnimalsDir(1))
+fprintf('    Neurons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFDirTuned(2), numDirTuned(2), numRFDirTuned(2)/numDirTuned(2)*100, ...
+    numSessionsDir(2), numAnimalsDir(2))
+fprintf('  Orientation:\n')
+fprintf('    Boutons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFOriTuned(1), numOriTuned(1), numRFOriTuned(1)/numOriTuned(1)*100, ...
+    numSessionsOri(1), numAnimalsOri(1))
+fprintf('    Neurons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFOriTuned(2), numOriTuned(2), numRFOriTuned(2)/numOriTuned(2)*100, ...
+    numSessionsOri(2), numAnimalsOri(2))

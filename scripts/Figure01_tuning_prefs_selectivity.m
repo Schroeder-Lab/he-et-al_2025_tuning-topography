@@ -17,15 +17,15 @@ figOri = figure;
 hOri = [0 0];
 hold on
 figDS = figure;
-hDS = [0 0];
 hold on
 figOS = figure;
-hOS = [0 0];
 hold on
 numDir = [0 0];
 numOri = [0 0];
 colSets = lines(2);
 
+medianDS = cell(1,2);
+medianOS = cell(1,2);
 fprintf('In response to drifting gratings:\n')
 for s = 1:2 % boutons and neurons
     fprintf('  %s:\n', sets{s})
@@ -332,16 +332,16 @@ for s = 1:2 % boutons and neurons
     selEdges = 0:0.1:0.8;
     selBins = selEdges(1:end-1) + 0.05;
     dirHists = NaN(length(selBins), max(dataset));
-    meanDS = NaN(1, max(dataset));
+    medianDS{s} = NaN(max(dataset),1);
     oriHists = NaN(length(selBins), max(dataset));
-    meanOS = NaN(1, max(dataset));
+    medianOS{s} = NaN(max(dataset),1);
     for c = 1:max(dataset)
         sel = dirSel(dirTuned & c==dataset);
         dirHists(:,c) = histcounts(sel, selEdges);
-        meanDS(c) = mean(sel);
+        medianDS{s}(c) = median(sel);
         sel = oriSel(oriTuned & c==dataset);
         oriHists(:,c) = histcounts(sel, selEdges);
-        meanOS(c) = mean(sel);
+        medianOS{s}(c) = median(sel);
     end
     % normalize histograms (to sum 1)
     dirHists = dirHists ./ sum(dirHists,1);
@@ -353,11 +353,11 @@ for s = 1:2 % boutons and neurons
     sem = std(dirHists(:,indSetsDir),0,2) ./ sqrt(sum(indSetsDir));
     fill(selBins([1:end end:-1:1]), [m-sem; flip(m+sem)], 'k', ...
         "FaceColor", colSets(s,:), "FaceAlpha", 0.5, "EdgeColor", "none")
-    plot(selBins, m, '.-', 'Color', colSets(s,:), "LineWidth", 1, "MarkerSize", 30)
-    m = mean(meanDS, "omitnan");
-    sem = std(meanDS, "omitnan") / sqrt(sum(~isnan(meanDS)));
-    plot(m + [-1 1].*sem, [1 1] .* 0.5, "Color", colSets(s,:), "LineWidth", 2)
-    plot(m, 0.5, 'v', "MarkerFaceColor", colSets(s,:), "MarkerEdgeColor", "none", "MarkerSize", 10)
+    plot(selBins, m, '.-', 'Color', colSets(s,:), "LineWidth", 1, ...
+        "MarkerSize", 30)
+    m = median(medianDS{s}, "omitnan");
+    plot(m, 0.5, 'v', "MarkerFaceColor", colSets(s,:), ...
+        "MarkerEdgeColor", "none", "MarkerSize", 10)
     
     % plot orientation
     figure(figOS)
@@ -365,11 +365,11 @@ for s = 1:2 % boutons and neurons
     sem = std(oriHists(:,indSetsOri),0,2) ./ sqrt(sum(indSetsOri));
     fill(selBins([1:end end:-1:1]), [m-sem; flip(m+sem)], 'k', ...
         "FaceColor", colSets(s,:), "FaceAlpha", 0.5, "EdgeColor", "none")
-    plot(selBins, m, '.-', 'Color', colSets(s,:), "LineWidth", 1, "MarkerSize", 30)
-    m = mean(meanOS, "omitnan");
-    sem = std(meanOS, "omitnan") / sqrt(sum(~isnan(meanOS)));
-    plot(m + [-1 1].*sem, [1 1] .* 0.5, "Color", colSets(s,:), "LineWidth", 2)
-    plot(m, 0.5, 'v', "MarkerFaceColor", colSets(s,:), "MarkerEdgeColor", "none", "MarkerSize", 10)
+    plot(selBins, m, '.-', 'Color', colSets(s,:), "LineWidth", 1, ...
+        "MarkerSize", 30)
+    m = median(medianOS{s}, "omitnan");
+    plot(m, 0.5, 'v', "MarkerFaceColor", colSets(s,:), ...
+        "MarkerEdgeColor", "none", "MarkerSize", 10)
 
     %% Extra plots
     % plot DS and OS against brain depth
@@ -508,3 +508,19 @@ ylim([0 0.5])
 xlabel('Orientation selectivity')
 ylabel('Proportion of units')
 io.saveFigure(gcf, fPlots, 'tuning_orientationSelectivity');
+
+%% Tests
+% DS
+m = [median(medianDS{1}, "omitnan"), median(medianDS{2}, "omitnan")];
+fprintf('Direction selectivity (median):\n')
+fprintf(' Boutons: %.4f\n', m(1))
+fprintf(' Neurons: %.4f\n', m(2))
+fprintf(' Comparison: boutons - neurons = %.4f (p = %.4f)\n', ...
+    m(1) - m(2), ranksum(medianDS{1}, medianDS{2}))
+% OS
+m = [median(medianOS{1}, "omitnan"), median(medianOS{2}, "omitnan")];
+fprintf('Direction selectivity (median):\n')
+fprintf(' Boutons: %.4f\n', m(1))
+fprintf(' Neurons: %.4f\n', m(2))
+fprintf(' Comparison: boutons - neurons = %.4f (p = %.4f)\n', ...
+    m(1) - m(2), ranksum(medianOS{1}, medianOS{2}))

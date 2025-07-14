@@ -12,6 +12,7 @@ yLimH = 0.061;
 
 %% Plot histograms + scatters: consistencies compared to null distribution
 for s = 1:2
+    fprintf('Consistency of %s:\n', sets{s})
     if retinotopyRF(s)
         str = 'retinoptopic';
     else
@@ -41,11 +42,19 @@ for s = 1:2
         h(2) = plot(binsSmooth, ns, 'r', "LineWidth", 1);
         legend(h, 'null', 'original')
         ylim([0 yLimH])
-        xlabel('Consistency')
+        xlabel(sprintf('%s consistency', measures{m}))
         ylabel('Probability')
-        title(sprintf('%s consistency (%s RFs) - %s (n = %d)', ...
-            measures{m}, str, sets{s}, sum(n)))
+        title(sprintf('%s (%s RFs, n = %d)', sets{s}, str, sum(n)))
         io.saveFigure(gcf, fPlots, sprintf('consistency_%s_%s_histogram_%sRFs', ...
             sets{s}, measures{m}, str))
+
+        mn = mean(maps(s).(measures{m}).consistencies(:), "omitnan");
+        sem = std(maps(s).(measures{m}).consistencies(:), "omitnan") / ...
+            sum(~isnan(maps(s).(measures{m}).consistencies(:)));
+        mnNull = squeeze(mean(maps(s).(measures{m}).nullCons, [1 2], "omitnan"));
+        fprintf('  %s:\n', measures{m})
+        fprintf('    Original (mean +- SEM): %.4f +- %.4f\n', mn, sem)
+        fprintf('    Null (median, 2.5-97.5 interval): %.4f (%.4f-%.4f)\n', ...
+            prctile(mnNull, [50 2.5 97.5]))
     end
 end

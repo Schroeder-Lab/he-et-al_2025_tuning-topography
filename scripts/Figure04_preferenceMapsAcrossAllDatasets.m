@@ -50,8 +50,10 @@ for s = 1:2
     ylabel('Elevation (deg)')
     n = sum(~any(isnan(data(s).rfPos),2) & ~isnan(data(s).dirPref) & valid);
     title(sprintf('%s @ %s RFs (n = %d)', sets{s}, str, n))
-    io.saveFigure(gcf, fPlots, sprintf('globalScatter_%s_direction_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalScatter_%s_direction_%sRFs', ...
+            sets{s}, str))
+    end
 
     % orientation
     colors = colmaps.colorcet('C1');
@@ -89,6 +91,8 @@ for s = 1:2
     ylabel('Elevation (deg)')
     n = sum(~any(isnan(data(s).rfPos),2) & ~isnan(data(s).oriPref) & valid);
     title(sprintf('%s @ %s RFs (n = %d)', sets{s}, str, n))
-    io.saveFigure(gcf, fPlots, sprintf('globalScatter_%s_orientation_%sRFs', ...
-        sets{s}, str))
+    if ~isempty(fPlots)
+        io.saveFigure(gcf, fPlots, sprintf('globalScatter_%s_orientation_%sRFs', ...
+            sets{s}, str))
+    end
 end

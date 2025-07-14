@@ -26,7 +26,7 @@ for s = 1:length(data)
     % direction
     % only use units with minimum DSI and maximum OSI
     valid = data(s).DSI >= selectivityThresholds(1,1) & ...
-        data(s).OSI <= selectivityThresholds(1,2);
+        (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI));
     figure('Position', [1 49 1920 955])
     tiledlayout(length(gridY), length(gridX), "TileSpacing", "tight")
     for x = 1:length(gridX)
@@ -58,7 +58,7 @@ for s = 1:length(data)
     % orientation
     % only use units with minimum OSI and maximum DSI
     valid = data(s).OSI >= selectivityThresholds(2,1) & ...
-        data(s).DSI <= selectivityThresholds(2,2);
+        (data(s).DSI <= selectivityThresholds(2,2) | isnan(data(s).DSI));
     figure('Position', [1 49 1920 955])
     tiledlayout(length(gridY), length(gridX), "TileSpacing", "tight")
     for x = 1:length(gridX)
@@ -102,11 +102,13 @@ for s = 1:length(data)
 end
 
 %% Prediction error, significance tests and classification histograms
+errDir_original = cell(1,2);
+errOri_original = cell(1,2);
 for s = 1:length(data)
     % direction
     % only use units with minimum DSI and maximum OSI
     valid = find(data(s).DSI >= selectivityThresholds(1,1) & ...
-        data(s).OSI <= selectivityThresholds(1,2) & ...
+        (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     dp = data(s).dirPref(valid); % preferred directions
     transVectors = NaN(length(valid), 4); % 4 direction vectors of DSGCs at RF position
@@ -120,7 +122,7 @@ for s = 1:length(data)
     % orientation
     % only use units with minimum OSI and maximum DSI
     valid = find(data(s).OSI >= selectivityThresholds(2,1) & ...
-        data(s).DSI <= selectivityThresholds(2,2) & ...
+        (data(s).DSI <= selectivityThresholds(2,2) | isnan(data(s).DSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     op = data(s).oriPref(valid); % preferred orientations
     % tranform angles from direction of motion (axial motion) to
@@ -141,27 +143,27 @@ for s = 1:length(data)
 
     % prediction error for original data
     % 1. direction
-    errDir_original = abs(dp - transVectors);
-    ind = errDir_original > 180;
-    errDir_original(ind) = 360 - errDir_original(ind);
-    [errDir_original, optTransVects] = min(errDir_original, [], 2);
+    err = abs(dp - transVectors);
+    ind = err > 180;
+    err(ind) = 360 - err(ind);
+    [errDir_original{s}, optTransVects] = min(err, [], 2);
     figure
     histogram(optTransVects, .5:4.5)
     set(gca, 'XTick', 1:4, 'XTickLabel', ...
         {'advance','retreat','rise','fall'}, 'Box', 'off')
-    title(sprintf('%s: Direction vectors', sets{s}))
+    title(sprintf('%s: Direction vectors (n = %d)', sets{s}, length(optTransVects)))
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_direction%s', ...
         sets{s}, suffix))
     % 2. orientation
-    errOri_original = abs(op - [longVectors, latVectors]);
-    ind = errOri_original > 90;
-    errOri_original(ind) = 180 - errOri_original(ind);
-    [errOri_original, optOriVects] = min(errOri_original, [], 2);
+    err = abs(op - [longVectors, latVectors]);
+    ind = err > 90;
+    err(ind) = 180 - err(ind);
+    [errOri_original{s}, optOriVects] = min(err, [], 2);
     figure
     histogram(optOriVects, .5:4.5)
     set(gca, 'XTick', 1:4, 'XTickLabel', ...
         {'H_{long}','V_{long}','H_{lat}','V_{lat}'}, 'Box', 'off')
-    title(sprintf('%s: Orientation vectors', sets{s}))
+    title(sprintf('%s: Orientation vectors (n = %d)', sets{s}, length(optOriVects)))
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_orientation%s', ...
         sets{s}, suffix))
 
@@ -204,21 +206,23 @@ for s = 1:length(data)
     fprintf('Prediction errors [95%% conf int: (1) permuted data, (2) uniform distribution]:\n')
     fprintf('  %s:\n', sets{s})
     fprintf('    Direction\n')
-    fprintf('      Mean: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
-        mean(errDir_original), ...
-        prctile(mean(errDir_perm,1),[2.5 97.5]), ...
-        prctile(mean(errDir_uni,1),[2.5 97.5]))
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
-        median(errDir_original), ...
+        median(errDir_original{s}), ...
         prctile(median(errDir_perm,1),[2.5 97.5]), ...
         prctile(median(errDir_uni,1),[2.5 97.5]))
     fprintf('    Orientation\n')
-    fprintf('      Mean: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
-        mean(errOri_original), ...
-        prctile(mean(errOri_perm,1),[2.5 97.5]), ...
-        prctile(mean(errOri_uni,1),[2.5 97.5]))
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
-        median(errOri_original), ...
+        median(errOri_original{s}), ...
         prctile(median(errOri_perm,1),[2.5 97.5]), ...
         prctile(median(errOri_uni,1),[2.5 97.5]))
 end
+
+fprintf('Prediction error: boutons vs neurons:\n')
+fprintf('  Direction:\n')
+fprintf('    Boutons - neurons (median): %.2f (p = %.4f, Wilcoxon rank-sum)\n', ...
+    median(errDir_original{1})-median(errDir_original{2}), ...
+    ranksum(errDir_original{1}, errDir_original{2}))
+fprintf('  Orientation:\n')
+fprintf('    Boutons - neurons (median): %.2f (p = %.4f, Wilcoxon rank-sum)\n', ...
+    median(errOri_original{1})-median(errOri_original{2}), ...
+    ranksum(errOri_original{1}, errOri_original{2}))
