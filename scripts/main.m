@@ -13,6 +13,9 @@
 
 % PC on campus
 folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+folders.dataRawEphys = 'Z:\RawData';
+% folders.results = 'D:\Results\OrientationColumns';
+folders.results = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 folders.tools = 'C:\dev\toolboxes';
 folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
 folders.plots = 'D:\Results\OrientationColumns_Plots';
@@ -21,6 +24,8 @@ folders.plots = 'D:\Results\OrientationColumns_Plots';
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
 addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
 addpath(genpath(fullfile(folders.repo)))
+
+%% 2P data
 
 %% Fit response kernels (gratings + bars)
 % Given the pre-processed calcium traces, fit response kernels, response
@@ -57,6 +62,18 @@ main_fitReceptiveFields(folders)
 % Find mapping between RF position and brain position (retinotopy). Then
 % infer RF position of units where RF could not be mapped.
 main_mapRFposToRetinotopy(folders)
+
+%% Ephys data
+
+%% Determine SC depth along probe
+main_determineSCdepth(folders);
+
+%% Map receptive fields
+% Given the spike responses to the visual noise stimulus, fit spatial
+% receptive fields (ON and OFF fields).
+main_fitReceptiveFields_ephys(folders, ephysProperties)
+
+%% Determine direction and orientation selectivity
 
 %% Figures
 Figure01(folders)
