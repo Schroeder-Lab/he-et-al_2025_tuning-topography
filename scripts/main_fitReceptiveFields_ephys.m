@@ -3,9 +3,6 @@ function main_fitReceptiveFields_ephys(folders)
 % receptive fields (ON and OFF fields).
 
 %% Parameters
-% to high-pass filter traces
-smoothWin = 20; % in s
-
 % for receptive field fits
 lambda = 0.002; % smoothing parameter for spatial RF
 rf_timeLimits = [0 0.2]; % time range of stimulus before neural response 
@@ -27,24 +24,28 @@ ellipse_x = linspace(-pi, pi, 100);
 titles = {'ON field','OFF field'};
 
 %% Fit RFs and get cross-validated explained variance
-subjDirs = dir(folders.dataEphys);
+subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.'));
 for subj = 1:length(subjDirs) % animals
     name = subjDirs(subj).name;
     fprintf('%s\n', name)
-    dateDirs = dir(fullfile(folders.dataEphys, name, '2*'));
+    dateDirs = dir(fullfile(folders.data, 'ephys', name, '2*'));
     for dt = 1:length(dateDirs) %dates
         date = dateDirs(dt).name;
         fprintf('  %s\n', date)
-        f = fullfile(folders.dataEphys, name, date);
+        f = fullfile(folders.data, 'ephys', name, date);
         % ignore session if visual noise stimulus was not present
-        if ~isfile(fullfile(f, 'sparse.startTime.npy'))
+        if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
             continue
         end
 
         %% Load data
         spikeData = io.getEphysData(f);
-        stimData = io.getVisNoiseInfo_ephys(f);
+        stimData = io.getVisNoiseInfo(f);
+        % ignore spike data before/after visual noise stimulation
+        t_ind = spikeData.times >= stimData.times(1) - 10 & ...
+            spikeData.times <= stimData.times(end) + 10;
+        stimData.times = stimData.times(t_ind);
 
         %% Prepare stimulus data
         % edges: [left right top bottom] (above horizon: >0)
@@ -71,28 +72,14 @@ for subj = 1:length(subjDirs) % animals
         rfBins = floor(rf_timeLimits(1) / tBin_stim) : ...
             ceil(rf_timeLimits(2) / tBin_stim);
 
-        %% Prepare calcium traces
-        % ignore data before/after visual noise stimulation
-        t_ind = caData.time > t_stim(1) - 10 & ...
-            caData.time < t_stim(end) + 10;
-        caTraces = caData.traces(t_ind,:);
-        t_ca = caData.time(t_ind);
-        % interpolate calcium traces to align all to same time
-        [caTraces, t_ca] = traces.alignSampling(caTraces, t_ca, ...
-            caData.planes, caData.delays);
-
-        % remove strong baseline decay at start of experiment
-        caTraces = traces.removeInitialDecay(caTraces, t_ca, ...
-            win_decay, thresh_decay);
-
-        % high-pass filter traces: remove smoothed traces
-        caTraces = traces.highPassFilter(caTraces, t_ca, smoothWin);
-
         %% Map RFs
 
         % generate toplitz matrix for stimulus
         [toeplitz, t_toeplitz] = ...
             rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+
+        % get firing rates aligned to stimulus times
+        [spikesAligned, spTrials] = events.alignData(spikes)
 
         % resample neural response at stimulus times
         tBin_ca = median(diff(t_ca));

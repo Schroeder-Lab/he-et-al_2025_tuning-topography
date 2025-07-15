@@ -6,19 +6,20 @@
 % folders.plots:    to save plots
 
 % Mac
-% folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
-% folders.tools = '/Users/ss2302/dev/toolboxes';
-% folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
-% folders.plots = '/Users/ss2302/Documents/Results/OrientationColumns_Plots';
+folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
+folders.results = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
+folders.tools = '/Users/ss2302/dev/toolboxes';
+folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
+folders.plots = '/Users/ss2302/Documents/Results/OrientationColumns_Plots';
 
-% PC on campus
-folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
-folders.dataRawEphys = 'Z:\RawData';
-% folders.results = 'D:\Results\OrientationColumns';
-folders.results = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
-folders.tools = 'C:\dev\toolboxes';
-folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
-folders.plots = 'D:\Results\OrientationColumns_Plots';
+% % PC on campus
+% folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+% folders.dataRawEphys = 'Z:\RawData';
+% % folders.results = 'D:\Results\OrientationColumns';
+% folders.results = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+% folders.tools = 'C:\dev\toolboxes';
+% folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
+% folders.plots = 'D:\Results\OrientationColumns_Plots';
 
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
@@ -71,7 +72,7 @@ main_determineSCdepth(folders);
 %% Map receptive fields
 % Given the spike responses to the visual noise stimulus, fit spatial
 % receptive fields (ON and OFF fields).
-main_fitReceptiveFields_ephys(folders, ephysProperties)
+main_fitReceptiveFields_ephys(folders)
 
 %% Determine direction and orientation selectivity
 
