@@ -13,6 +13,10 @@ function data = getVisNoiseInfo(folder)
 %   .frames     [frames x rows x columns], pixel values of each unique
 %               stimulus frame
 
+if ~isfile(fullfile(folder, '_ss_sparseNoise.times.npy'))
+    data = [];
+    return
+end
 data.stimOrder = readNPY(fullfile(folder, '_ss_sparseNoise._ss_sparseNoiseID.npy'));
 data.times = readNPY(fullfile(folder, '_ss_sparseNoise.times.npy'));
 data.edges = readNPY(fullfile(folder, '_ss_sparseNoiseArea.edges.npy'));

@@ -2,7 +2,8 @@ function main_determineSCdepth(folders)
 
 %% Parameters
 smoothLFP = {5 21};
-stimWin = [0.02 .15];
+% stimWin = [0.02 .15];
+stimWin = [-.05 .15];
 baseWin = [-.05 0];
 surfaceAmplitude = 0.25;
 
@@ -31,6 +32,10 @@ for subj = 1:length(subjDirs) % animals
         fprintf('  Load and prep LFP...\n')
         % load visual noise data
         stim = io.getVisNoiseInfo(f);
+        if isempty(stim)
+            fprintf('  NO VISUAL NOISE DATA. DISREGARD DATASET!\n')
+            continue
+        end
 
         % load LFP meta data
         meta = io.getLFPMetaData(fullfile(f_raw, ...
@@ -61,56 +66,77 @@ for subj = 1:length(subjDirs) % animals
         % https://billkarsh.github.io/SpikeGLX/Support/Metadata_3A.html
         lfp = double(lfp) .* meta.Vmax  .* 1000 ./ meta.Imax ./ meta.lfpGain; % mV
 
-        % subtract median from each channel
+        % subtract median across time from each channel
         lfp = lfp - median(lfp,2);
 
-        % TODO: first test whether filtering is necessary
-        % Remove 50Hz line noise
-        fprintf('  Filter LFP...\n')
-        notchFilter50 = designfilt('bandstopiir', ...
-            'PassbandFrequency1',48, ...
-            'StopbandFrequency1',49.5, ...
-            'StopbandFrequency2',50.5, ...
-            'PassbandFrequency2',52, ...
-            'PassbandRipple1',1, ...
-            'StopbandAttenuation',60, ...
-            'PassbandRipple2',1, ...
-            'SampleRate',meta.samplingRate);
-        notchFilter100 = designfilt('bandstopiir', ...
-            'PassbandFrequency1',95, ...
-            'StopbandFrequency1',99, ...
-            'StopbandFrequency2',101, ...
-            'PassbandFrequency2',105, ...
-            'PassbandRipple1',1, ...
-            'StopbandAttenuation',60, ...
-            'PassbandRipple2',1, ...
-            'SampleRate',meta.samplingRate);
-        f1 = figure;
-        plot(t_lfp(1:5000), lfp(1:5000))
-        hold on
-        f2 = figure;
-        lfp_mean = mean(lfp,1);
-        [pxx, freq] = pwelch(lfp_mean, hamming(256), 128, 512, meta.samplingRate);
-        plot(freq, pxx)
-        set(gca, 'YScale', 'log')
-        hold on
+        % subtract median lfp trace (across channels) from each channel
+        lfp_median = median(lfp, 1);
+        lfp = lfp - lfp_median;
 
-        lfp = filtfilt(notchFilter50, lfp')';
-        figure(f1);
-        plot(t_lfp(1:5000), lfp(1:5000))
-        figure(f2);
-        lfp_mean = mean(lfp,1);
-        [pxx, freq] = pwelch(lfp_mean, hamming(256), 128, 512, meta.samplingRate);
-        plot(freq, pxx)
-
-        lfp = filtfilt(notchFilter100, lfp')';
-        figure(f1);
-        plot(t_lfp(1:5000), lfp(1:5000))
-        figure(f2);
-        lfp_mean = mean(lfp,1);
-        [pxx, freq] = pwelch(lfp_mean, hamming(256), 128, 512, meta.samplingRate);
-        plot(freq, pxx)
-        set(gca, 'YScale', 'log')
+        % % Test whether filtering is necessary
+        % [pxx, freq] = pwelch(lfp_mean, 512, 256, 1024, meta.samplingRate);
+        % pxx_log = log10(pxx);
+        % [~, ind50] = min(abs(freq - 50));
+        % pow50 = pxx_log(ind50);
+        % [~, ind40] = min(abs(freq - 40));
+        % pow40 = pxx_log(ind40);
+        % if pow50 - pow40 > 0.1
+        %     f1 = figure;
+        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
+        %     hold on
+        %     f2 = figure;
+        %     plot(freq, pxx)
+        %     hold on
+        % 
+        %     % Remove 50Hz line noise
+        %     fprintf('  Filter LFP...\n')
+        %     notchFilter50 = designfilt('bandstopiir', ...
+        %         'PassbandFrequency1',48, ...
+        %         'StopbandFrequency1',49.5, ...
+        %         'StopbandFrequency2',50.5, ...
+        %         'PassbandFrequency2',52, ...
+        %         'PassbandRipple1',1, ...
+        %         'StopbandAttenuation',45, ...
+        %         'PassbandRipple2',1, ...
+        %         'SampleRate',meta.samplingRate);
+        %     notchFilter100 = designfilt('bandstopiir', ...
+        %         'PassbandFrequency1',95, ...
+        %         'StopbandFrequency1',99, ...
+        %         'StopbandFrequency2',101, ...
+        %         'PassbandFrequency2',105, ...
+        %         'PassbandRipple1',1, ...
+        %         'StopbandAttenuation',30, ...
+        %         'PassbandRipple2',1, ...
+        %         'SampleRate',meta.samplingRate);
+        % 
+        %     % notchFilter6 = designfilt('bandstopiir', ...
+        %     %     'PassbandFrequency1',5, ...
+        %     %     'StopbandFrequency1',6, ...
+        %     %     'StopbandFrequency2',7, ...
+        %     %     'PassbandFrequency2',8, ...
+        %     %     'PassbandRipple1',1, ...
+        %     %     'StopbandAttenuation',2, ...
+        %     %     'PassbandRipple2',1, ...
+        %     %     'SampleRate',meta.samplingRate);
+        % 
+        % 
+        %     lfp = filtfilt(notchFilter50, lfp')';
+        %     lfp_mean = mean(lfp,1);
+        %     [pxx, freq] = pwelch(lfp_mean, hamming(512), 256, 1024, meta.samplingRate);
+        %     figure(f1)
+        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
+        %     figure(f2)
+        %     plot(freq, pxx)
+        % 
+        %     lfp = filtfilt(notchFilter100, lfp')';
+        %     lfp_mean = mean(lfp,1);
+        %     [pxx, freq] = pwelch(lfp_mean, hamming(512), 256, 1024, meta.samplingRate);
+        %     figure(f1);
+        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
+        %     figure(f2);
+        %     plot(freq, pxx)
+        %     set(gca, 'YScale', 'log')
+        % end
 
         % focus on left and right columns of probe separately, 
         % replace noisy channel data with interpolation, 
@@ -202,8 +228,9 @@ for subj = 1:length(subjDirs) % animals
         %% Make plots
         spikes = io.getEphysData(f);
         
-        figure('Position', [100 100 1300 700])
+        figure('Position', [3 100 1466 700])
         tiledlayout(1,4)
+
         nexttile
         m = max(abs(profile),[],"all");
         imagesc(stimWin, channelDepths, lfpEvoked(:,:,maxPix), [-m m])
