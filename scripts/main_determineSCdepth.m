@@ -30,10 +30,17 @@ for subj = 1:length(subjDirs) % animals
         
         %% Load data
         fprintf('  Load and prep LFP...\n')
-        % load visual noise data
+        % load visual stimulus data
         stim = io.getVisNoiseInfo(f);
+        stimType = 'noise';
         if isempty(stim)
-            fprintf('  NO VISUAL NOISE DATA. DISREGARD DATASET!\n')
+            stim = io.getCircleInfo(f);
+            stimType = 'circles';
+            if isempty(stim)
+                fprintf('  NO NOISE OR CIRCLE DATA. DISREGARD DATASET!\n')
+                continue
+            end
+        else
             continue
         end
 
@@ -69,75 +76,6 @@ for subj = 1:length(subjDirs) % animals
         % subtract median across time from each channel
         lfp = lfp - median(lfp,2);
 
-        % subtract median lfp trace (across channels) from each channel
-        lfp_median = median(lfp, 1);
-        lfp = lfp - lfp_median;
-
-        % % Test whether filtering is necessary
-        % [pxx, freq] = pwelch(lfp_mean, 512, 256, 1024, meta.samplingRate);
-        % pxx_log = log10(pxx);
-        % [~, ind50] = min(abs(freq - 50));
-        % pow50 = pxx_log(ind50);
-        % [~, ind40] = min(abs(freq - 40));
-        % pow40 = pxx_log(ind40);
-        % if pow50 - pow40 > 0.1
-        %     f1 = figure;
-        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
-        %     hold on
-        %     f2 = figure;
-        %     plot(freq, pxx)
-        %     hold on
-        % 
-        %     % Remove 50Hz line noise
-        %     fprintf('  Filter LFP...\n')
-        %     notchFilter50 = designfilt('bandstopiir', ...
-        %         'PassbandFrequency1',48, ...
-        %         'StopbandFrequency1',49.5, ...
-        %         'StopbandFrequency2',50.5, ...
-        %         'PassbandFrequency2',52, ...
-        %         'PassbandRipple1',1, ...
-        %         'StopbandAttenuation',45, ...
-        %         'PassbandRipple2',1, ...
-        %         'SampleRate',meta.samplingRate);
-        %     notchFilter100 = designfilt('bandstopiir', ...
-        %         'PassbandFrequency1',95, ...
-        %         'StopbandFrequency1',99, ...
-        %         'StopbandFrequency2',101, ...
-        %         'PassbandFrequency2',105, ...
-        %         'PassbandRipple1',1, ...
-        %         'StopbandAttenuation',30, ...
-        %         'PassbandRipple2',1, ...
-        %         'SampleRate',meta.samplingRate);
-        % 
-        %     % notchFilter6 = designfilt('bandstopiir', ...
-        %     %     'PassbandFrequency1',5, ...
-        %     %     'StopbandFrequency1',6, ...
-        %     %     'StopbandFrequency2',7, ...
-        %     %     'PassbandFrequency2',8, ...
-        %     %     'PassbandRipple1',1, ...
-        %     %     'StopbandAttenuation',2, ...
-        %     %     'PassbandRipple2',1, ...
-        %     %     'SampleRate',meta.samplingRate);
-        % 
-        % 
-        %     lfp = filtfilt(notchFilter50, lfp')';
-        %     lfp_mean = mean(lfp,1);
-        %     [pxx, freq] = pwelch(lfp_mean, hamming(512), 256, 1024, meta.samplingRate);
-        %     figure(f1)
-        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
-        %     figure(f2)
-        %     plot(freq, pxx)
-        % 
-        %     lfp = filtfilt(notchFilter100, lfp')';
-        %     lfp_mean = mean(lfp,1);
-        %     [pxx, freq] = pwelch(lfp_mean, hamming(512), 256, 1024, meta.samplingRate);
-        %     figure(f1);
-        %     plot(t_lfp(150000:155000), lfp_mean(150000:155000))
-        %     figure(f2);
-        %     plot(freq, pxx)
-        %     set(gca, 'YScale', 'log')
-        % end
-
         % focus on left and right columns of probe separately, 
         % replace noisy channel data with interpolation, 
         % then smooth across channels and time
@@ -156,11 +94,14 @@ for subj = 1:length(subjDirs) % animals
                 smoothLFP);
         end
         clear F
+
+        % subtract mean lfp trace (across channels) from each channel
+        lfp_mean = mean(lfp, 1);
+        lfp = lfp - lfp_mean;
         
         %% Determine top of SC base on VEP (visually evoked potential)
         fprintf('  Frame-evoked LFP...\n')
-        % Get stimulus triggered LFP
-        stimFlat = reshape(stim.frames, size(stim.frames,1), []);
+        % Get stimulus-aligned LFP, subtract baseline
         baselinePerFrame = traces.getAlignedTraces(lfp', t_lfp, ...
             stim.times, baseWin); % [t x frames x channels]
         % [1 x frames x channels]:
@@ -176,6 +117,14 @@ for subj = 1:length(subjDirs) % animals
 
         % Get pixel-evoked LFP
         fprintf('  Pixel-evoked LFP...\n')
+        switch stimType
+            case 'noise'
+                stimFlat = reshape(stim.frames, size(stim.frames,1), []);
+            case 'circles'
+                stimFlat = stimuli.getStimMatrix(stim.times, ...
+                    stim.xPos, stim.yPos, stim.diameter, stim.isWhite);
+                stimFlat = reshape(stimFlat, size(stimFlat,1), []);
+        end
         lfpEvoked = NaN([size(evokedPerFrame, [1 2]), 2, ...
             size(stimFlat,2)]); % [channels x time x Black/White x pixels]
         for pix = 1:size(stimFlat,2)
@@ -278,8 +227,8 @@ for subj = 1:length(subjDirs) % animals
         xlabel('Time (ms)')
         title('Spikes')
 
-        sgtitle(sprintf('%s %s: Top: %d, SGS-SO: %d', name, date, ...
-            chanTop, chan_SGS_SO))
+        sgtitle(sprintf('%s %s (%s): Top: %d, SGS-SO: %d', name, date, ...
+            stimType, chanTop, chan_SGS_SO))
         saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpeg', name, date)))
         close gcf
     end
