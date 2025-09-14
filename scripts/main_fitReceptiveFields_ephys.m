@@ -119,92 +119,92 @@ for subj = 1:length(subjDirs) % animals
     end
 end
 
-%% Plot RFs
-for s = 1:2 % boutons and neurons
-    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    for subj = 1:length(subjDirs) % animals
-        name = subjDirs(subj).name;
-        fprintf('%s\n', name)
-        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs) %dates
-            date = dateDirs(dt).name;
-            fprintf('  %s\n', date)
-            f = fullfile(folders.data, sets{s}, name, date);
-            % ignore session if visual noise stimulus was not present
-            if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-                continue
-            end
-            fPlots = fullfile(folders.plots, 'ReceptiveFields', ...
-                sets{s}, name, date);
-            if ~isfolder(fPlots)
-                mkdir(fPlots)
-            end
-
-            % load data
-            results = io.getRFFits(f);
-            edges = results.edges;
-            gridW = diff(edges(1:2)) / size(results.maps,3);
-            gridH = -diff(edges(3:4)) / size(results.maps,2);
-            for iUnit = 1:size(results.fitParameters,1)
-                % plot RF (if explained var. and peak-to-noise high enough
-                if results.EV(iUnit) >= minEV_plot && ...
-                        results.peaks(iUnit) >= minPeak_plot
-                    line = ':';
-                    if results.EV(iUnit) >= minEV && ...
-                            results.peaks(iUnit) >= minPeak
-                        line = '-';
-                    end
-                    % rf_tmp: [rows x columns x subfield]
-                    rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
-                    rf_tmp(:,:,2) = -rf_tmp(:,:,2);
-                    mx = max(abs(rf_tmp),[],"all");
-                    rfGaussPars = results.fitParameters(iUnit,:);
-                    figure('Position', [75 195 1470 475])
-                    for sf = 1:2
-                        subplot(1,2,sf)
-                        % STA
-                        imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
-                            [edges(3)-gridH/2 edges(4)+gridH/2], ...
-                            rf_tmp(:,:,sf),[-mx mx])
-                        hold on
-                        if ismember(results.bestSubFields(iUnit), [sf 3])
-                            % ellipse at 2 STD (x and y), not rotated, not shifted
-                            x = rfGaussPars(3) * cos(ellipse_x);
-                            y = rfGaussPars(5) * sin(ellipse_x);
-                            % rotate and shift ellipse
-                            x_rot = rfGaussPars(2) + ...
-                                x .* cos(rfGaussPars(6)) - ...
-                                y .* sin(rfGaussPars(6));
-                            y_rot = rfGaussPars(4) + ...
-                                x .* sin(rfGaussPars(6)) + ...
-                                y .* cos(rfGaussPars(6));
-                            n = x_rot < edges(1) | x_rot > edges(2) | ...
-                                y_rot > edges(3) | y_rot < edges(4);
-                            x_rot(n) = NaN;
-                            y_rot(n) = NaN;
-                            plot(x_rot, y_rot, ['k' line], 'LineWidth', 2)
-                        end
-                        axis image
-                        set(gca, 'box', 'off', 'YDir', 'normal')
-                        xlim(edges([1 2]))
-                        ylim(edges([4 3])) 
-                        colormap(gca, cms(:,:,sf))
-                        title(titles{sf})
-                        colorbar
-                    end
-                    sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
-                        iUnit, results.EV(iUnit), results.peaks(iUnit), ...
-                        RFtypes{results.bestSubFields(iUnit)}))
-
-                    saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));
-                    close gcf
-                end
-            end
-        end
-    end
-end
-
-%% Plot all RF outlines per dataset
+% %% Plot RFs
+% for s = 1:2 % boutons and neurons
+%     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+%     for subj = 1:length(subjDirs) % animals
+%         name = subjDirs(subj).name;
+%         fprintf('%s\n', name)
+%         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+%         for dt = 1:length(dateDirs) %dates
+%             date = dateDirs(dt).name;
+%             fprintf('  %s\n', date)
+%             f = fullfile(folders.data, sets{s}, name, date);
+%             % ignore session if visual noise stimulus was not present
+%             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+%                 continue
+%             end
+%             fPlots = fullfile(folders.plots, 'ReceptiveFields', ...
+%                 sets{s}, name, date);
+%             if ~isfolder(fPlots)
+%                 mkdir(fPlots)
+%             end
+% 
+%             % load data
+%             results = io.getRFFits(f);
+%             edges = results.edges;
+%             gridW = diff(edges(1:2)) / size(results.maps,3);
+%             gridH = -diff(edges(3:4)) / size(results.maps,2);
+%             for iUnit = 1:size(results.fitParameters,1)
+%                 % plot RF (if explained var. and peak-to-noise high enough
+%                 if results.EV(iUnit) >= minEV_plot && ...
+%                         results.peaks(iUnit) >= minPeak_plot
+%                     line = ':';
+%                     if results.EV(iUnit) >= minEV && ...
+%                             results.peaks(iUnit) >= minPeak
+%                         line = '-';
+%                     end
+%                     % rf_tmp: [rows x columns x subfield]
+%                     rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
+%                     rf_tmp(:,:,2) = -rf_tmp(:,:,2);
+%                     mx = max(abs(rf_tmp),[],"all");
+%                     rfGaussPars = results.fitParameters(iUnit,:);
+%                     figure('Position', [75 195 1470 475])
+%                     for sf = 1:2
+%                         subplot(1,2,sf)
+%                         % STA
+%                         imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
+%                             [edges(3)-gridH/2 edges(4)+gridH/2], ...
+%                             rf_tmp(:,:,sf),[-mx mx])
+%                         hold on
+%                         if ismember(results.bestSubFields(iUnit), [sf 3])
+%                             % ellipse at 2 STD (x and y), not rotated, not shifted
+%                             x = rfGaussPars(3) * cos(ellipse_x);
+%                             y = rfGaussPars(5) * sin(ellipse_x);
+%                             % rotate and shift ellipse
+%                             x_rot = rfGaussPars(2) + ...
+%                                 x .* cos(rfGaussPars(6)) - ...
+%                                 y .* sin(rfGaussPars(6));
+%                             y_rot = rfGaussPars(4) + ...
+%                                 x .* sin(rfGaussPars(6)) + ...
+%                                 y .* cos(rfGaussPars(6));
+%                             n = x_rot < edges(1) | x_rot > edges(2) | ...
+%                                 y_rot > edges(3) | y_rot < edges(4);
+%                             x_rot(n) = NaN;
+%                             y_rot(n) = NaN;
+%                             plot(x_rot, y_rot, ['k' line], 'LineWidth', 2)
+%                         end
+%                         axis image
+%                         set(gca, 'box', 'off', 'YDir', 'normal')
+%                         xlim(edges([1 2]))
+%                         ylim(edges([4 3])) 
+%                         colormap(gca, cms(:,:,sf))
+%                         title(titles{sf})
+%                         colorbar
+%                     end
+%                     sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
+%                         iUnit, results.EV(iUnit), results.peaks(iUnit), ...
+%                         RFtypes{results.bestSubFields(iUnit)}))
+% 
+%                     saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));
+%                     close gcf
+%                 end
+%             end
+%         end
+%     end
+% end
+% 
+% %% Plot all RF outlines per dataset
 for s = 1:2 % boutons and neurons
     fPlots = fullfile(folders.plots, 'ReceptiveFields', sets{s});
     if ~isfolder(fPlots)
