@@ -16,11 +16,11 @@ minEV_plot = 0.000; % minimum explained variance to plot RF
 minPeak_plot = 0; % minimum peak of RF (compared to noise) to plot RF
 
 % plotting RFs
+plotFolder = '05_ReceptiveFields';
 % colormaps
 [cm_ON, cm_OFF] = colmaps.getRFMaps;
 cms = cat(3, cm_ON, cm_OFF);
 ellipse_x = linspace(-pi, pi, 100);
-
 titles = {'ON field','OFF field'};
 
 %% Fit RFs and get cross-validated explained variance
@@ -134,7 +134,7 @@ for subj = 2:length(subjDirs) % animals
         if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
             continue
         end
-        fPlots = fullfile(folders.plots, '05_ReceptiveFields', ...
+        fPlots = fullfile(folders.plots, plotFolder, ...
             'ephys', name, date);
         if ~isfolder(fPlots)
             mkdir(fPlots)
