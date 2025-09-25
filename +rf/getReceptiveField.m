@@ -60,7 +60,8 @@ end
 A = gpuArray([stim; lamMatrix_stim .* lamStim]);
 y_train = gpuArray(padarray(zTraces(:,validUnits), ...
     size(lamMatrix_stim,1), 'post'));
-receptiveFields = gather(A \ y_train);
 
+receptiveFields = NaN(size(A,2), size(zTraces,2));
+receptiveFields(:, validUnits) = gather(A \ y_train);
 receptiveFields = reshape(receptiveFields, ...
     [stimSize, length(rfBins), 2, size(zTraces,2)]);

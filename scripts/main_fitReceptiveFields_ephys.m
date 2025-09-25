@@ -25,7 +25,7 @@ titles = {'ON field','OFF field'};
 
 %% Fit RFs and get cross-validated explained variance
 subjDirs = dir(fullfile(folders.data, 'ephys'));
-subjDirs = subjDirs(~startsWith({subjDirs.name}, '.'));
+subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
 for subj = 1:length(subjDirs) % animals
     name = subjDirs(subj).name;
     fprintf('%s\n', name)
@@ -121,8 +121,8 @@ end
 
 %% Plot RFs
 subjDirs = dir(fullfile(folders.data, 'ephys'));
-subjDirs = subjDirs(~startsWith({subjDirs.name}, '.'));
-for subj = 1:length(subjDirs) % animals
+subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
+for subj = 2:length(subjDirs) % animals
     name = subjDirs(subj).name;
     fprintf('%s\n', name)
     dateDirs = dir(fullfile(folders.data, 'ephys', name, '2*'));
@@ -204,54 +204,54 @@ for subj = 1:length(subjDirs) % animals
 end
 
 %% Plot all RF outlines per dataset
-for s = 1:2 % boutons and neurons
-    fPlots = fullfile(folders.plots, 'ReceptiveFields', sets{s});
-    if ~isfolder(fPlots)
-        mkdir(fPlots)
-    end
-
-    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    for subj = 1:length(subjDirs) % animals
-        name = subjDirs(subj).name;
-        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs) %dates
-            date = dateDirs(dt).name;
-            f = fullfile(folders.data, sets{s}, name, date);
-            % ignore session if visual noise stimulus was not present
-            if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-                continue
-            end
-
-            caData = io.getRFFits(f);
-            rfGaussPars = caData.fitParameters;
-            EVs = caData.EV;
-            peakNoiseRatio = caData.peaks;
-            figure
-            hold on
-            for iUnit = 1:size(rfGaussPars,1)
-                if EVs(iUnit) < minEV || peakNoiseRatio(iUnit) < minPeak
-                    continue
-                end
-                % ellipse at 2 STD (x and y), not rotated, not shifted
-                x = rfGaussPars(iUnit,3) * cos(ellipse_x);
-                y = rfGaussPars(iUnit,5) * sin(ellipse_x);
-                % rotate and shift ellipse
-                x_rot = rfGaussPars(iUnit,2) + ...
-                    x .* cos(rfGaussPars(iUnit,6)) - ...
-                    y .* sin(rfGaussPars(iUnit,6));
-                y_rot = rfGaussPars(iUnit,4) + ...
-                    x .* sin(rfGaussPars(iUnit,6)) + ...
-                    y .* cos(rfGaussPars(iUnit,6));
-                plot(x_rot, y_rot, 'k')
-            end
-            axis image
-            axis(caData.edges([1 2 4 3]))
-            xlabel('Azimuth (visual degrees)')
-            ylabel('Elevation (visual degrees)')
-            title(sprintf('%s %s', name, date))
-
-            saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpg', name, date)));
-            close gcf
-        end
-    end
-end
+% for s = 1:2 % boutons and neurons
+%     fPlots = fullfile(folders.plots, 'ReceptiveFields', sets{s});
+%     if ~isfolder(fPlots)
+%         mkdir(fPlots)
+%     end
+% 
+%     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+%     for subj = 1:length(subjDirs) % animals
+%         name = subjDirs(subj).name;
+%         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+%         for dt = 1:length(dateDirs) %dates
+%             date = dateDirs(dt).name;
+%             f = fullfile(folders.data, sets{s}, name, date);
+%             % ignore session if visual noise stimulus was not present
+%             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+%                 continue
+%             end
+% 
+%             caData = io.getRFFits(f);
+%             rfGaussPars = caData.fitParameters;
+%             EVs = caData.EV;
+%             peakNoiseRatio = caData.peaks;
+%             figure
+%             hold on
+%             for iUnit = 1:size(rfGaussPars,1)
+%                 if EVs(iUnit) < minEV || peakNoiseRatio(iUnit) < minPeak
+%                     continue
+%                 end
+%                 % ellipse at 2 STD (x and y), not rotated, not shifted
+%                 x = rfGaussPars(iUnit,3) * cos(ellipse_x);
+%                 y = rfGaussPars(iUnit,5) * sin(ellipse_x);
+%                 % rotate and shift ellipse
+%                 x_rot = rfGaussPars(iUnit,2) + ...
+%                     x .* cos(rfGaussPars(iUnit,6)) - ...
+%                     y .* sin(rfGaussPars(iUnit,6));
+%                 y_rot = rfGaussPars(iUnit,4) + ...
+%                     x .* sin(rfGaussPars(iUnit,6)) + ...
+%                     y .* cos(rfGaussPars(iUnit,6));
+%                 plot(x_rot, y_rot, 'k')
+%             end
+%             axis image
+%             axis(caData.edges([1 2 4 3]))
+%             xlabel('Azimuth (visual degrees)')
+%             ylabel('Elevation (visual degrees)')
+%             title(sprintf('%s %s', name, date))
+% 
+%             saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpg', name, date)));
+%             close gcf
+%         end
+%     end
+% end

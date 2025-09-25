@@ -17,6 +17,10 @@ EVs = NaN(numUnits, 1);
 for iUnit = 1:numUnits
     % rfield: [rows x cols x t x ON/OFF]
     rfield = rFields(:,:,:,:,iUnit);
+    % continue if RF is invalid (all NaNs)
+    if all(isnan(rfield), "all")
+        continue
+    end
     % invert polarity of OFF field so that positive values
     % mean: unit is driven by black square
     rfield(:,:,:,2) = -rfield(:,:,:,2);
@@ -25,7 +29,6 @@ for iUnit = 1:numUnits
     % and what optimal sign of each subfield is
     % average across time
     rf_tmp = squeeze(mean(rfield,3));
-
     % fitRFs: Gaussian masks with best sign (pos or neg)
     [fitRFs, RFsigns, MSEs] = rf.findRFGaussianMask(rf_tmp);
     [~, bestSubField] = min(MSEs);

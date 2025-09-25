@@ -5,14 +5,14 @@
 % folders.repo:     current repository
 % folders.plots:    to save plots
 
-% Mac
-folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
-folders.results = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
-folders.tools = '/Users/ss2302/dev/toolboxes';
-folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
-folders.plots = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
+% % Mac
+% folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
+% folders.results = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
+% folders.tools = '/Users/ss2302/dev/toolboxes';
+% folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
+% folders.plots = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
 
-% % PC on campus
+% % PC on campus (Sussex Desk)
 % folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
 % folders.dataRawEphys = 'Z:\RawData';
 % % folders.results = 'D:\Results\OrientationColumns';
@@ -21,9 +21,18 @@ folders.plots = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/
 % folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
 % folders.plots = 'D:\Results\OrientationColumns_Plots';
 
+% PC on campus (The Machine)
+folders.data = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+folders.dataRawEphys = 'Z:\RawData';
+% folders.results = 'D:\Results\OrientationColumns';
+folders.results = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+folders.tools = 'C:\dev\toolboxes';
+folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
+folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
+% addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
 addpath(genpath(fullfile(folders.repo)))
 
 %% 2P data
