@@ -7,6 +7,9 @@ stimWin = [-.05 .15];
 baseWin = [-.05 0];
 surfaceAmplitude = 0.25;
 
+% manual setting of borders
+manual = {'FG007', '2024-04-18', 250, []};
+
 colors = colmaps.getBlueWhiteRedMap(255);
 plotFolder = '07_SCDepthOnEphysProbe';
 fPlots = fullfile(folders.results, plotFolder);
@@ -16,7 +19,7 @@ end
 
 %% Determine SC depth from LFP
 subjDirs = dir(fullfile(folders.data, 'ephys'));
-subjDirs = subjDirs(~matches({subjDirs.name}, [".",".."]));
+subjDirs = subjDirs(~matches({subjDirs.name}, [".",".."]) & [subjDirs.isdir]);
 for subj = 1:length(subjDirs) % animals
     name = subjDirs(subj).name;
     dateDirs = dir(fullfile(folders.data, 'ephys', name, '2*'));
@@ -40,8 +43,6 @@ for subj = 1:length(subjDirs) % animals
                 fprintf('  NO NOISE OR CIRCLE DATA. DISREGARD DATASET!\n')
                 continue
             end
-        else
-            continue
         end
 
         % load LFP meta data
@@ -172,7 +173,18 @@ for subj = 1:length(subjDirs) % animals
             chanSink:chanSource, 0)) * 2;
 
         %% Save results
-        writeNPY([chanTop chan_SGS_SO], fullfile(f, '_ss_recordings.scChannels.npy'))
+        c1 = chanTop;
+        c2 = chan_SGS_SO;
+        ind_manual = strcmp(name, manual(:,1)) & strcmp(date, manual(:,2));
+        if any(ind_manual)
+            if ~isempty(manual{ind_manual,3})
+                c1 = manual{ind_manual,3};
+            end
+            if ~isempty(manual{ind_manual,4})
+                c2 = manual{ind_manual,4};
+            end
+        end
+        writeNPY([c1 c2], fullfile(f, '_ss_recordings.scChannels.npy'))
 
         %% Make plots
         spikes = io.getEphysData(f);
@@ -187,8 +199,18 @@ for subj = 1:length(subjDirs) % animals
         c = colorbar;
         c.Label.String ='mV';
         hold on
-        plot(stimWin, [1 1].*channelDepths(chanTop/2), 'k', 'LineWidth', 2)
-        plot(stimWin, [1 1].*channelDepths(chan_SGS_SO/2), 'k:', 'LineWidth', 2)
+        plot(stimWin, [1 1].*channelDepths(c1/2), 'k', 'LineWidth', 2)
+        plot(stimWin, [1 1].*channelDepths(c2/2), 'k:', 'LineWidth', 2)
+        if any(ind_manual)
+            if ~isempty(manual{ind_manual,3})
+                plot(stimWin, [1 1].*channelDepths(chanTop/2), ...
+                    'Color', [1 1 1].*0.5, 'LineWidth', 1)
+            end
+            if ~isempty(manual{ind_manual,4})
+                plot(stimWin, [1 1].*channelDepths(chan_SGS_SO/2), ...
+                    ':', 'Color', [1 1 1].*0.5, 'LineWidth', 1)
+            end
+        end
         set(gca, 'YDir', 'normal')
         xlabel('Time (ms)')
         ylabel('Distance from probe tip (um)')
@@ -202,8 +224,18 @@ for subj = 1:length(subjDirs) % animals
         c = colorbar;
         c.Label.String = 'mV/mm^2';
         hold on
-        plot(stimWin, [1 1].*channelDepths(chanTop/2), 'k', 'LineWidth', 2)
-        plot(stimWin, [1 1].*channelDepths(chan_SGS_SO/2), 'k:', 'LineWidth', 2)
+        plot(stimWin, [1 1].*channelDepths(c1/2), 'k', 'LineWidth', 2)
+        plot(stimWin, [1 1].*channelDepths(c2/2), 'k:', 'LineWidth', 2)
+        if any(ind_manual)
+            if ~isempty(manual{ind_manual,3})
+                plot(stimWin, [1 1].*channelDepths(chanTop/2), ...
+                    'Color', [1 1 1].*0.5, 'LineWidth', 1)
+            end
+            if ~isempty(manual{ind_manual,4})
+                plot(stimWin, [1 1].*channelDepths(chan_SGS_SO/2), ...
+                    ':', 'Color', [1 1 1].*0.5, 'LineWidth', 1)
+            end
+        end
         set(gca, 'YDir', 'normal')
         xlabel('Time (ms)')
         title('Current-source density')
@@ -219,8 +251,8 @@ for subj = 1:length(subjDirs) % animals
         cg = gray;
         colormap(gca, flip(cg))
         hold on
-        plot([0 100], [1 1].*channelDepths(chanTop/2), 'r', 'LineWidth', 2)
-        plot([0 100], [1 1].*channelDepths(chan_SGS_SO/2), 'r:', 'LineWidth', 2)
+        plot([0 100], [1 1].*channelDepths(c1/2), 'r', 'LineWidth', 2)
+        plot([0 100], [1 1].*channelDepths(c2/2), 'r:', 'LineWidth', 2)
         xlim([0 100])
         ylim([min(channelDepths) max(channelDepths)])
         set(gca, 'YDir', 'normal')
@@ -228,7 +260,7 @@ for subj = 1:length(subjDirs) % animals
         title('Spikes')
 
         sgtitle(sprintf('%s %s (%s): Top: %d, SGS-SO: %d', name, date, ...
-            stimType, chanTop, chan_SGS_SO))
+            stimType, c1, c2))
         saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpeg', name, date)))
         close gcf
     end
