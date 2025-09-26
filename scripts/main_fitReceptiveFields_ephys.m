@@ -20,8 +20,10 @@ minPeak_plot = 0; % minimum peak of RF (compared to noise) to plot RF
 [cm_ON, cm_OFF] = colmaps.getRFMaps;
 cms = cat(3, cm_ON, cm_OFF);
 ellipse_x = linspace(-pi, pi, 100);
-
 titles = {'ON field','OFF field'};
+
+% for depth estimate
+SC_extent = 1000; % microns
 
 %% Fit RFs and get cross-validated explained variance
 subjDirs = dir(fullfile(folders.data, 'ephys'));
@@ -65,7 +67,7 @@ for subj = 1:length(subjDirs) % animals
         [toeplitz, t_toeplitz] = ...
             rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
 
-        % get firing rates aligned to stimulus times
+        get firing rates aligned to stimulus times
         units = unique(spikeData.clusters);
         traces = nan(length(t_stim), length(units));
         for iUnit = 1:length(units)
@@ -112,6 +114,7 @@ for subj = 1:length(subjDirs) % animals
         writeNPY(fitGaussians, fullfile(f, '_ss_rf.gaussMask.npy'))
         writeNPY(fitWeights, fullfile(f, '_ss_rf.gaussTimeWeights.npy'))
         writeNPY(EVs, fullfile(f, '_ss_rf.explVars.npy'))
+        writeNPY(units, fullfile(f, '_ss_rf.clusters.npy'))
         writeNPY(predictions, fullfile(f, '_ss_rfPrediction.traces.npy'))
         writeNPY(t_toeplitz, fullfile(f, '_ss_rfPrediction.timestamps.npy'))
         writeNPY(edges, fullfile(f, '_ss_rfDescr.edges.npy'))
@@ -137,11 +140,20 @@ for subj = 2:length(subjDirs) % animals
         fPlots = fullfile(folders.plots, '05_ReceptiveFields', ...
             'ephys', name, date);
         if ~isfolder(fPlots)
-            mkdir(fPlots)
+            mkdir(fullfile(fPlots, '1_above'))
+            mkdir(fullfile(fPlots, '2_sSC'))
+            mkdir(fullfile(fPlots, '3_dSC'))
+            mkdir(fullfile(fPlots, '4_below'))
         end
 
         % load data
         results = io.getRFFits(f);
+        spikeData = io.getEphysData(f);
+        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
+        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
+        SC_top = chanCoord(SC_depth(1), 2);
+        SC_SO = chanCoord(SC_depth(2), 2);
+
         edges = results.edges;
         gridW = diff(edges(1:2)) / size(results.maps,3);
         gridH = -diff(edges(3:4)) / size(results.maps,2);
@@ -192,11 +204,25 @@ for subj = 2:length(subjDirs) % animals
                     title(titles{sf})
                     colorbar
                 end
-                sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
-                    iUnit, results.EV(iUnit), results.peaks(iUnit), ...
-                    RFtypes{results.bestSubFields(iUnit)}))
 
-                saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));
+                depth = median(spikeData.depths(spikeData.clusters == ...
+                    results.units(iUnit)));
+                sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)\n%.1f um from SC surface', ...
+                    iUnit, results.EV(iUnit), results.peaks(iUnit), ...
+                    RFtypes{results.bestSubFields(iUnit)}, ...
+                    SC_top - depth))
+                
+                if depth > SC_top
+                    fp = '1_above';
+                elseif depth < SC_top && depth > SC_SO
+                    fp = '2_sSC';
+                elseif depth < SC_SO && depth > SC_top - SC_extent
+                    fp = '3_dSC';
+                else
+                    fp = '4_below';
+                end
+                saveas(gcf, fullfile(fPlots, fp, ...
+                    sprintf('%04d_Unit%03d.jpg', round(depth), iUnit)));
                 close gcf
             end
         end

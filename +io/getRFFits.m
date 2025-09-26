@@ -37,6 +37,7 @@ data.peaks = readNPY(fullfile(f, '_ss_rf.peak.npy'));
 data.gaussMasks = readNPY(fullfile(f, '_ss_rf.gaussMask.npy'));
 data.timeWeights = readNPY(fullfile(f, '_ss_rf.gaussTimeWeights.npy'));
 data.EV = readNPY(fullfile(f, '_ss_rf.explVars.npy'));
+data.units = readNPY(fullfile(f, '_ss_rf.clusters.npy'));
 data.predictions = readNPY(fullfile(f, '_ss_rfPrediction.traces.npy'));
 data.time_prediction = readNPY(fullfile(f, '_ss_rfPrediction.timestamps.npy'));
 data.edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
