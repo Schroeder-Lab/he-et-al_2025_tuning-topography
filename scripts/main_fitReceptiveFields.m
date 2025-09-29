@@ -26,7 +26,7 @@ smoothWin = 20; % in s
 
 % for receptive field fits
 lambda = 0.002; % smoothing parameter for spatial RF
-rf_timeLimits = [0.2 0.4]; % time range of stimulus before neural response 
+rf_timeLimits = [0.2 0.5]; % time range of stimulus before neural response 
                       % considered for RF
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 
@@ -75,7 +75,7 @@ for s = 1:2 % boutons and neurons
             t_stim = stimData.times;
             tBin_stim = median(diff(t_stim));
             rfBins = floor(rf_timeLimits(1) / tBin_stim) : ...
-                ceil(rf_timeLimits(2) / tBin_stim);
+                ceil(rf_timeLimits(2) / tBin_stim) - 1;
 
             %% Prepare calcium traces
             % ignore data before/after visual noise stimulation

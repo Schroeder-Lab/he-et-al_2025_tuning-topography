@@ -1,4 +1,4 @@
-function data = getRFFits(f)
+function data = getNoiseRFFits(folder)
 %GETRFFITS   Load receptive fields fitted to responses to visual noise.
 
 % INPUTS
@@ -29,16 +29,16 @@ function data = getRFFits(f)
 %   .edges          [left rigth top bottom] of RF map
 %   .time_RF        [t_rf], sample times of spatio-temporal RFs
 
-data.maps = readNPY(fullfile(f, '_ss_rf.maps.npy'));
-data.bestSubFields = readNPY(fullfile(f, '_ss_rf.bestSubField.npy'));
-data.subFieldSigns = readNPY(fullfile(f, '_ss_rf.subFieldSigns.npy'));
-data.fitParameters = readNPY(fullfile(f, '_ss_rf.gaussFitPars.npy'));
-data.peaks = readNPY(fullfile(f, '_ss_rf.peak.npy'));
-data.gaussMasks = readNPY(fullfile(f, '_ss_rf.gaussMask.npy'));
-data.timeWeights = readNPY(fullfile(f, '_ss_rf.gaussTimeWeights.npy'));
-data.EV = readNPY(fullfile(f, '_ss_rf.explVars.npy'));
-data.units = readNPY(fullfile(f, '_ss_rf.clusters.npy'));
-data.predictions = readNPY(fullfile(f, '_ss_rfPrediction.traces.npy'));
-data.time_prediction = readNPY(fullfile(f, '_ss_rfPrediction.timestamps.npy'));
-data.edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
-data.time_RF = readNPY(fullfile(f, '_ss_rfDescr.timestamps.npy'));
+data.maps = readNPY(fullfile(folder, '_ss_rf.maps.npy'));
+data.bestSubFields = readNPY(fullfile(folder, '_ss_rf.bestSubField.npy'));
+data.subFieldSigns = readNPY(fullfile(folder, '_ss_rf.subFieldSigns.npy'));
+data.fitParameters = readNPY(fullfile(folder, '_ss_rf.gaussFitPars.npy'));
+data.peaks = readNPY(fullfile(folder, '_ss_rf.peak.npy'));
+data.gaussMasks = readNPY(fullfile(folder, '_ss_rf.gaussMask.npy'));
+data.timeWeights = readNPY(fullfile(folder, '_ss_rf.gaussTimeWeights.npy'));
+data.EV = readNPY(fullfile(folder, '_ss_rf.explVars.npy'));
+data.units = readNPY(fullfile(folder, '_ss_rf.clusters.npy'));
+data.predictions = readNPY(fullfile(folder, '_ss_rfPrediction.traces.npy'));
+data.time_prediction = readNPY(fullfile(folder, '_ss_rfPrediction.timestamps.npy'));
+data.edges = readNPY(fullfile(folder, '_ss_rfDescr.edges.npy'));
+data.time_RF = readNPY(fullfile(folder, '_ss_rfDescr.timestamps.npy'));

@@ -52,7 +52,7 @@ else
 
     % construct spatial smoothing lambda matrix
     lamMatrix_stim = rf.makeLambdaMatrix([stimSize, length(rfBins)], ...
-        [1 1 0]);
+        [ones(1, length(stimSize)) 0]);
     lamMatrix_stim = blkdiag(lamMatrix_stim, lamMatrix_stim);
 end
 

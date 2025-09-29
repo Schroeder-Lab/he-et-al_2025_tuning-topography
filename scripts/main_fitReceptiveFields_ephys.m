@@ -12,8 +12,8 @@ RFtypes = {'ON', 'OFF', 'ON+OFF'};
 % for evaluation of receptive fields (significance/goodness)
 minEV = 0.01; % minimum explained variance to plot RF
 minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
-minEV_plot = 0.000; % minimum explained variance to plot RF
-minPeak_plot = 0; % minimum peak of RF (compared to noise) to plot RF
+minEV_plot = 0.005; % minimum explained variance to plot RF
+minPeak_plot = 3.5; % minimum peak of RF (compared to noise) to plot RF
 
 % plotting RFs
 plotFolder = '05_ReceptiveFields';
@@ -37,96 +37,126 @@ for subj = 1:length(subjDirs) % animals
         date = dateDirs(dt).name;
         fprintf('  %s\n', date)
         f = fullfile(folders.data, 'ephys', name, date);
-        % ignore session if visual noise stimulus was not present
-        if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-            continue
-        end
 
         %% Load data
         spikeData = io.getEphysData(f);
-        stimData = io.getVisNoiseInfo(f);
-        % ignore spike data before/after visual noise stimulation
-        t_ind = spikeData.times >= stimData.times(1) - 10 & ...
-            spikeData.times <= stimData.times(end) + 10;
-        spikeData.times = spikeData.times(t_ind);
-        spikeData.clusters = spikeData.clusters(t_ind);
 
-        %% Prepare stimulus data
-        % edges: [left right top bottom] (above horizon: >0)
-        [stimMatrix, edges, gridX, gridY] = ...
-            stimuli.getNoiseStimMatrix(stimData.edges, ...
-            stimData.frames, stimData.stimOrder);
-        stimSize = size(stimMatrix, [2 3]);
-        t_stim = stimData.times;
-        tBin_stim = median(diff(t_stim));
-        rfBins = floor(rf_timeLimits(1) / tBin_stim) : ...
-            ceil(rf_timeLimits(2) / tBin_stim);
+        for stimType = 1:2
+            if stimType == 1
+                % if white noise data available, use it to map RFs
+                if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+                    continue
+                end
+                stimData = io.getVisNoiseInfo(f);
+                % edges: [left right top bottom] (above horizon: >0)
+                % gridX, gridY: centre coordinates of checkers
+                [stimMatrix, edges, gridX, gridY] = ...
+                    stimuli.getNoiseStimMatrix(stimData.edges, ...
+                    stimData.frames, stimData.stimOrder);
+                stimSize = size(stimMatrix, [2 3]);
+            else
+                % if circle data available, use that to map RFs
+                if ~isfile(fullfile(f, 'circles.times.npy'))
+                    continue
+                end
+                stimData = io.getCircleInfo(f);
+                [stimMatrix, gridX, gridY, diameters] = ...
+                    circles.getStimMatrix(stimData.times, ...
+                    stimData.xPos, stimData.yPos, stimData.diameter, ...
+                    stimData.isWhite);
+                stimSize = [length(gridY) length(gridX) length(diameters)];
+                gridW = median(diff(gridX));
+                gridH = median(-diff(gridY));
+                % edges: [left right top bottom] (above horizon: >0)
+                edges = [gridX(1)-0.5*gridW gridX(end)+0.5*gridW ...
+                    gridY(1)+0.5*gridH gridY(end)-0.5*gridH];
+            end
+            t_stim = stimData.times;
+            tBin_stim = median(diff(t_stim));
+            rfBins = floor(rf_timeLimits(1) / tBin_stim) : ...
+                ceil(rf_timeLimits(2) / tBin_stim) - 1;
 
-        %% Map RFs
+            %% Prepare traces
+            % ignore spike data before/after visual noise stimulation
+            t_ind = spikeData.times >= stimData.times(1) - 10 & ...
+                spikeData.times <= stimData.times(end) + 10;
+            spikeData.times = spikeData.times(t_ind);
+            spikeData.clusters = spikeData.clusters(t_ind);
 
-        % generate toplitz matrix for stimulus
-        [toeplitz, t_toeplitz] = ...
-            rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+            % get firing rates aligned to stimulus times
+            units = unique(spikeData.clusters);
+            traces = nan(length(t_stim), length(units));
+            for iUnit = 1:length(units)
+                t = spikeData.times(spikeData.clusters == units(iUnit));
+                [~, frameOfSpike] = events.alignData(t, ...
+                    t_stim, [0 tBin_stim]);
+                traces(:,iUnit) = histcounts(frameOfSpike, ...
+                    (0:length(t_stim)) + 0.5);
+            end
+            % z-score neural response
+            zTraces = (traces - mean(traces,1,'omitnan')) ./ ...
+                std(traces,0,1,'omitnan');
 
-        get firing rates aligned to stimulus times
-        units = unique(spikeData.clusters);
-        traces = nan(length(t_stim), length(units));
-        for iUnit = 1:length(units)
-            t = spikeData.times(spikeData.clusters == units(iUnit));
-            [~, frameOfSpike] = events.alignData(t, ...
-                t_stim, [0 tBin_stim]);
-            traces(:,iUnit) = histcounts(frameOfSpike, ...
-                (0:length(t_stim)) + 0.5);
+            %% Map RFs
+            % generate toplitz matrix for stimulus
+            [toeplitz, t_toeplitz] = ...
+                rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+
+            %--------------------------------------------------------------
+            % Comment if RFs are already mapped and only Gaussian fit is
+            % needed.
+            % map RF
+            % rFields: [rows x columns (x diameters) x time x ON/OFF x units]
+            rFields = rf.getReceptiveField( ...
+                zTraces, toeplitz, stimSize, rfBins, lambda);
+            % NOTE: OFF subfield: positive pixel -> suppressed by black
+            % negative pixel -> driven by black
+
+            %--------------------------------------------------------------
+            % % Uncomment if RFs have already been mapped, and only Gaussian
+            % % fit should be performed.
+            % results = io.getRFFits(f);
+            % rFields = results.maps;
+            % rFields = permute(rFields, [2:5 1]);
+            %--------------------------------------------------------------
+
+            % fit Gaussian
+            [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
+                bestSubFields, subFieldSigns, predictions, EVs, sizeTuning] = ...
+                rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz);
+            % save results
+            dims = 1:ndims(rFields);
+            results.maps = permute(rFields, dims([end 1:end-1]));
+            results.bestSubfields = bestSubFields;
+            results.subfieldSigns = subFieldSigns;
+            results.gaussPars = rfGaussPars;
+            results.peaks = peakNoiseRatio;
+            results.gaussMasks = fitGaussians;
+            results.timeWeights = fitWeights;
+            results.EV = EVs;
+            results.units = units;
+            results.predictions = predictions;
+            results.time_prediction = t_toeplitz;
+            results.time_RF = rfBins * tBin_stim;
+            if stimType == 1
+                results.edges = edges;
+                io.writeNoiseRFResults(results, f);
+            elseif stimType == 2
+                results.x = gridX;
+                results.y = gridY;
+                results.diameters = diameters;
+                results.sizeTuning = sizeTuning;
+                io.writeCircleRFResults(results, f);
+            end
+            clear results
         end
-
-        % z-score neural response
-        zTraces = (traces - mean(traces,1,'omitnan')) ./ ...
-            std(traces,0,1,'omitnan');
-
-        %--------------------------------------------------------------
-        % Comment if RFs are already mapped and only Gaussian fit is
-        % needed.
-        % map RF
-        % rFields: [rows x columns x time x ON/OFF x units]
-        rFields = rf.getReceptiveField( ...
-            zTraces, toeplitz, stimSize, rfBins, lambda);
-        % NOTE: OFF subfield: positive pixel -> suppressed by black
-        % negative pixel -> driven by black
-
-        %--------------------------------------------------------------
-        % % Uncomment if RFs have already been mapped, and only Gaussian
-        % % fit should be performed.
-        % results = io.getRFFits(f);
-        % rFields = results.maps;
-        % rFields = permute(rFields, [2:5 1]);
-        %--------------------------------------------------------------
-
-        % fit Gaussian
-        [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
-            bestSubFields, subFieldSigns, predictions, EVs] = ...
-            rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz);
-
-        % save results
-        writeNPY(permute(rFields, [5 1 2 3 4]), fullfile(f, '_ss_rf.maps.npy'))
-        writeNPY(bestSubFields, fullfile(f, '_ss_rf.bestSubField.npy'))
-        writeNPY(subFieldSigns, fullfile(f, '_ss_rf.subFieldSigns.npy'))
-        writeNPY(rfGaussPars, fullfile(f, '_ss_rf.gaussFitPars.npy'))
-        writeNPY(peakNoiseRatio, fullfile(f, '_ss_rf.peak.npy'))
-        writeNPY(fitGaussians, fullfile(f, '_ss_rf.gaussMask.npy'))
-        writeNPY(fitWeights, fullfile(f, '_ss_rf.gaussTimeWeights.npy'))
-        writeNPY(EVs, fullfile(f, '_ss_rf.explVars.npy'))
-        writeNPY(units, fullfile(f, '_ss_rf.clusters.npy'))
-        writeNPY(predictions, fullfile(f, '_ss_rfPrediction.traces.npy'))
-        writeNPY(t_toeplitz, fullfile(f, '_ss_rfPrediction.timestamps.npy'))
-        writeNPY(edges, fullfile(f, '_ss_rfDescr.edges.npy'))
-        writeNPY(rfBins * tBin_stim, fullfile(f, '_ss_rfDescr.timestamps.npy'))
     end
 end
 
 %% Plot RFs
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
-for subj = 2:length(subjDirs) % animals
+for subj = 1:length(subjDirs) % animals
     name = subjDirs(subj).name;
     fprintf('%s\n', name)
     dateDirs = dir(fullfile(folders.data, 'ephys', name, '2*'));
@@ -134,43 +164,73 @@ for subj = 2:length(subjDirs) % animals
         date = dateDirs(dt).name;
         fprintf('  %s\n', date)
         f = fullfile(folders.data, 'ephys', name, date);
-        % ignore session if visual noise stimulus was not present
-        if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-            continue
-        end
-        fPlots = fullfile(folders.plots, plotFolder, ...
-            'ephys', name, date);
-        if ~isfolder(fPlots)
-            mkdir(fullfile(fPlots, '1_above'))
-            mkdir(fullfile(fPlots, '2_sSC'))
-            mkdir(fullfile(fPlots, '3_dSC'))
-            mkdir(fullfile(fPlots, '4_below'))
-        end
 
-        % load data
-        results = io.getRFFits(f);
         spikeData = io.getEphysData(f);
         chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
         SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
         SC_top = chanCoord(SC_depth(1), 2);
         SC_SO = chanCoord(SC_depth(2), 2);
 
-        edges = results.edges;
-        gridW = diff(edges(1:2)) / size(results.maps,3);
-        gridH = -diff(edges(3:4)) / size(results.maps,2);
-        for iUnit = 1:size(results.fitParameters,1)
-            % plot RF (if explained var. and peak-to-noise high enough
-            if results.EV(iUnit) >= minEV_plot && ...
-                    results.peaks(iUnit) >= minPeak_plot
+        for stimType = 1:2
+            if stimType == 1
+                if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+                    continue
+                end
+                fPlots = fullfile(folders.plots, plotFolder, ...
+                    'ephys', 'noise', name, date);
+                if ~isfolder(fPlots)
+                    mkdir(fullfile(fPlots, '1_above'))
+                    mkdir(fullfile(fPlots, '2_sSC'))
+                    mkdir(fullfile(fPlots, '3_dSC'))
+                    mkdir(fullfile(fPlots, '4_below'))
+                end
+                % load data
+                results = io.getNoiseRFFits(f);
+                edges = results.edges;
+                gridW = diff(edges(1:2)) / size(results.maps,3);
+                gridH = -diff(edges(3:4)) / size(results.maps,2);
+            else
+                if ~isfile(fullfile(f, 'circles.times.npy'))
+                    continue
+                end
+                fPlots = fullfile(folders.plots, plotFolder, ...
+                    'ephys', 'circles', name, date);
+                if ~isfolder(fPlots)
+                    mkdir(fullfile(fPlots, '1_above'))
+                    mkdir(fullfile(fPlots, '2_sSC'))
+                    mkdir(fullfile(fPlots, '3_dSC'))
+                    mkdir(fullfile(fPlots, '4_below'))
+                end
+                % load data
+                results = io.getCircleRFFits(f);
+                gridW = median(diff(results.x));
+                gridH = median(-diff(results.y));
+                % edges: [left right top bottom] (above horizon: >0)
+                edges = [results.x(1)-0.5*gridW results.x(end)+0.5*gridW ...
+                    results.y(1)+0.5*gridH results.y(end)-0.5*gridH];
+            end
+
+            for iUnit = 1:size(results.fitParameters,1)
+                % plot RF (if explained var. and peak-to-noise high enough
+                if ~(results.EV(iUnit) >= minEV_plot && ...
+                        results.peaks(iUnit) >= minPeak_plot)
+                    continue
+                end
                 line = ':';
                 if results.EV(iUnit) >= minEV && ...
                         results.peaks(iUnit) >= minPeak
                     line = '-';
                 end
-                % rf_tmp: [rows x columns x subfield]
-                rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
-                rf_tmp(:,:,2) = -rf_tmp(:,:,2);
-                mx = max(abs(rf_tmp),[],"all");
+                [~, mxTime] = max(results.timeWeights(iUnit,:));
+                % rf: [rows x columns x subfield]
+                if ndims(results.maps) == 5 % visual noise
+                    rfield = squeeze(results.maps(iUnit,:,:,mxTime,:));
+                elseif ndims(results.maps) == 6 % circle paradigm
+                    [~, mxSize] = max(results.sizeTuning(iUnit,:));
+                    rfield = squeeze(results.maps(iUnit,:,:,mxSize,mxTime,:));
+                end
+                rfield(:,:,2) = -rfield(:,:,2);
+                mx = max(abs(rfield),[],"all");
                 rfGaussPars = results.fitParameters(iUnit,:);
                 figure('Position', [75 195 1470 475])
                 for sf = 1:2
@@ -178,7 +238,7 @@ for subj = 2:length(subjDirs) % animals
                     % STA
                     imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
                         [edges(3)-gridH/2 edges(4)+gridH/2], ...
-                        rf_tmp(:,:,sf),[-mx mx])
+                        rfield(:,:,sf),[-mx mx])
                     hold on
                     if ismember(results.bestSubFields(iUnit), [sf 3])
                         % ellipse at 2 STD (x and y), not rotated, not shifted
@@ -207,12 +267,25 @@ for subj = 2:length(subjDirs) % animals
                 end
 
                 depth = median(spikeData.depths(spikeData.clusters == ...
-                    results.units(iUnit)));
-                sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)\n%.1f um from SC surface', ...
-                    iUnit, results.EV(iUnit), results.peaks(iUnit), ...
-                    RFtypes{results.bestSubFields(iUnit)}, ...
-                    SC_top - depth))
-                
+                    results.units(iUnit)), "omitnan");
+                if stimType == 1
+                    sgtitle(sprintf(['ROI %d ' ...
+                        '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
+                        '%.1f um from SC surface'], ...
+                        results.units(iUnit), ...
+                        results.EV(iUnit), results.peaks(iUnit), ...
+                        RFtypes{results.bestSubFields(iUnit)}, ...
+                        SC_top - depth))
+                else
+                    sgtitle(sprintf(['ROI %d, size: %.1f deg ' ...
+                        '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
+                        '%.1f um from SC surface'], ...
+                        results.units(iUnit), results.diameters(mxSize), ...
+                        results.EV(iUnit), results.peaks(iUnit), ...
+                        RFtypes{results.bestSubFields(iUnit)}, ...
+                        SC_top - depth))
+                end
+
                 if depth > SC_top
                     fp = '1_above';
                 elseif depth < SC_top && depth > SC_SO
@@ -223,7 +296,8 @@ for subj = 2:length(subjDirs) % animals
                     fp = '4_below';
                 end
                 saveas(gcf, fullfile(fPlots, fp, ...
-                    sprintf('%04d_Unit%03d.jpg', round(depth), iUnit)));
+                    sprintf('%04d_Unit%03d.jpg', round(depth), ...
+                    results.units(iUnit))));
                 close gcf
             end
         end
