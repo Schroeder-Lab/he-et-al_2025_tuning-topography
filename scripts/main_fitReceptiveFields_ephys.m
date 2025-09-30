@@ -1,5 +1,5 @@
 function main_fitReceptiveFields_ephys(folders)
-% Given the spike responses to the visual noise stimulus, fit spatial
+% Given the spike responses to the visual noise or circles stimulus, fit spatial
 % receptive fields (ON and OFF fields).
 
 %% Parameters
@@ -288,15 +288,15 @@ for subj = 1:length(subjDirs) % animals
 
                 if depth > SC_top
                     fp = '1_above';
-                elseif depth < SC_top && depth > SC_SO
+                elseif depth <= SC_top && depth >= SC_SO
                     fp = '2_sSC';
-                elseif depth < SC_SO && depth > SC_top - SC_extent
+                elseif depth < SC_SO && depth >= SC_top - SC_extent
                     fp = '3_dSC';
                 else
                     fp = '4_below';
                 end
                 saveas(gcf, fullfile(fPlots, fp, ...
-                    sprintf('%04d_Unit%03d.jpg', round(depth), ...
+                    sprintf('%04d_Unit%04d.jpg', round(depth), ...
                     results.units(iUnit))));
                 close gcf
             end
@@ -305,54 +305,156 @@ for subj = 1:length(subjDirs) % animals
 end
 
 %% Plot all RF outlines per dataset
-% for s = 1:2 % boutons and neurons
-%     fPlots = fullfile(folders.plots, 'ReceptiveFields', sets{s});
-%     if ~isfolder(fPlots)
-%         mkdir(fPlots)
-%     end
-% 
-%     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-%     for subj = 1:length(subjDirs) % animals
-%         name = subjDirs(subj).name;
-%         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-%         for dt = 1:length(dateDirs) %dates
-%             date = dateDirs(dt).name;
-%             f = fullfile(folders.data, sets{s}, name, date);
-%             % ignore session if visual noise stimulus was not present
-%             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-%                 continue
-%             end
-% 
-%             caData = io.getRFFits(f);
-%             rfGaussPars = caData.fitParameters;
-%             EVs = caData.EV;
-%             peakNoiseRatio = caData.peaks;
-%             figure
-%             hold on
-%             for iUnit = 1:size(rfGaussPars,1)
-%                 if EVs(iUnit) < minEV || peakNoiseRatio(iUnit) < minPeak
-%                     continue
-%                 end
-%                 % ellipse at 2 STD (x and y), not rotated, not shifted
-%                 x = rfGaussPars(iUnit,3) * cos(ellipse_x);
-%                 y = rfGaussPars(iUnit,5) * sin(ellipse_x);
-%                 % rotate and shift ellipse
-%                 x_rot = rfGaussPars(iUnit,2) + ...
-%                     x .* cos(rfGaussPars(iUnit,6)) - ...
-%                     y .* sin(rfGaussPars(iUnit,6));
-%                 y_rot = rfGaussPars(iUnit,4) + ...
-%                     x .* sin(rfGaussPars(iUnit,6)) + ...
-%                     y .* cos(rfGaussPars(iUnit,6));
-%                 plot(x_rot, y_rot, 'k')
-%             end
-%             axis image
-%             axis(caData.edges([1 2 4 3]))
-%             xlabel('Azimuth (visual degrees)')
-%             ylabel('Elevation (visual degrees)')
-%             title(sprintf('%s %s', name, date))
-% 
-%             saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpg', name, date)));
-%             close gcf
-%         end
-%     end
-% end
+fPlots = fullfile(folders.plots, plotFolder, 'ephys');
+
+subjDirs = dir(fullfile(folders.data, 'ephys'));
+subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
+for subj = 1:length(subjDirs) % animals
+    name = subjDirs(subj).name;
+    dateDirs = dir(fullfile(folders.data, 'ephys', name, '2*'));
+    for dt = 1:length(dateDirs) %dates
+        date = dateDirs(dt).name;
+        f = fullfile(folders.data, 'ephys', name, date);
+        % ignore session if no visual noise or circle stimulus was present
+        if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy')) && ...
+                ~isfile(fullfile(f, 'circles.times.npy'))
+            continue
+        end
+
+        % load data
+        spikeData = io.getEphysData(f);
+        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
+        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
+        SC_top = chanCoord(SC_depth(1), 2);
+        SC_SO = chanCoord(SC_depth(2), 2);
+        results = cell(2,1);
+        if isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+            results{1} = io.getNoiseRFFits(f);
+        end
+        if isfile(fullfile(f, 'circles.times.npy'))
+            results{2} = io.getCircleRFFits(f);
+        end
+
+        % select units with good RFs from noise or circles
+        unitsCombined = NaN(0, 1);
+        EVsCombined = NaN(0, 2);
+        n = 0;
+        for stimType = 1:2
+            if isempty(results{stimType})
+                continue
+            end
+            good = find(results{stimType}.EV >= minEV & ...
+                results{stimType}.peaks >= minPeak);
+            [member, ind] = ismember(results{stimType}.units(good), ...
+                unitsCombined);
+            EVsCombined(ind(member), stimType) = ...
+                results{stimType}.EV(good(member));
+            unitsCombined = [unitsCombined; results{stimType}.units(good(~member))];
+            EVsCombined(n+1:length(unitsCombined), stimType) = ...
+                results{stimType}.EV(good(~member));
+            n = n + sum(~member);
+        end
+        [~, stims] = max(EVsCombined, [], 2);
+
+        depths = NaN(length(unitsCombined), 1);
+        for iUnit = 1: length(unitsCombined)
+            depths(iUnit) = median(spikeData.depths(...
+                spikeData.clusters == unitsCombined(iUnit)), "omitnan");
+        end
+        depths = SC_top - depths;
+        ind = depths >= 0 & depths <= SC_extent;
+        depths = depths(ind);
+        unitsCombined = unitsCombined(ind);
+        
+        edges = NaN(2, 4);
+        if ~isempty(results{1})
+            edges(1,:) = results{1}.edges;
+        end
+        if ~isempty(results{2})
+            gridX = results{2}.x;
+            gridY = results{2}.y;
+            gridW = median(diff(gridX));
+            gridH = median(-diff(gridY));
+            % edges: [left right top bottom] (above horizon: >0)
+            edges(2,:) = [gridX(1)-0.5*gridW gridX(end)+0.5*gridW ...
+                gridY(1)+0.5*gridH gridY(end)-0.5*gridH];
+        end
+        edges(1, [1 4]) = min(edges(:,[1 4]), [], 1);
+        edges(1, [2 3]) = max(edges(:,[2 3]), [], 1);
+        edges = edges(1,:);
+        colors = jet(500);
+        [~, ~, colInds] = histcounts(depths, linspace(0, SC_extent, 500));
+        lines = {'-', ':'};
+
+        figure
+        tiledlayout(1, 1)
+        nexttile
+        hold on
+        for k = 1:length(unitsCombined)
+            unit = unitsCombined(k);
+            res = results{stims(k)};
+            iUnit = find(res.units == unit);
+            pars = res.fitParameters(iUnit,:);
+            % ellipse at 2 STD (x and y), not rotated, not shifted
+            x = pars(3) * cos(ellipse_x);
+            y = pars(5) * sin(ellipse_x);
+            % rotate and shift ellipse
+            x_rot = pars(2) + x .* cos(pars(6)) - y .* sin(pars(6));
+            y_rot = pars(4) + x .* sin(pars(6)) + y .* cos(pars(6));
+            plot(x_rot, y_rot, lines{stims(k)}, ...
+                'Color', colors(colInds(k),:))
+        end
+        axis image
+        axis(edges([1 2 4 3]))
+        xlabel('Azimuth (visual degrees)')
+        ylabel('Elevation (visual degrees)')
+
+        nexttile('East')
+        hold on
+        imagesc(0, [0 SC_extent], (1:500)')
+        plot([-0.5 0.5], [1 1] .* (SC_top - SC_SO), 'k', 'LineWidth', 2)
+        colormap(colors)
+        axis([-0.5 0.5 0 SC_extent])
+        set(gca, "YAxisLocation", "right", "XTick", [], "Box", "off", ...
+            "YDir", "reverse")
+        ylabel('Depth from SC surface (in um)')
+
+        sgtitle(sprintf('%s %s', name, date))
+        
+        saveas(gcf, fullfile(fPlots, sprintf('%s_%s_2D.jpg', name, date)));
+        close gcf
+
+        figure
+        tiledlayout(1, 2)
+        for dim = 1:2
+            nexttile
+            hold on
+            for k = 1:length(unitsCombined)
+                unit = unitsCombined(k);
+                res = results{stims(k)};
+                iUnit = find(res.units == unit);
+                pars = res.fitParameters(iUnit,:);
+                plot(pars(2*dim) + [-1 1] .* pars(2*dim + 1), ...
+                    [1 1] .* depths(k), ...
+                    ['k' lines{stims(k)}], 'LineWidth', 2)
+            end
+            ylim([0 SC_extent])
+            set(gca, 'YDir', 'reverse')
+            if dim == 1
+                plot(edges([1 2]), [1 1] .* SC_top - SC_SO, 'r')
+                xlim(edges([1 2]))
+                xlabel('Azimuth (visual degrees)')
+                ylabel('Depth from SC surface (in um)')
+            else
+                plot(edges([4 3]), [1 1] .* SC_top - SC_SO, 'r')
+                xlim(edges([4 3]))
+                xlabel('Elevation (visual degrees)')
+            end
+        end
+
+        sgtitle(sprintf('%s %s', name, date))
+        
+        saveas(gcf, fullfile(fPlots, sprintf('%s_%s_1D.jpg', name, date)));
+        close gcf
+    end
+end
