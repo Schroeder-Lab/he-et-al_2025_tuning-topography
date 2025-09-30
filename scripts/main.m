@@ -79,19 +79,42 @@ main_mapRFposToRetinotopy(folders)
 main_determineSCdepth(folders);
 
 %% Map receptive fields
-% Given the spike responses to the visual noise stimulus, fit spatial
+% Given the spike responses to the visual noise or circle stimulus, fit spatial
 % receptive fields (ON and OFF fields).
 main_fitReceptiveFields_ephys(folders)
 
 %% Determine direction and orientation selectivity
+% Based on average firing rate during grating presentations,
+% use vector averaging to determine preferred direction and orientation 
+% (direction of final vector) as well as direction and orientation 
+% selectivity (length of final vector). Use permutation test to determine
+% significance of direction and orientation selectivity.
+main_calculateDS_OS_ephys(folders)
 
 %% Figures
+% Distribution of direction & orientation preferences, and direction &
+% orientation selectivity
 Figure01(folders)
-
-Figure02(folders)
-
-Figure03(folders)
-
-Figure04_05(folders)
-
 Figure01S(folders)
+
+% Pairwise difference in tuning preferences depending on horizontal distance
+Figure02(folders)
+Figure02S(folders)
+
+% Receptive fields and pairwise tuning differences depending on RF distance
+Figure03(folders)
+Figure03S(folders)
+
+% Global distribution of direction and orientation preferences across
+% visual field
+Figure04(folders)
+Figure04S(folders)
+
+% Match between direction/orientation preference and expected preference at
+% RF location (as predicted by longitudinal and latitudinal geometry)
+Figure05(folders)
+Figure05S(folders)
+
+% Direction and orientation preferences across SC depth
+Figure06(folders)
+Figure06S(folders)

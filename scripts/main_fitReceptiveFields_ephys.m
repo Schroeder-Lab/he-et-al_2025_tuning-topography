@@ -336,35 +336,19 @@ for subj = 1:length(subjDirs) % animals
         end
 
         % select units with good RFs from noise or circles
-        unitsCombined = NaN(0, 1);
-        EVsCombined = NaN(0, 2);
-        n = 0;
-        for stimType = 1:2
-            if isempty(results{stimType})
-                continue
-            end
-            good = find(results{stimType}.EV >= minEV & ...
-                results{stimType}.peaks >= minPeak);
-            [member, ind] = ismember(results{stimType}.units(good), ...
-                unitsCombined);
-            EVsCombined(ind(member), stimType) = ...
-                results{stimType}.EV(good(member));
-            unitsCombined = [unitsCombined; results{stimType}.units(good(~member))];
-            EVsCombined(n+1:length(unitsCombined), stimType) = ...
-                results{stimType}.EV(good(~member));
-            n = n + sum(~member);
-        end
-        [~, stims] = max(EVsCombined, [], 2);
-
-        depths = NaN(length(unitsCombined), 1);
-        for iUnit = 1: length(unitsCombined)
+        [units, stimTypes] = rf.selectRFStim(results, minEV, minPeak);
+        
+        % determine depth of each unit
+        depths = NaN(length(units), 1);
+        for iUnit = 1: length(units)
             depths(iUnit) = median(spikeData.depths(...
-                spikeData.clusters == unitsCombined(iUnit)), "omitnan");
+                spikeData.clusters == units(iUnit)), "omitnan");
         end
         depths = SC_top - depths;
+        % only consider units within SC
         ind = depths >= 0 & depths <= SC_extent;
         depths = depths(ind);
-        unitsCombined = unitsCombined(ind);
+        units = units(ind);
         
         edges = NaN(2, 4);
         if ~isempty(results{1})
@@ -390,9 +374,9 @@ for subj = 1:length(subjDirs) % animals
         tiledlayout(1, 1)
         nexttile
         hold on
-        for k = 1:length(unitsCombined)
-            unit = unitsCombined(k);
-            res = results{stims(k)};
+        for k = 1:length(units)
+            unit = units(k);
+            res = results{stimTypes(k)};
             iUnit = find(res.units == unit);
             pars = res.fitParameters(iUnit,:);
             % ellipse at 2 STD (x and y), not rotated, not shifted
@@ -401,7 +385,7 @@ for subj = 1:length(subjDirs) % animals
             % rotate and shift ellipse
             x_rot = pars(2) + x .* cos(pars(6)) - y .* sin(pars(6));
             y_rot = pars(4) + x .* sin(pars(6)) + y .* cos(pars(6));
-            plot(x_rot, y_rot, lines{stims(k)}, ...
+            plot(x_rot, y_rot, lines{stimTypes(k)}, ...
                 'Color', colors(colInds(k),:))
         end
         axis image
@@ -429,14 +413,14 @@ for subj = 1:length(subjDirs) % animals
         for dim = 1:2
             nexttile
             hold on
-            for k = 1:length(unitsCombined)
-                unit = unitsCombined(k);
-                res = results{stims(k)};
+            for k = 1:length(units)
+                unit = units(k);
+                res = results{stimTypes(k)};
                 iUnit = find(res.units == unit);
                 pars = res.fitParameters(iUnit,:);
                 plot(pars(2*dim) + [-1 1] .* pars(2*dim + 1), ...
                     [1 1] .* depths(k), ...
-                    ['k' lines{stims(k)}], 'LineWidth', 2)
+                    ['k' lines{stimTypes(k)}], 'LineWidth', 2)
             end
             ylim([0 SC_extent])
             set(gca, 'YDir', 'reverse')
