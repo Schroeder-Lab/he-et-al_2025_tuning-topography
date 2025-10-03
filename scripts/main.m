@@ -78,6 +78,9 @@ main_mapRFposToRetinotopy(folders)
 %% Determine SC depth along probe
 main_determineSCdepth(folders);
 
+%% Determine depth of each unit relative to SC layers
+main_determineUnitDepths(folders);
+
 %% Map receptive fields
 % Given the spike responses to the visual noise or circle stimulus, fit spatial
 % receptive fields (ON and OFF fields).
