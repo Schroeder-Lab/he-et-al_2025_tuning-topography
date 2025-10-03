@@ -24,17 +24,12 @@ for subj = 1:length(subjDirs) % animals
 
         % load data
         spikeData = io.getEphysData(f);
+        stimData = io.getGratingInfo(f, 'gratingsDrifting');
         chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
         SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
         SC_top = chanCoord(SC_depth(1), 2);
         SC_SO = chanCoord(SC_depth(2), 2);
-        results = cell(2,1);
-        if isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
-            results{1} = io.getNoiseRFFits(f);
-        end
-        if isfile(fullfile(f, 'circles.times.npy'))
-            results{2} = io.getCircleRFFits(f);
-        end
+
 
         % select units with good RFs from noise or circles
         [units, stimTypes] = rf.selectRFStim(results, minEV, minPeak);
@@ -51,7 +46,20 @@ for subj = 1:length(subjDirs) % animals
         depths = depths(ind);
         units = units(ind);
 
-        
+        for k = 1:length(units)
+            unit = units(k);
+            res = results{stimTypes(k)};
+            iUnit = find(res.units == unit);
+            pars = res.fitParameters(iUnit,:);
+            % ellipse at 2 STD (x and y), not rotated, not shifted
+            x = pars(3) * cos(ellipse_x);
+            y = pars(5) * sin(ellipse_x);
+            % rotate and shift ellipse
+            x_rot = pars(2) + x .* cos(pars(6)) - y .* sin(pars(6));
+            y_rot = pars(4) + x .* sin(pars(6)) + y .* cos(pars(6));
+            plot(x_rot, y_rot, lines{stimTypes(k)}, ...
+                'Color', colors(colInds(k),:))
+        end
     end
 end
 
