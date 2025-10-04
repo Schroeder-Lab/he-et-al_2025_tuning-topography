@@ -77,6 +77,9 @@ for subj = 1:length(subjDirs) % animals
                 ceil(rf_timeLimits(2) / tBin_stim) - 1;
 
             %% Prepare traces
+
+            % CONTINUE UPDATE HERE: use spikeData.clusterIDs!
+
             % ignore spike data before/after visual noise stimulation
             t_ind = spikeData.times >= stimData.times(1) - 10 & ...
                 spikeData.times <= stimData.times(end) + 10;
@@ -84,10 +87,13 @@ for subj = 1:length(subjDirs) % animals
             spikeData.clusters = spikeData.clusters(t_ind);
 
             % get firing rates aligned to stimulus times
-            units = unique(spikeData.clusters);
-            traces = nan(length(t_stim), length(units));
-            for iUnit = 1:length(units)
-                t = spikeData.times(spikeData.clusters == units(iUnit));
+            traces = nan(length(t_stim), length(spikeData.clusterIDs));
+            for iUnit = 1:length(spikeData.clusterIDs)
+                t = spikeData.times(spikeData.clusters == ...
+                    spikeData.clusterIDs(iUnit));
+                if isempty(t)
+                    continue
+                end
                 [~, frameOfSpike] = events.alignData(t, ...
                     t_stim, [0 tBin_stim]);
                 traces(:,iUnit) = histcounts(frameOfSpike, ...
