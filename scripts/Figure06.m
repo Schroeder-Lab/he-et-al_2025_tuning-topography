@@ -1,6 +1,8 @@
 function Figure06(folders)
 
 %% Parameters
+minEV = 0.01; % minimum explained variance to plot RF
+minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
 
 %% Examples
 
@@ -25,29 +27,20 @@ for subj = 1:length(subjDirs) % animals
         % load data
         spikeData = io.getEphysData(f);
         stimData = io.getGratingInfo(f, 'gratingsDrifting');
-        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
-        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
-        SC_top = chanCoord(SC_depth(1), 2);
-        SC_SO = chanCoord(SC_depth(2), 2);
-
 
         % select units with good RFs from noise or circles
-        [units, stimTypes] = rf.selectRFStim(results, minEV, minPeak);
-        
-        % determine depth of each unit
-        depths = NaN(length(units), 1);
-        for iUnit = 1: length(units)
-            depths(iUnit) = median(spikeData.depths(...
-                spikeData.clusters == units(iUnit)), "omitnan");
+        results = cell(2,1);
+        if isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
+            results{1} = io.getNoiseRFFits(f);
         end
-        depths = SC_top - depths;
-        % only consider units within SC
-        ind = depths >= 0 & depths <= SC_extent;
-        depths = depths(ind);
-        units = units(ind);
-
-        for k = 1:length(units)
-            unit = units(k);
+        if isfile(fullfile(f, 'circles.times.npy'))
+            results{2} = io.getCircleRFFits(f);
+        end
+        stimTypes = rf.selectRFStim(results, minEV, minPeak);
+        
+        unitsSC = find(spikeData.clusterDepths(:,2) > 0);
+        for k = 1:length(unitsSC)
+            unit = unitsSC(k);
             res = results{stimTypes(k)};
             iUnit = find(res.units == unit);
             pars = res.fitParameters(iUnit,:);
@@ -60,6 +53,12 @@ for subj = 1:length(subjDirs) % animals
             plot(x_rot, y_rot, lines{stimTypes(k)}, ...
                 'Color', colors(colInds(k),:))
         end
+
+
+        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
+        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
+        SC_top = chanCoord(SC_depth(1), 2);
+        SC_SO = chanCoord(SC_depth(2), 2);
     end
 end
 
