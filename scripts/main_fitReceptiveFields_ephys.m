@@ -78,8 +78,6 @@ for subj = 1:length(subjDirs) % animals
 
             %% Prepare traces
 
-            % CONTINUE UPDATE HERE: use spikeData.clusterIDs!
-
             % ignore spike data before/after visual noise stimulation
             t_ind = spikeData.times >= stimData.times(1) - 10 & ...
                 spikeData.times <= stimData.times(end) + 10;
@@ -140,7 +138,6 @@ for subj = 1:length(subjDirs) % animals
             results.gaussMasks = fitGaussians;
             results.timeWeights = fitWeights;
             results.EV = EVs;
-            results.units = units;
             results.predictions = predictions;
             results.time_prediction = t_toeplitz;
             results.time_RF = rfBins * tBin_stim;

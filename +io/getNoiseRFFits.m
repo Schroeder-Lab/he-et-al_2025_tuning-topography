@@ -10,8 +10,8 @@ function data = getNoiseRFFits(folder)
 %                   RF for ON (type=1) and OFF (type=2) subfields
 %   .bestSubFields  [ROIs], 1: 'ON', 2: 'OFF', or 3: 'ON+OFF'
 %   .subFieldSigns  [ROIs x 2], sings of ON and OFF fields
-%   .fitParameters  [ROIs x parameters], (amplitude, xCenter, xSTD,
-%                   yCenter, ySTD, rotation)
+%   .gaussPars      [ROIs x parameters], (amplitude, xCenter, xSTD,
+%                   yCenter, ySTD, rotation, offset)
 %   .peaks          [ROIs], amplitude of RF peak (of best type) in STD of
 %                   noise
 %   .gaussMasks     [ROIs x rows x columns x type], best fitting Gaussian
@@ -32,12 +32,11 @@ function data = getNoiseRFFits(folder)
 data.maps = readNPY(fullfile(folder, '_ss_rf.maps.npy'));
 data.bestSubFields = readNPY(fullfile(folder, '_ss_rf.bestSubField.npy'));
 data.subFieldSigns = readNPY(fullfile(folder, '_ss_rf.subFieldSigns.npy'));
-data.fitParameters = readNPY(fullfile(folder, '_ss_rf.gaussFitPars.npy'));
+data.gaussPars = readNPY(fullfile(folder, '_ss_rf.gaussFitPars.npy'));
 data.peaks = readNPY(fullfile(folder, '_ss_rf.peak.npy'));
 data.gaussMasks = readNPY(fullfile(folder, '_ss_rf.gaussMask.npy'));
 data.timeWeights = readNPY(fullfile(folder, '_ss_rf.gaussTimeWeights.npy'));
 data.EV = readNPY(fullfile(folder, '_ss_rf.explVars.npy'));
-data.units = readNPY(fullfile(folder, '_ss_rf.clusters.npy'));
 data.predictions = readNPY(fullfile(folder, '_ss_rfPrediction.traces.npy'));
 data.time_prediction = readNPY(fullfile(folder, '_ss_rfPrediction.timestamps.npy'));
 data.edges = readNPY(fullfile(folder, '_ss_rfDescr.edges.npy'));
