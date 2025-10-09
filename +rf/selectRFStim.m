@@ -1,20 +1,17 @@
-function [units, stimTypes] = selectRFStim(results, minEV, minPeak)
+function stimTypes = selectRFStim(results, minEV, minPeak)
 
-units = [];
-EVs = zeros(0, 2);
 n = 0;
 for stimType = 1:2
     if isempty(results{stimType})
         continue
     end
-    good = find(results{stimType}.EV >= minEV & ...
-        results{stimType}.peaks >= minPeak);
-    [member, ind] = ismember(results{stimType}.units(good), units);
-    EVs(ind(member), stimType) = ...
-        results{stimType}.EV(good(member));
-    units = [units; results{stimType}.units(good(~member))];
-    EVs(n+1:length(units), stimType) = ...
-        results{stimType}.EV(good(~member));
-    n = n + sum(~member);
+    if n == 0
+        n = length(results{stimType}.peaks);
+        EVs = NaN(n, 2);
+    end
+    good = results{stimType}.EV >= minEV & ...
+        results{stimType}.peaks >= minPeak;
+    EVs(good, stimType) = results{stimType}.EV(good);
 end
 [~, stimTypes] = max(EVs, [], 2);
+stimTypes(all(isnan(EVs), 2)) = NaN;
