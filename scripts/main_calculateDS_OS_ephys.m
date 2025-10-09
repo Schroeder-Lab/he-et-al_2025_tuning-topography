@@ -81,6 +81,16 @@ for subj = 1:length(subjDirs) % animals
                 end
             end
             % test whether unit is responsive
+            amps = amplitudes(:);
+            groups = reshape(repmat(1:length(stimDirs), stimReps), [], 1);
+            invalid = isnan(amps);
+            amps(invalid) = [];
+            groups(invalid) = [];
+            T = table(amps, categorical(groups), ...
+                'VaraibleNames', {'amps', 'stim'});
+            lme = fitlme(T, 'amps ~ 1 + (1|stim)', 'FitMethod', 'REML');
+
+            % CONTINUE HERE
         end
 
 
