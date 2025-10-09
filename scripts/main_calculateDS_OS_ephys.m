@@ -6,6 +6,12 @@ function main_calculateDS_OS_ephys(folders)
 % significance of direction and orientation selectivity.
 
 %% Parameters
+% stimulus response
+stimulusDur = 2;
+durationSlack = 0.01;
+baselineTime = -0.5;
+
+% testing tuning selectivity
 numShuffles = 1000; % number of permutations for testing significance of 
                     % direction and orientation selectivity
 maxP = 0.05; % p-value threshold for direction/orientation selectivity
@@ -34,32 +40,47 @@ for subj = 1:length(subjDirs) % animals
             mkdir(fPlots)
         end
 
-        % load and prepare stimulus data
+        % load data
+        spikeData = io.getEphysData(f);
         stimData = io.getGratingInfo(f, 'gratingsDrifting');
+
+        % determine tuning related values
         stimDirs = stimData.directions;
-        % determine values needed for plotting
         stimDist = median(diff(stimDirs));
+        stimReps = max(histcounts(stimData.ids, 0.5:length(stimDirs)+1));
+        stimDurs = diff(stimTimes,1,2);
         stimDirsCirc = [stimDirs; 360];
         stimOrisCirc = stimDirs(1:length(stimDirs)/2+1);
-        stimTimes = stimData.times;
-        stimDur = median(diff(stimTimes,1,2));
 
-        % load spike data and prepare response traces
-        spikeData = io.getEphysData(f);
         % ignore spike data before/after visual paradigm
         t_ind = spikeData.times >= stimData.times(1) - 2 & ...
             spikeData.times <= stimData.times(end) + 2;
         spikeData.times = spikeData.times(t_ind);
         spikeData.clusters = spikeData.clusters(t_ind);
-        % get firing rates aligned to stimulus times
-        units = unique(spikeData.clusters);
-        traces = nan(length(t_stim), length(units));
+
+        % get baseline-subtracted firing rates for each trial
+        units = spikeData.clusterIDs;
+        amplitudes = NaN(stimReps, length(stimDirs), length(units));
+        invalidTrials = find(stimDurs < stimulusDur - durationSlack);
         for iUnit = 1:length(units)
             t = spikeData.times(spikeData.clusters == units(iUnit));
-            [~, frameOfSpike] = events.alignData(t, ...
-                t_stim, [0 tBin_stim]);
-            traces(:,iUnit) = histcounts(frameOfSpike, ...
-                (0:length(t_stim)) + 0.5);
+            [sp_aligned, trial] = events.alignData(t, ...
+                stimData.times(:,1), [baselineTime stimulusDur]);
+            for stim = 1:length(stimDirs)
+                stimTrials = find(stimData.ids == stim);
+                for rep = 1:length(stimTrials)
+                    tr = stimTrials(rep);
+                    if ismember(tr, invalidTrials)
+                        continue
+                    end
+                    ind_spikes = trial == tr;
+                    amplitudes(rep, stim, iUnit) = ...
+                        sum(sp_aligned(ind_spikes) >= 0) / ...
+                        min(stimDur(tr), stimulusDur) - ...
+                        sum(sp_aligned(ind_spikes) , 0) / (-baselineTime);
+                end
+            end
+            % test whether unit is responsive
         end
 
 
