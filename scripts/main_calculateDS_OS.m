@@ -93,8 +93,6 @@ for s = 1:2 % neurons and boutons
                         stimDirs, numShuffles);
                     dirTuning(iCell) = drct;
                     oriTuning(iCell) = ori;
-                    maxi = max(amplitudes(:,:,iCell),[],'all');
-                    mini = min(amplitudes(:,:,iCell),[],'all');
 
                     % plot results
                     % replicate responses at 0 degrees to plot at 360 or
@@ -126,6 +124,8 @@ for s = 1:2 % neurons and boutons
                     set(gca, 'box', 'off')
                     
                     % direction tuning curve (not if grating was static)
+                    maxi = max(ampsDir,[],'all');
+                    mini = min(ampsDir,[],'all');
                     if any(strcmp(type, stimTypes(1:2)))
                         nexttile
                         c = cols(1,:);
@@ -148,7 +148,10 @@ for s = 1:2 % neurons and boutons
                         set(gca, 'box', 'off', 'XTick', stimDirsCirc(1:3:end))
                     end
 
-                    nexttile % orientation tuning curve
+                    % orientation tuning curve
+                    maxi = max(ampsOri,[],'all');
+                    mini = min(ampsOri,[],'all');
+                    nexttile 
                     c = cols(1,:);
                     h = [0 0 0];
                     if ori.pValue > maxP

@@ -14,7 +14,7 @@ end
 
 %% Example spike waveshapes, firing traces and tuning curves
 
-%% Example recordings: tuning preferences and selectivity against depth in SC
+%% Tuning preferences and selectivity against depth in SC
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
 for subj = 1:length(subjDirs) % animals
