@@ -21,6 +21,14 @@ cols = [1 0 0; 1 0.8 0.8];
 layers = {'sSC', 'dSC'};
 
 %% Plot direction and orientation tuning curves
+infoTable = table('Size', [0 8], ...
+    'VariableNames', ...
+    {'animal', 'date', '#Experiments', '#Repetitions', '#Directions', ...
+    'Contrast', 'SF', 'TF'}, ...
+    'VariableTypes', ...
+    {'string', 'string', 'double', 'double', 'double', 'double', ...
+    'double', 'double'});
+
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
 for subj = 1:length(subjDirs) % animals
@@ -34,6 +42,7 @@ for subj = 1:length(subjDirs) % animals
         if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
             continue
         end
+        fprintf('%s %s\n', name, date)
         fPlots = fullfile(folders.plots, '02_TuningCurves', ...
             'gratingsDrifting', 'ephys', name, date);
         if ~isfolder(fPlots)
@@ -44,10 +53,15 @@ for subj = 1:length(subjDirs) % animals
         spikeData = io.getEphysData(f);
         stimData = io.getGratingInfo(f, 'gratingsDrifting');
 
+        [stimData, dirExperiments] = ...
+            stimuli.fixNonDirectionFeatures(stimData);
+
         % determine tuning related values
-        stimDirs = stimData.directions;
+        validStimIDs = find(~isnan(stimData.directions));
+        stimDirs = unique(stimData.directions(validStimIDs));
         stimDist = median(diff(stimDirs));
-        stimReps = max(histcounts(stimData.ids, 0.5:length(stimDirs)+1));
+        stimReps = max(histcounts(stimData.directions(stimData.ids), ...
+            [stimDirs; 361]));
         stimDurs = diff(stimData.times,1,2);
         stimDirsCirc = [stimDirs; 360];
         stimOrisCirc = stimDirs(1:length(stimDirs)/2+1);
@@ -85,7 +99,8 @@ for subj = 1:length(subjDirs) % animals
                 continue
             end
             for stim = 1:length(stimDirs)
-                stimTrials = find(stimData.ids == stim);
+                stimID = find(stimData.directions == stimDirs(stim));
+                stimTrials = find(stimData.ids == stimID);
                 for rep = 1:length(stimTrials)
                     tr = stimTrials(rep);
                     if ismember(tr, invalidTrials)
@@ -122,7 +137,7 @@ for subj = 1:length(subjDirs) % animals
             % Now test whether responses to stimuli are different from each
             % other (same as ANOVA).
             p_compareAcrossStimuli(unit) = coefTest(mdl);
-            
+
             % disregard non-responsive units from further analysis
             if (p_compareToBaseline(unit) > maxP && ...
                     p_compareAcrossStimuli(unit) > maxP) 
@@ -212,5 +227,15 @@ for subj = 1:length(subjDirs) % animals
         writeNPY(p_compareAcrossStimuli, ...
             fullfile(f, '_ss_gratingsDriftingResponsive.p_acrossStimuli.npy'))
         io.writeTuningResults(dirTuning, oriTuning, f, 'gratingsDrifting');
+
+        % fill info table
+        infoTable = [infoTable; {name, date, length(dirExperiments), ...
+            stimReps, length(stimDirs), ...
+            unique(stimData.contrasts(validStimIDs)), ...
+            unique(stimData.spatialFrequencies(validStimIDs)), ...
+            unique(stimData.temporalFrequencies(validStimIDs))}];
     end
 end
+
+writetable(infoTable, fullfile(folders.plots, '02_TuningCurves', ...
+    'gratingsDrifting', 'ephys', 'tuningInfoTable.csv'))
