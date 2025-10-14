@@ -23,12 +23,13 @@ dirSel = [];
 oriSel = [];
 dirTuned = false(0,0);
 oriTuned = false(0,0);
-depth = [];
+depth = []; % in um, relative to SC surface
 dataset = [];
 % variables of size #sessions
 totalN = [];
 animals = cell(0,1);
 dates = cell(0,1);
+SO_depth = [];
 
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
@@ -51,6 +52,8 @@ for subj = 1:length(subjDirs) % animals
         p_compareAcrossStimuli = readNPY(fullfile(f, ...
             '_ss_gratingsDriftingResponsive.p_acrossStimuli.npy'));
         [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
+        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
         
         unitsSC = spikeData.clusterDepths(:,2) > 0;
         if sum(unitsSC) < 1
@@ -59,6 +62,9 @@ for subj = 1:length(subjDirs) % animals
         animals{end+1,1} = name;
         dates{end+1,1} = date;
         totalN = [totalN; sum(unitsSC)];
+        SC_top = chanCoord(SC_depth(1), 2);
+        SC_SO = chanCoord(SC_depth(2), 2);
+        SO_depth(end+1,1) = SC_top - SC_SO;
 
         responsive = unitsSC & ...
             (p_grandMean < maxP | p_compareAcrossStimuli < maxP);
@@ -69,7 +75,7 @@ for subj = 1:length(subjDirs) % animals
         dirTuned = [dirTuned; dirTuning.pValue(responsive) < maxP];
         oriTuned = [oriTuned; oriTuning.pValue(responsive) < maxP];
         depth = [depth; spikeData.clusterDepths(responsive, 1)];
-        dataset = [dataset; ones(length(responsive),1) .* session];
+        dataset = [dataset; ones(sum(responsive),1) .* session];
 
         session = session + 1;
     end
@@ -82,12 +88,23 @@ fprintf('    Of %d responsive units, %d (%.1f%%) were tuned to direction, %d (%.
     sum(oriTuned), sum(oriTuned)/length(depth)*100)
 
 %% Population data: tuning preferences and selectivity against depth in SC
+scale = 30;
+figure
+hold on
+for session = 1:length(totalN)
+    units = find(dataset == session & dirTuned);
+    X = ones(length(units),1) .* (session * 2 * scale);
+    Y = depth(units);
+    directions = dirPreferences(units);
+    [U, V] = pol2cart(deg2rad(directions), ones(length(units),1) .* scale);
+    X = X - 0.5 .* U;
+    Y = Y - 0.5 .* V;
+    quiver(X, Y, U, V, "off", 'k');
+end
 
+axis image
+set(gca, "YDir", "reverse")
 
-        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
-        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
-        SC_top = chanCoord(SC_depth(1), 2);
-        SC_SO = chanCoord(SC_depth(2), 2);
 
 %% Pairwise differences in tuning preferences versus distance in depth
 
