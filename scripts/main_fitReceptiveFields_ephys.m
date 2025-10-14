@@ -169,10 +169,6 @@ for subj = 1:length(subjDirs) % animals
         f = fullfile(folders.data, 'ephys', name, date);
 
         spikeData = io.getEphysData(f);
-        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
-        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
-        SC_top = chanCoord(SC_depth(1), 2);
-        SC_SO = chanCoord(SC_depth(2), 2);
 
         for stimType = 1:2
             if stimType == 1
@@ -213,10 +209,11 @@ for subj = 1:length(subjDirs) % animals
                     results.y(1)+0.5*gridH results.y(end)-0.5*gridH];
             end
 
-            for iUnit = 1:size(results.fitParameters,1)
+            for iUnit = 1:length(spikeData.clusterIDs)
                 % plot RF (if explained var. and peak-to-noise high enough
-                if ~(results.EV(iUnit) >= minEV_plot && ...
-                        results.peaks(iUnit) >= minPeak_plot)
+                if isnan(results.EV(iUnit)) || ...
+                        results.EV(iUnit) < minEV_plot || ...
+                        results.peaks(iUnit) < minPeak_plot
                     continue
                 end
                 line = ':';
@@ -234,7 +231,7 @@ for subj = 1:length(subjDirs) % animals
                 end
                 rfield(:,:,2) = -rfield(:,:,2);
                 mx = max(abs(rfield),[],"all");
-                rfGaussPars = results.fitParameters(iUnit,:);
+                rfGaussPars = results.gaussPars(iUnit,:);
                 figure('Position', [75 195 1470 475])
                 for sf = 1:2
                     subplot(1,2,sf)
@@ -269,38 +266,39 @@ for subj = 1:length(subjDirs) % animals
                     colorbar
                 end
 
-                depth = median(spikeData.depths(spikeData.clusters == ...
-                    results.units(iUnit)), "omitnan");
+                depth = spikeData.clusterDepths(iUnit,:);
                 if stimType == 1
                     sgtitle(sprintf(['ROI %d ' ...
                         '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
                         '%.1f um from SC surface'], ...
-                        results.units(iUnit), ...
+                        spikeData.clusterIDs(iUnit), ...
                         results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}, ...
-                        SC_top - depth))
+                        depth(1)))
                 else
                     sgtitle(sprintf(['ROI %d, size: %.1f deg ' ...
                         '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
                         '%.1f um from SC surface'], ...
-                        results.units(iUnit), results.diameters(mxSize), ...
+                        spikeData.clusterIDs(iUnit), ...
+                        results.diameters(mxSize), ...
                         results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}, ...
-                        SC_top - depth))
+                        depth(1)))
                 end
 
-                if depth > SC_top
-                    fp = '1_above';
-                elseif depth <= SC_top && depth >= SC_SO
-                    fp = '2_sSC';
-                elseif depth < SC_SO && depth >= SC_top - SC_extent
-                    fp = '3_dSC';
-                else
-                    fp = '4_below';
+                switch depth(2)
+                    case -1
+                        fp = '1_above';
+                    case 1
+                        fp = '2_sSC';
+                    case 2
+                        fp = '3_dSC';
+                    case 0
+                        fp = '4_below';
                 end
                 saveas(gcf, fullfile(fPlots, fp, ...
-                    sprintf('%04d_Unit%04d.jpg', round(depth), ...
-                    results.units(iUnit))));
+                    sprintf('%04d_Unit%04d.jpg', round(depth(1)), ...
+                    spikeData.clusterIDs(iUnit))));
                 close gcf
             end
         end
@@ -339,20 +337,15 @@ for subj = 1:length(subjDirs) % animals
         end
 
         % select units with good RFs from noise or circles
-        [units, stimTypes] = rf.selectRFStim(results, minEV, minPeak);
+        stimTypes = rf.selectRFStim(results, minEV, minPeak);
         
         % determine depth of each unit
-        depths = NaN(length(units), 1);
-        for iUnit = 1: length(units)
-            depths(iUnit) = median(spikeData.depths(...
-                spikeData.clusters == units(iUnit)), "omitnan");
-        end
-        depths = SC_top - depths;
-        % only consider units within SC
-        ind = depths >= 0 & depths <= SC_extent;
-        depths = depths(ind);
-        units = units(ind);
+        depths = spikeData.clusterDepths;
+
+        % consider only units within SC and with good RF
+        validUnits = find(depths(:,2) > 0 & ~isnan(stimTypes));
         
+        % determine stimulus edges
         edges = NaN(2, 4);
         if ~isempty(results{1})
             edges(1,:) = results{1}.edges;
@@ -369,27 +362,32 @@ for subj = 1:length(subjDirs) % animals
         edges(1, [1 4]) = min(edges(:,[1 4]), [], 1);
         edges(1, [2 3]) = max(edges(:,[2 3]), [], 1);
         edges = edges(1,:);
+
+        % determine colour for each unit
         colors = jet(500);
-        [~, ~, colInds] = histcounts(depths, linspace(0, SC_extent, 500));
+        [~, ~, colInds] = histcounts(depths(validUnits,1), ...
+            linspace(0, SC_extent, 500));
         lines = {'-', ':'};
 
         figure
         tiledlayout(1, 1)
         nexttile
         hold on
-        for k = 1:length(units)
-            unit = units(k);
-            res = results{stimTypes(k)};
-            iUnit = find(res.units == unit);
-            pars = res.fitParameters(iUnit,:);
+        for k = 1:length(validUnits)
+            unit = validUnits(k);
+            res = results{stimTypes(unit)};
+            if res.EV(unit) < minEV || res.peaks(unit) < minPeak
+                continue
+            end
+            pars = res.gaussPars(unit,:);
             % ellipse at 2 STD (x and y), not rotated, not shifted
             x = pars(3) * cos(ellipse_x);
             y = pars(5) * sin(ellipse_x);
             % rotate and shift ellipse
             x_rot = pars(2) + x .* cos(pars(6)) - y .* sin(pars(6));
             y_rot = pars(4) + x .* sin(pars(6)) + y .* cos(pars(6));
-            plot(x_rot, y_rot, lines{stimTypes(k)}, ...
-                'Color', colors(colInds(k),:))
+            plot(x_rot, y_rot, lines{stimTypes(unit)}, ...
+                'Color', colors(colInds(k),:), 'LineWidth', 2)
         end
         axis image
         axis(edges([1 2 4 3]))
@@ -416,14 +414,16 @@ for subj = 1:length(subjDirs) % animals
         for dim = 1:2
             nexttile
             hold on
-            for k = 1:length(units)
-                unit = units(k);
-                res = results{stimTypes(k)};
-                iUnit = find(res.units == unit);
-                pars = res.fitParameters(iUnit,:);
+            for k = 1:length(validUnits)
+                unit = validUnits(k);
+                res = results{stimTypes(unit)};
+                if res.EV(unit) < minEV || res.peaks(unit) < minPeak
+                    continue
+                end
+                pars = res.gaussPars(unit,:);
                 plot(pars(2*dim) + [-1 1] .* pars(2*dim + 1), ...
-                    [1 1] .* depths(k), ...
-                    ['k' lines{stimTypes(k)}], 'LineWidth', 2)
+                    [1 1] .* depths(unit,1), ...
+                    ['k' lines{stimTypes(unit)}], 'LineWidth', 2)
             end
             ylim([0 SC_extent])
             set(gca, 'YDir', 'reverse')

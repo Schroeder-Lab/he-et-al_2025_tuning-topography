@@ -1,6 +1,6 @@
 function main_determineUnitDepths(folders)
 % Given the site of the SC surface and its SGS-SO border, determine depth
-% of each unit within SC.
+% of each unit within SC (postive values -> microns below surface).
 
 %% Parameters
 % for depth estimate
