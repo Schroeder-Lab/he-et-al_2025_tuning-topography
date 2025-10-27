@@ -30,6 +30,9 @@ folders.tools = 'C:\dev\toolboxes';
 folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
 folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 
+%% Global parameters
+glob.figPositionDefault = [680 460 560 420];
+
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
 % addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
@@ -97,27 +100,27 @@ main_calculateDS_OS_ephys(folders)
 %% Figures
 % Distribution of direction & orientation preferences, and direction &
 % orientation selectivity
-Figure01(folders)
-Figure01S(folders)
+Figure01(folders, glob)
+Figure01S(folders, glob)
 
 % Pairwise difference in tuning preferences depending on horizontal distance
-Figure02(folders)
-Figure02S(folders)
+Figure02(folders, glob)
+Figure02S(folders, glob)
 
 % Receptive fields and pairwise tuning differences depending on RF distance
-Figure03(folders)
-Figure03S(folders)
+Figure03(folders, glob)
+Figure03S(folders, glob)
 
 % Global distribution of direction and orientation preferences across
 % visual field
-Figure04(folders)
-Figure04S(folders)
+Figure04(folders, glob)
+Figure04S(folders, glob)
 
 % Match between direction/orientation preference and expected preference at
 % RF location (as predicted by longitudinal and latitudinal geometry)
-Figure05(folders)
-Figure05S(folders)
+Figure05(folders, glob)
+Figure05S(folders, glob)
 
 % Direction and orientation preferences across SC depth
-Figure06(folders)
-Figure06S(folders)
+Figure06(folders, glob)
+Figure06S(folders, glob)

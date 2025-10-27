@@ -8,7 +8,7 @@ nonDirFeatures = [stimData.contrasts, stimData.spatialFrequencies, ...
 % first, separate experiments, then find the one where only direction was 
 % varied
 ISIs = stimData.times(2:end, 1) - stimData.times(1:end-1, 2);
-lastExpTrials = find(ISIs > 5);
+lastExpTrials = find(ISIs > 60);
 if isempty(lastExpTrials)
     starts = 1;
     ends = size(stimData.times,1);
