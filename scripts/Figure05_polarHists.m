@@ -8,7 +8,13 @@ if nargin  < 5
 end
 
 %% Parameters
-[ds_trans, os_long, os_lat] = algebra.getDsOsAxes();
+% to optimize pitch angle;
+% translational and latitude axes determined by Sabbah et al assume that
+% the lambda-bregma axis of the skull is at an angle of 29 deg (bregma
+% lower); the angle of our mice is typically somewhat above 0; to match the
+% two angles, we will need to tilt the translational and latitude axes
+% upwards by 0-29 deg
+pitchRange = [-29 0];
 
 % Plotting
 gridSpace = 10;
@@ -21,8 +27,60 @@ cols = {'k', 'b', 'r', 'm'};
 % Tests
 nPerm = 1000;
 
+%% Optimize pitch angle for each session
+% minimize distance between preferred direction/orientation and nearest
+% predicted vector
+bestPitches = cell(1,2);
+modelDirs = cell(1,2);
+modelOris = cell(1,2);
+for s = 1:length(data)
+    animals = unique(data(s).animal);
+    bestPitches{s} = NaN(length(animals), 1);
+    modelDirs{s} = NaN(length(data(s).dirPref), 4);
+    modelOris{s} = NaN(length(data(s).dirPref), 4);
+    options = optimset('Display', 'off'); % optimset('Display', 'iter');
+    for subj = 1:length(animals)
+        units = find(strcmp(animals{subj}, data(s).animal) & ...
+            ~any(isnan(data(s).rfPos), 2));
+        d = data(s).dirPref(units);
+        o = data(s).oriPref(units);
+        fun = @(x)algebra.determinePitchError(x, d, o, ...
+            data(s).rfPos(units,:));
+        pitch = fminbnd(fun, pitchRange(1), pitchRange(2), options);
+        bestPitches{s}(subj) = pitch;
+
+        [ds_trans, os_long, os_lat] = algebra.getDsOsAxes(pitch);
+        for k = 1:length(units)
+            unit = units(k);
+            if ~isnan(data(s).dirPref(unit))
+                d = NaN(1,4);
+                for v = 1:4
+                    [~, ~, d(v)] = algebra.getTranslationDir( ...
+                        ds_trans(v,:), data(s).rfPos(unit,:));
+                end
+                modelDirs{s}(unit,:) = d;
+            end
+            if ~isnan(data(s).oriPref(unit))
+                o1 = NaN(1,2);
+                o2 = NaN(1,2);
+                for v = 1:2
+                    [~, ~, o1(v)] = algebra.getTranslationDir( ...
+                        os_long(v,:), data(s).rfPos(unit,:));
+                    [~, ~, o2(v)] = algebra.getLatitudeOrientation( ...
+                        os_lat(v,:), data(s).rfPos(unit,:));
+                end
+                modelOris{s}(unit,:) = [mod(o1, 180) o2];
+            end
+        end
+    end
+end
+
 %% Polar histograms
 for s = 1:length(data)
+    % get average best pitch
+    avgPitch = mean(bestPitches{s});
+    [ds_trans, os_long, os_lat] = algebra.getDsOsAxes(avgPitch);
+
     % direction
     % only use units with minimum DSI and maximum OSI
     valid = data(s).DSI >= selectivityThresholds(1,1) & ...
@@ -111,14 +169,7 @@ for s = 1:length(data)
         (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     dp = data(s).dirPref(valid); % preferred directions
-    transVectors = NaN(length(valid), 4); % 4 direction vectors of DSGCs at RF position
-    for k = 1:length(valid)
-        for v = 1:4
-            [~,~, predDir] = algebra.getTranslationDir(ds_trans(v,:), ...
-                data(s).rfPos(valid(k),:));
-            transVectors(k,v) = predDir;
-        end
-    end
+    predictedDirs = modelDirs{s}(valid,:); % 4 direction vectors of DSGCs at RF position
     % orientation
     % only use units with minimum OSI and maximum DSI
     valid = find(data(s).OSI >= selectivityThresholds(2,1) & ...
@@ -128,22 +179,11 @@ for s = 1:length(data)
     % tranform angles from direction of motion (axial motion) to
     % orientation of grating
     op = mod(op + 90, 180);
-    longVectors = NaN(length(valid), 2); % 2 longitudinal vectors of OSGCs at RF position
-    latVectors = NaN(length(valid), 2); % 2 latitudinal vectors of OSGCs at RF position
-    for k = 1:length(valid)
-        for v = 1:2
-            [~,~, predOri] = algebra.getTranslationDir(os_long(v,:), ...
-                data(s).rfPos(valid(k),:));
-            longVectors(k,v) = mod(predOri, 180);
-            [~,~, predOri] = algebra.getLatitudeOrientation(os_lat(v,:), ...
-                data(s).rfPos(valid(k),:));
-            latVectors(k,v) = predOri;
-        end
-    end
+    predictedOris = modelOris{s}(valid,:);
 
     % prediction error for original data
     % 1. direction
-    err = abs(dp - transVectors);
+    err = abs(dp - predictedDirs);
     ind = err > 180;
     err(ind) = 360 - err(ind);
     [errDir_original{s}, optTransVects] = min(err, [], 2);
@@ -155,7 +195,7 @@ for s = 1:length(data)
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_direction%s', ...
         sets{s}, suffix))
     % 2. orientation
-    err = abs(op - [longVectors, latVectors]);
+    err = abs(op - predictedOris);
     ind = err > 90;
     err(ind) = 180 - err(ind);
     [errOri_original{s}, optOriVects] = min(err, [], 2);
@@ -167,54 +207,60 @@ for s = 1:length(data)
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_orientation%s', ...
         sets{s}, suffix))
 
-    % prediciton error for permuted data
-    errDir_perm = NaN(length(dp), nPerm);
-    errOri_perm = NaN(length(op), nPerm);
+    % prediction error for permuted data
+    errDir_perm = NaN(1, nPerm);
+    errOri_perm = NaN(1, nPerm);
     rng('default');
     for p = 1:nPerm
         % 1. direction
         order = randperm(length(dp));
         dp_perm = dp(order);
-        err_tmp = abs(dp_perm - transVectors);
+        err_tmp = abs(dp_perm - predictedDirs);
         ind = err_tmp > 180;
         err_tmp(ind) = 360 - err_tmp(ind);
-        errDir_perm(:,p) = min(err_tmp, [], 2);
+        err_tmp = min(err_tmp, [], 2);
+        errDir_perm(p) = median(err_tmp);
         % 2. orientation
         order = randperm(length(op));
         op_perm = op(order);
-        err_tmp = abs(op_perm - [longVectors, latVectors]);
+        err_tmp = abs(op_perm - predictedOris);
         ind = err_tmp > 90;
         err_tmp(ind) = 180 - err_tmp(ind);
-        errOri_perm(:,p) = min(err_tmp, [], 2);
+        err_tmp = min(err_tmp, [], 2);
+        errOri_perm(p) = median(err_tmp);
     end
+    errDir_perm = prctile(errDir_perm, [2.5 97.5]);
+    errOri_perm = prctile(errOri_perm, [2.5 97.5]);
     
     % prediciton error for uniform data
     rng('default');
     % 1. direction
     dp_uni = rand(length(dp), 1, nPerm) .* 360;
-    err_tmp = abs(dp_uni - transVectors);
+    err_tmp = abs(dp_uni - predictedDirs);
     ind = err_tmp > 180;
     err_tmp(ind) = 360 - err_tmp(ind);
-    errDir_uni = squeeze(min(err_tmp, [], 2));
+    err_tmp = squeeze(min(err_tmp, [], 2));
+    errDir_uni = prctile(median(err_tmp, 1), [2.5 97.5]);
     % 2. orientation
     op_uni = rand(length(op), 1, nPerm) .* 180;
-    err_tmp = abs(op_uni - [longVectors, latVectors]);
+    err_tmp = abs(op_uni - predictedOris);
     ind = err_tmp > 90;
     err_tmp(ind) = 180 - err_tmp(ind);
-    errOri_uni = squeeze(min(err_tmp, [], 2));
+    err_tmp = squeeze(min(err_tmp, [], 2));
+    errOri_uni = prctile(median(err_tmp, 1), [2.5 97.5]);
 
     fprintf('Prediction errors [95%% conf int: (1) permuted data, (2) uniform distribution]:\n')
     fprintf('  %s:\n', sets{s})
     fprintf('    Direction\n')
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
         median(errDir_original{s}), ...
-        prctile(median(errDir_perm,1),[2.5 97.5]), ...
-        prctile(median(errDir_uni,1),[2.5 97.5]))
+        errDir_perm, ...
+        errDir_uni)
     fprintf('    Orientation\n')
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
         median(errOri_original{s}), ...
-        prctile(median(errOri_perm,1),[2.5 97.5]), ...
-        prctile(median(errOri_uni,1),[2.5 97.5]))
+        errOri_perm, ...
+        errOri_uni)
 end
 
 fprintf('Prediction error: boutons vs neurons:\n')

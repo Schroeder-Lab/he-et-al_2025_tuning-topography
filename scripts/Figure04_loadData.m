@@ -10,7 +10,7 @@ maxP = 0.05;
 
 %% Load data: RF position, tuning preferences
 data = struct('rfPos', cell(length(sets),1), 'dirPref', [], 'DSI', [], ...
-    'oriPref', [], 'OSI', [], 'set', []);
+    'oriPref', [], 'OSI', [], 'set', [], 'animal', []);
 for s = 1:length(sets)
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     count = 1;
@@ -27,9 +27,9 @@ for s = 1:length(sets)
             end
             % load data
             if ~retinotopyRF(s)
-                dt = io.getRFFits(f);
+                dt = io.getNoiseRFFits(f);
                 edges = dt.edges; % [left right top bottom]
-                pos = dt.fitParameters(:,[2 4]);
+                pos = dt.gaussPars(:,[2 4]);
                 % exclude all RFs too close to monitor edge
                 ind = dt.EV < minEV | dt.peaks < minPeak | ...
                     pos(:,1) < edges(1)+dist2edge | ...
@@ -66,6 +66,8 @@ for s = 1:length(sets)
             data(s).oriPref = [data(s).oriPref; op];
             data(s).OSI = [data(s).OSI; osi];
             data(s).set = [data(s).set; ones(size(dp)) .* count];
+            data(s).animal = [data(s).animal; ...
+                repmat({name}, length(dp), 1)];
 
             count = count + 1;
         end

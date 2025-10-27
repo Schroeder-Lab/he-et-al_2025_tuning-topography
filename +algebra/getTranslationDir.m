@@ -8,7 +8,7 @@ function [vecDir, dir_rad, dir_vis] = getTranslationDir(T, r)
 %       unitsphere at which translational flow is measured
 
 % transform translation vector to cartesian coordinates
-% (dimensions: AP, ML, DV)
+% (dimensions: AP (+ -> anterior), ML (+ -> right), DV (+ -> up))
 T = deg2rad(T);
 T = [cos(T(2)) * cos(T(1)); ...
     cos(T(2)) * sin(T(1)); ...
