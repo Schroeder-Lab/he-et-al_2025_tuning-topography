@@ -1,7 +1,6 @@
-function Figure05(folders)
+function Figure05(folders, glob)
 
 %% Parameters
-[ds_trans, os_long, os_lat] = algebra.getDsOsAxes();
 sets = {'boutons', 'neurons'};
 retinotopyRF = [false true]; % true: use RF positions estimated from 
                              % retinotopic mapping;
@@ -15,12 +14,13 @@ end
 
 %% Plot cartoons
 
+[ds_trans, os_long, os_lat] = algebra.getDsOsAxes();
 % Cartoon of longitudes for direction preferences
 % average body axis
 body = mean([ds_trans(1,:); (ds_trans(2,:)+[180 0]).*[1 -1]], 1);
 gravitation = mean([ds_trans(3,:); (ds_trans(4,:)+[180 0]).*[1 -1]], 1);
 
-figure
+figure('Position', glob.figPositionDefault)
 hold on
 [X,Y,Z] = sphere(100);
 surf(X, Y, Z, 'FaceColor', 'w', 'FaceAlpha', 1, 'EdgeColor', 'none')
@@ -28,10 +28,11 @@ algebra.plotLongitudes(body, 12, 'b')
 algebra.plotLongitudes(gravitation, 12, 'c')
 algebra.plotLatitudes([0 90], 1, 'k')
 algebra.plotLatitudes([0 0], 1, 'k')
-view([-62, 25])
+% view([-62, 25])
+view([118, 25])
 io.saveFigure(gcf, fPlots, 'cartoon_directionVectors');
 
-figure
+figure('Position', glob.figPositionDefault)
 hold on
 [X,Y,Z] = sphere(100);
 surf(X, Y, Z, 'FaceColor', 'w', 'FaceAlpha', 1, 'EdgeColor', 'none')
@@ -39,10 +40,10 @@ algebra.plotLongitudes(os_long(1,:), 12, 'b')
 algebra.plotLongitudes(os_long(2,:), 12, 'c')
 algebra.plotLatitudes([0 90], 1, 'k')
 algebra.plotLatitudes([0 0], 1, 'k')
-view([-62, 25])
+view([118, 25])
 io.saveFigure(gcf, fPlots, 'cartoon_orientationLongitudeVectors');
 
-figure
+figure('Position', glob.figPositionDefault)
 hold on
 [X,Y,Z] = sphere(100);
 surf(X, Y, Z, 'FaceColor', 'w', 'FaceAlpha', 1, 'EdgeColor', 'none')
@@ -50,7 +51,7 @@ algebra.plotLatitudes(os_lat(1,:), 8, 'r')
 algebra.plotLatitudes(os_lat(2,:), 8, 'y')
 algebra.plotLatitudes([0 90], 1, 'k')
 algebra.plotLatitudes([0 0], 1, 'k')
-view([-62, 25])
+view([118, 25])
 io.saveFigure(gcf, fPlots, 'cartoon_orientationLatitudeVectors');
 
 %% Load data: RF position, tuning preferences
