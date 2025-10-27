@@ -10,8 +10,8 @@ rf_timeLimits = [0 0.2]; % time range of stimulus before neural response
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 
 % for evaluation of receptive fields (significance/goodness)
-minEV = 0.01; % minimum explained variance to plot RF
-minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
+minEV = 0.01; % minimum explained variance
+minPeak = 5; % minimum peak of RF (compared to noise)
 minEV_plot = 0.005; % minimum explained variance to plot RF
 minPeak_plot = 3.5; % minimum peak of RF (compared to noise) to plot RF
 
@@ -38,10 +38,9 @@ for subj = 1:length(subjDirs) % animals
         fprintf('  %s\n', date)
         f = fullfile(folders.data, 'ephys', name, date);
 
-        %% Load data
-        spikeData = io.getEphysData(f);
-
         for stimType = 1:2
+            %% Load data
+            spikeData = io.getEphysData(f);
             if stimType == 1
                 % if white noise data available, use it to map RFs
                 if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
@@ -131,8 +130,8 @@ for subj = 1:length(subjDirs) % animals
             % save results
             dims = 1:ndims(rFields);
             results.maps = permute(rFields, dims([end 1:end-1]));
-            results.bestSubfields = bestSubFields;
-            results.subfieldSigns = subFieldSigns;
+            results.bestSubFields = bestSubFields;
+            results.subFieldSigns = subFieldSigns;
             results.gaussPars = rfGaussPars;
             results.peaks = peakNoiseRatio;
             results.gaussMasks = fitGaussians;

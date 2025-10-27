@@ -2,11 +2,8 @@ function Figure03_examples(folders, sets, ex, fPlots)
 
 %% Parameters
 % plotting RFs
-[cm_ON, cm_OFF] = colmaps.getRFMaps;
-cms = cat(3, cm_ON, cm_OFF);
 ellipse_x = linspace(-pi, pi, 100);
 edges_rf = [-135 -90 42 -20];
-titles = {'ON field','OFF field'};
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 colEx = lines(4);
 
@@ -63,41 +60,8 @@ for s = 1:2 % boutons and neurons
     for iUnit = units
         % rf_tmp: [rows x columns x subfield]
         rf_tmp = squeeze(mean(rfData.maps(iUnit,:,:,:,:),4));
-        rf_tmp(:,:,2) = -rf_tmp(:,:,2);
-        mx = max(abs(rf_tmp),[],"all");
-        pars = rfGaussPars(iUnit,:);
-        figure('Position', [75 195 1470 475])
-        for sf = 1:2
-            subplot(1,2,sf)
-            % STA
-            imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
-                [edges(3)-gridH/2 edges(4)+gridH/2], ...
-                rf_tmp(:,:,sf),[-mx mx])
-            hold on
-            if ismember(rfData.bestSubFields(iUnit), [sf 3])
-                line = '-';
-            else
-                line = ':';
-            end
-            % ellipse at 1 STD (x and y), not rotated, not shifted
-            x = pars(3) * cos(ellipse_x);
-            y = pars(5) * sin(ellipse_x);
-            % rotate and shift ellipse
-            x_rot = pars(2) + ...
-                x .* cos(pars(6)) - ...
-                y .* sin(pars(6));
-            y_rot = pars(4) + ...
-                x .* sin(pars(6)) + ...
-                y .* cos(pars(6));
-            plot(x_rot, y_rot, ['k' line], 'LineWidth', 2)
-            axis image
-            set(gca, 'box', 'off', 'YDir', 'normal')
-            xlim(edges_rf([1 2]))
-            ylim(edges_rf([4 3]))
-            colormap(gca, cms(:,:,sf))
-            title(titles{sf})
-            colorbar
-        end
+        rf.plotRF(rf_tmp, rfGaussPars(iUnit,:), ...
+            rfData.bestSubFields(iUnit), edges, edges_rf, gridW, gridH)
         sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
             iUnit, EVs(iUnit), peakNoiseRatio(iUnit), ...
             RFtypes{rfData.bestSubFields(iUnit)}))
@@ -107,36 +71,8 @@ for s = 1:2 % boutons and neurons
     end
 
     % RF outlines of all units in example dataset
-    figure
-    hold on
-    h = zeros(size(rfGaussPars,1),1);
-    for iUnit = 1:size(rfGaussPars,1)
-        if EVs(iUnit) < minEV || peakNoiseRatio(iUnit) < minPeak
-            continue
-        end
-        % ellipse at 2 STD (x and y), not rotated, not shifted
-        x = rfGaussPars(iUnit,3) * cos(ellipse_x);
-        y = rfGaussPars(iUnit,5) * sin(ellipse_x);
-        % rotate and shift ellipse
-        x_rot = rfGaussPars(iUnit,2) + ...
-            x .* cos(rfGaussPars(iUnit,6)) - ...
-            y .* sin(rfGaussPars(iUnit,6));
-        y_rot = rfGaussPars(iUnit,4) + ...
-            x .* sin(rfGaussPars(iUnit,6)) + ...
-            y .* cos(rfGaussPars(iUnit,6));
-        h(iUnit) = plot(x_rot, y_rot, 'k');
-    end
-    for k = 1:length(units)
-        iUnit = units(k);
-        set(h(iUnit),'Color',colEx(k,:))
-        uistack(h(iUnit),'top')
-        set(h(iUnit),'LineWidth',2)
-    end
-    legend(h(units))
-    axis image
-    axis(edges_rf([1 2 4 3]))
-    xlabel('Azimuth (visual degrees)')
-    ylabel('Elevation (visual degrees)')
+    rf.plotRFOutlines(rfGaussPars, EVs, peakNoiseRatio, minEV, minPeak, ...
+        units, edges_rf)
     n = sum(EVs >= minEV & peakNoiseRatio >= minPeak);
     title(sprintf('%s %s (n = %d)', ex{s,1}, ex{s,2}, n))
     io.saveFigure(gcf, fPlots, sprintf('example_%s_RFoutlines_%s_%s', ...
