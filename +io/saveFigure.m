@@ -15,7 +15,7 @@ fJpeg = fullfile(folder, 'jpeg');
 if ~isfolder(fJpeg)
     mkdir(fJpeg)
 end
-savefig(fig, fullfile(fMatlab, filename), 'compact')
+savefig(fig, fullfile(fMatlab, filename))
 saveas(fig, fullfile(fJpeg, filename), 'jpeg')
 % fig.Renderer = 'painters';
 % saveas(fig, fullfile(folder, filename), 'epsc')
