@@ -22,7 +22,7 @@ end
 if prod(limits) < 0
     edges = [-flip(0:binSize:-limits(1)) binSize:binSize:limits(2)];
 else
-    edges = limits(1):binSize:limts(2);
+    edges = limits(1):binSize:limits(2);
 end
 bins = edges(1:end-1) + 0.5*binSize;
 
