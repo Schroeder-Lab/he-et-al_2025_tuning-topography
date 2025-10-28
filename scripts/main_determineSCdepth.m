@@ -2,7 +2,6 @@ function main_determineSCdepth(folders)
 
 %% Parameters
 smoothLFP = {5 21};
-% stimWin = [0.02 .15];
 stimWin = [-.05 .15];
 baseWin = [-.05 0];
 surfaceAmplitude = 0.25;
@@ -212,7 +211,7 @@ for subj = 1:length(subjDirs) % animals
             end
         end
         set(gca, 'YDir', 'normal')
-        xlabel('Time (ms)')
+        xlabel('Time (s)')
         ylabel('Distance from probe tip (um)')
         title('Evoked LFP')
         legend('Top of SC', 'SGS-SO-border')
@@ -237,7 +236,7 @@ for subj = 1:length(subjDirs) % animals
             end
         end
         set(gca, 'YDir', 'normal')
-        xlabel('Time (ms)')
+        xlabel('Time (s)')
         title('Current-source density')
 
         nexttile([1 2])
@@ -256,7 +255,7 @@ for subj = 1:length(subjDirs) % animals
         xlim([0 100])
         ylim([min(channelDepths) max(channelDepths)])
         set(gca, 'YDir', 'normal')
-        xlabel('Time (ms)')
+        xlabel('Time (s)')
         title('Spikes')
 
         sgtitle(sprintf('%s %s (%s): Top: %d, SGS-SO: %d', name, date, ...
