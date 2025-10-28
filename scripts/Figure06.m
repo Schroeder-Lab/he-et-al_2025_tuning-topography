@@ -23,17 +23,12 @@ if ~isfolder(fPlots)
     mkdir(fPlots)
 end
 
-%% Example spike waveshapes, firing traces and tuning curves
+%% Example firing traces and tuning curves
+Figure06_examplesTuning(folders, fPlots, exAnimal, exDate, exUnits)
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
 data = Figure06_loadData(folders, maxP, minEV, minPeak);
-
-%% Plot tuning preferences and selectivity against depth in SC (per recording)
-Figure06_plotTuningData(data, fPlots, glob)
-
-%% Pairwise differences in tuning preferences and SC depth
-Figure06_pairwiseDifferences(fPlots, glob, data)
 
 %% Plot example RFs
 exSession = strcmp(exAnimal, {data.animal}) & ...
@@ -41,5 +36,8 @@ exSession = strcmp(exAnimal, {data.animal}) & ...
 Figure06_exampleRFs(folders, fPlots, glob, data(exSession), ...
     minEV, minPeak, exUnits, exColors)
 
-%% Compare preferred direction / orientation to expected value based on RF location
-Figure06_polarHistograms(data, fPlots)
+%% Plot tuning preferences and selectivity against depth in SC (per recording)
+Figure06_plotTuningData(data, fPlots)
+
+%% Pairwise differences in tuning preferences and SC depth
+Figure06_pairwiseDifferences(fPlots, glob, data)

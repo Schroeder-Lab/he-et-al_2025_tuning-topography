@@ -1,6 +1,8 @@
-function Figure06_plotTuningData(tuningData, fPlots, glob)
+function Figure06_plotTuningData(tuningData, fPlots)
+
 scale = 30;
 colors = {colmaps.colorcet('C7'), colmaps.colorcet('C1')};
+depthLimits = [-300 850];
 
 features = {'direction', 'orientation'};
 featureNames = {'dir', 'ori'};
@@ -41,6 +43,7 @@ for feat = 1:2 % direction and orientation preferences
     axis image
     set(gca, "YDir", "reverse", "XTick", ...
         (1:length(tuningData)) .* (3 * scale), "XTickLabel", mouseID)
+    ylim(depthLimits)
     xlabel('Animal ID')
     ylabel('Depth from SGS-SO border (in um)')
     colormap(colors{feat})
@@ -82,49 +85,7 @@ for feat = 1:2 % direction and orientation selectivities
     ylabel('Depth from SGS-SO border (in um)')
     title(sprintf('%s selectivity', features{feat}))
     xlim([0 1])
-    ylim(d([1 end]))
+    ylim(depthLimits)
     io.saveFigure(gcf, fPlots, ...
         sprintf('tuning_selectivity_%sAcrossSCDepth', features{feat}))
 end
-
-%% Plot direction vs orientation preference and selectivity
-tuned = [cat(1, tuningData.dirTuned), cat(1, tuningData.oriTuned)];
-dirPreferences = cat(1, tuningData.dirPreferences);
-oriPreferences = cat(1, tuningData.oriPreferences);
-dirSel = cat(1, tuningData.dirSel);
-oriSel = cat(1, tuningData.oriSel);
-
-% Direction vs orientation preference scatterplot
-figure('Position', glob.figPositionDefault)
-hold on
-plot([0 180], [0 180], 'Color', [1 1 1].*0.5)
-plot([180 360], [0 180], 'Color', [1 1 1].*0.5)
-scatter(dirPreferences(all(tuned,2)), oriPreferences(all(tuned,2)), 15, ...
-    'k', 'filled')
-axis equal
-xlim([-10 370])
-ylim([-10 190])
-set(gca, "Box", "off", "XTick", 0:90:360, "YTick", 0:90:180)
-xlabel('Direction (deg)')
-ylabel('Orientation (deg)')
-title(sprintf('n = %d', sum(all(tuned,2))))
-io.saveFigure(gcf, fPlots, 'tuning_preference_dirVsOriScatter');
-
-% DS vs OS scatterplot
-figure('Position', glob.figPositionDefault)
-h = gscatter(dirSel(any(tuned,2)), oriSel(any(tuned,2)), ...
-    tuned(any(tuned,2),1) + 2*tuned(any(tuned,2),2), ...
-    repmat([0.4 0.8 0]', 1, 3), [], 15);
-% hold on
-% scatter(dirSel(indExamples), oriSel(indExamples), 40, ...
-%     lines(length(indExamples)), "filled")
-l = legend(h, 'DS', 'OS', 'DS & OS', "Location", "bestoutside");
-l.Box = "off";
-axis padded equal
-mini = -0.05;
-maxi = 1.05;
-axis([mini maxi mini maxi])
-set(gca, "Box", "off")
-xlabel('Direction selectivity')
-ylabel('Orientation selectivity')
-io.saveFigure(gcf, fPlots, 'tuning_selectivity_dirVsOriScatter');
