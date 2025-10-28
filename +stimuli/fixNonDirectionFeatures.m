@@ -16,22 +16,17 @@ else
     starts = [1; lastExpTrials+1];
     ends = [lastExpTrials; size(stimData.times,1)];
 end
-dirExp = [];
-stimIDs = [];
+dirExp = 1:length(starts);
 uniqueFeatures = [];
 for k = 1:length(starts)
     ids = unique(stimData.ids(starts(k):ends(k)));
     uniqueStims = unique(nonDirFeatures(ids,:), "rows");
     if size(uniqueStims,1) == 1
-        dirExp = [dirExp; k];
-        stimIDs = [stimIDs; ids];
         uniqueFeatures = [uniqueFeatures; uniqueStims];
     end
 end
 
-if isempty(dirExp)
-    fprintf('\n    NOTE: no experiment with correct stimulus features!\n\n')
-elseif length(dirExp) > 1
+if length(dirExp) > 1
     % if several direction experiments were performed, find the one where
     % other stimulus features are closest to the standard
     deviance = sum(abs((uniqueFeatures - [1 0.08 2]) ./ [1 0.08 2]), 2);
