@@ -29,7 +29,7 @@ function [ds_trans, os_long, os_lat] = getDsOsAxes(pitchAngle)
 % [azimuth, elevation]
 ds_N = [180 -15]; % advance cells (optic flow), opposite to [-0 15] (black)
 ds_T = [0 11]; % retreat cells, opposite to [-180 -11] (blue)
-ds_D = [293 -83]; % rise cells, opposite to [113 83] (red)
+ds_D = [-67 -83]; % rise cells, opposite to [113 83] (red)
 ds_V = [106 88]; % fall cells, opposite to [-74 -88] (magenta)
 ds_trans = [ds_N; ds_T; ds_D; ds_V];
 

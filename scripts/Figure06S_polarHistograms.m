@@ -24,7 +24,7 @@ SCLabel = {'sSC', 'dSC', 'SC'};
 % predicted vector
 bestPitches = NaN(length(data), 1);
 animals = unique({data.animal});
-options = optimset('Display', 'iter');
+options = optimset('Display', 'off'); % optimset('Display', 'iter');
 for subj = 1:length(animals)
     sessions = strcmp(animals{subj}, {data.animal});
     d = cat(1, data(sessions).dirPreferences);
@@ -117,8 +117,9 @@ for l = 1:3 % layer in SC: (1) sSC, (2) dSC, (3) pooled
             set(gca,'ThetaDir','clockwise', 'RTick', [], 'ThetaTickLabel', {})
         end
     end
-    sgtitle(sprintf('Direction tuning [%d to %d azim, %d to %d elev]', ...
-        gridX(1), gridX(end), gridY(end), gridY(1)))
+    sgtitle(sprintf(['Direction tuning with pitch %.2f deg\n\n' ...
+        '[%d to %d azim, %d to %d elev]'], ...
+        pitch, gridX(1), gridX(end), gridY(end), gridY(1)))
     io.saveFigure(gcf, fPlots, ...
         sprintf('polarHists_direction_%s', SCLabel{l}))
 
@@ -160,8 +161,9 @@ for l = 1:3 % layer in SC: (1) sSC, (2) dSC, (3) pooled
             set(gca,'ThetaDir','clockwise', 'RTick', [], 'ThetaTickLabel', {})
         end
     end
-    sgtitle(sprintf('Orientation tuning at %s RFs [%d to %d azim, %d to %d elev]', ...
-        gridX(1), gridX(end), gridY(end), gridY(1)))
+    sgtitle(sprintf(['Orientation tuning with pitch %.2fdeg\n' ...
+        'V_{lat} axis: [%d %d]\n[%d to %d azim, %d to %d elev]'], ...
+        pitch, round(os_lat(2,:)), gridX([1 end]), gridY([end 1])))
     io.saveFigure(gcf, fPlots, ...
         sprintf('polarHists_orientation_%s', SCLabel{l}))
 end

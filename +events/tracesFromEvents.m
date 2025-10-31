@@ -27,7 +27,7 @@ end
 bins = edges(1:end-1) + 0.5*binSize;
 
 % bin spikes of each trial
-binned = zeros(length(groups), length(bins));
+binned = NaN(length(groups), length(bins));
 for tr = 1:length(groups)
     ind = trials == tr;
     if sum(ind) < 1
@@ -47,7 +47,7 @@ for g = uniGr
     if sum(tr) < 1
         continue
     end
-    traces(g,:) = nanmean(binned(tr,:), 1);
+    traces(g,:) = mean(binned(tr,:), 1, "omitnan");
 end
 
 % smooth traces with causal half-gaussian
@@ -61,11 +61,12 @@ win = win ./ sum(win);
 w = ones(1,length(win));
 for g = uniGr
     if isCausal
-        tr = conv([w .* nanmean(traces(g,1:sigBins)), ...
+        tr = conv([w .* mean(traces(g,1:sigBins), "omitnan"), ...
             traces(g,:)], win);
     else
-        tr = conv([w .* nanmean(traces(g,1:sigBins)), ...
-            traces(g,:), w .* nanmean(traces(g,end-sigBins:end))], win, 'same');
+        tr = conv([w .* mean(traces(g,1:sigBins), "omitnan"), ...
+            traces(g,:), w .* mean(traces(g,end-sigBins:end), ...
+            "omitnan")], win, 'same');
     end
     tr = tr(length(win)+(1:length(bins)));
     traces(g,:) = tr;

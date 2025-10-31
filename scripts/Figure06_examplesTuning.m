@@ -21,7 +21,7 @@ stimDur = diff(stimData.times, 1, 2);
 invalidTrials = find(stimDur < stimulusDur - durationSlack);
 stimDur = median(stimDur);
 
-for k = 2:length(units)
+for k = 1:length(units)
     indUnit = find(spikeData.clusterIDs == units(k));
     t = spikeData.times(spikeData.clusters == units(k));
     [sp_aligned, trial] = events.alignData(t, ...
@@ -29,9 +29,8 @@ for k = 2:length(units)
     invalid = ismember(trial, invalidTrials);
     sp_aligned(invalid) = [];
     trial(invalid) = [];
-    trials = unique(trial);
     [traces_singleTrials, bins] = events.tracesFromEvents(sp_aligned, trial, ...
-        trials, [-buffer, stimDur + buffer], ...
+        (1:length(stimData.ids))', [-buffer, stimDur + buffer], ...
         binSize, sigma, false);
 
     mini = min(traces_singleTrials, [], "all");
@@ -50,7 +49,7 @@ for k = 2:length(units)
             'FaceColor', [1 1 1].*0.9, 'EdgeColor', 'none')
         % single trial traces
         plot(bins, traces_singleTrials(stimTrials,:), "Color", [1 1 1].*0.5);
-        % mean predicted traces (from kernel fit)
+        % mean trace
         plot(bins, mean(traces_singleTrials(stimTrials,:), 1, "omitnan"), ...
             'k', "LineWidth", 1)
         set(gca, "Box", "off")
