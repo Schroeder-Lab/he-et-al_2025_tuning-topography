@@ -19,7 +19,8 @@ savefig(fig, fullfile(fMatlab, filename))
 saveas(fig, fullfile(fJpeg, filename), 'jpeg')
 % fig.Renderer = 'painters';
 % saveas(fig, fullfile(folder, filename), 'epsc')
-exportgraphics(fig, fullfile(folder, [filename '.eps']), "ContentType", "vector")
+exportgraphics(fig, fullfile(folder, [filename '.eps']), ...
+    "ContentType", "vector", "BackgroundColor", "white")
 % saveas(fig, fullfile(folder, filename), 'pdf')
 
 close(fig)

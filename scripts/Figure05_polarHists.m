@@ -1,5 +1,7 @@
 function Figure05_polarHists(data, fPlots, sets, selectivityThresholds, suffix)
 
+warning('off', 'MATLAB:print:ContentTypeImageSuggested')
+
 if nargin < 4 
     selectivityThresholds = [0 1; 0 1];
 end
