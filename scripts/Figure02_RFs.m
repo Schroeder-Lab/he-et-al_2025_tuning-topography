@@ -1,8 +1,7 @@
-function Figure03_examples(folders, sets, ex, fPlots)
+function Figure02_RFs(folders, sets, ex, fPlots)
 
 %% Parameters
 % plotting RFs
-ellipse_x = linspace(-pi, pi, 100);
 edges_rf = [-135 -90 42 -20];
 RFtypes = {'ON', 'OFF', 'ON+OFF'};
 colEx = lines(4);

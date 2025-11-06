@@ -112,7 +112,7 @@ Figure01S(folders, glob)
 
 % Pairwise difference in tuning preferences depending on horizontal distance
 Figure02(folders, glob)
-Figure02S(folders, glob)
+Figure02S(folders)
 
 % Receptive fields and pairwise tuning differences depending on RF distance
 Figure03(folders, glob)

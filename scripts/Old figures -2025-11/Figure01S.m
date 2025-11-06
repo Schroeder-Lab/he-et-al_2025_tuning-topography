@@ -1,4 +1,4 @@
-function Figure01S(folders, glob)
+function Figure01S(folders)
 
 %% Parameters
 % for example traces
@@ -244,7 +244,7 @@ diffs(diffs > 180) = diffs(diffs > 180) - 360;
 m = mean(diffs);
 p = signrank(diffs);
 % [~,p] = ttest(diffs);
-figure('Position', glob.figPositionDefault)
+figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(dirPreferences(ind,1), dirPreferences(ind,2), 15, 'k', 'filled')
@@ -268,7 +268,7 @@ diffs(diffs > 90) = diffs(diffs > 90) - 180;
 m = mean(diffs);
 p = signrank(diffs);
 % [~,p] = ttest(diffs);
-figure('Position', glob.figPositionDefault)
+figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,1), oriPreferences(ind,2), 15, 'k', 'filled')
@@ -292,7 +292,7 @@ diffs(diffs > 90) = diffs(diffs > 90) - 180;
 m = mean(diffs);
 p = signrank(diffs);
 % [~,p] = ttest(diffs);
-figure('Position', glob.figPositionDefault)
+figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,1), oriPreferences(ind,3), 15, 'k', 'filled')
@@ -316,7 +316,7 @@ diffs(diffs > 90) = diffs(diffs > 90) - 180;
 m = mean(diffs);
 p = signrank(diffs);
 % [~,p] = ttest(diffs);
-figure('Position', glob.figPositionDefault)
+figure
 hold on
 plot([0 360], [0 360], 'Color', [1 1 1].*0.5)
 scatter(oriPreferences(ind,3), oriPreferences(ind,2), 15, 'k', 'filled')

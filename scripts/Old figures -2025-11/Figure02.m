@@ -1,13 +1,49 @@
-function Figure04(folders, glob)
+function Figure02(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
+maxP = 0.05; % p-value threshold for response kernel and 
+             % direction/orientation selectivity
+minROIs = 15;
+binSize = [5, 20];
+stepSize = [2.5, 5];
+xLims = [50 500];
+cLims = [0.00032 0.00004];
 fovLims = [20 160; 400 900];
+numPerm = 1000;
+
+%% Examples
+ex = cell(2,2); % rows: (1) bouton, (2) neuron
+ex(1,:) = {'SS078', '2017-10-05'};
+% ex(1,:) = {'SS078', '2017-09-28', 1};
+ex(2,:) = {'SS041', '2015-04-11'};
+% ex(2,:) = {'SS044', '2015-04-28', 3};
 
 %% For all plots
-fPlots = fullfile(folders.plots, 'Figures', 'Figure04');
+fPlots = fullfile(folders.plots, 'Figures', 'Figure02');
 if ~isfolder(fPlots)
     mkdir(fPlots)
+end
+
+%% Example maps showing preferences of ROIs
+for s = 1:2 % boutons and neurons
+    str = sets{s};
+    f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
+    % load data
+    [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+    data = io.getRecordingInfo(f);
+    masks = data.roiMasks;
+    fovPix = data.fovPix;
+    fovM = data.fovMicrons;
+
+    tuning.plotOrientationMap(dirTuning.preference, ...
+        dirTuning.pValue < maxP, 'dir', masks, fovPix(1,:), fovM(1,:));
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_directionMap_%s_%s', ...
+        str, ex{s,1}, ex{s,2}))
+    tuning.plotOrientationMap(oriTuning.preference, ...
+        oriTuning.pValue < maxP, 'ori', masks, fovPix(1,:), fovM(1,:));
+    io.saveFigure(gcf, fPlots, sprintf('example_%s_orientationMap_%s_%s', ...
+        str, ex{s,1}, ex{s,2}))
 end
 
 %% Plot pairwise distance in brain versus difference in tuning preference
@@ -24,8 +60,8 @@ for s = 1:2 % boutons and neurons
     oriDiffRelative = {};
     distBinnedOri = {};
     fovSize = [];
-    % rec = 1;
-    % exRecs = [0 0];
+    rec = 1;
+    exRecs = [0 0];
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
         fprintf('%s\n', name)
@@ -115,10 +151,10 @@ for s = 1:2 % boutons and neurons
             end
             fovSize(rec) = mean(sqrt(sum(fovs.^2,2)));
 
-            % if strcmp(name,ex{s,1}) && strcmp(date,ex{s,2})
-            %     exRecs(s) = rec;
-            % end
-            % rec = rec + 1;
+            if strcmp(name,ex{s,1}) && strcmp(date,ex{s,2})
+                exRecs(s) = rec;
+            end
+            rec = rec + 1;
         end
     end
 
@@ -161,13 +197,13 @@ for s = 1:2 % boutons and neurons
         y(ind1:ind2,rec) = interp1(distBinnedDir{rec}, ...
             dirDiffRelative{rec}, x(ind1:ind2), "pchip");
     end
-    figure('Position', glob.figPositionDefault)
+    figure
     hold on
     fill([0 maxi maxi 0], [-3 -3 3 3], 'k', 'FaceColor', 'k', ...
         'FaceAlpha', 0.2, 'EdgeColor', 'none')
     plot([0 maxi],[0 0], 'k')
     p = plot(x, y);
-    % p(exRecs(s)).LineWidth = 2;
+    p(exRecs(s)).LineWidth = 2;
     legend(p,'Location','bestoutside')
     set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)), ...
         "YTick", -12:3:12)
@@ -195,13 +231,13 @@ for s = 1:2 % boutons and neurons
         y(ind1:ind2,rec) = interp1(distBinnedOri{rec}, ...
             oriDiffRelative{rec}, x(ind1:ind2), "pchip");
     end
-    figure('Position', glob.figPositionDefault)
+    figure
     hold on
     fill([0 maxi maxi 0], [-3 -3 3 3], 'k', 'FaceColor', 'k', ...
         'FaceAlpha', 0.2, 'EdgeColor', 'none')
     plot([0 maxi],[0 0], 'k')
     p = plot(x, y);
-    % p(exRecs(s)).LineWidth = 2;
+    p(exRecs(s)).LineWidth = 2;
     legend(p,'Location','bestoutside')
     set(gca, "Box", "off", "ColorOrder", turbo(size(y,2)), ...
         "YTick", -12:3:12)
@@ -217,9 +253,9 @@ for s = 1:2 % boutons and neurons
 
     % plot mean preference difference for each dataset against size of 
     % imaged field-of-view
-    figure('Position', glob.figPositionDefault)
+    figure
     c = zeros(length(fovSize),3);
-    % c(exRecs(s),:) = [1 0 0];
+    c(exRecs(s),:) = [1 0 0];
     m = cellfun(@mean, dirDiff, repmat({"omitnan"},1,length(dirDiff)));
     scatter(fovSize, m, 36, c, 'filled');
     xlim(fovLims(s,:))
@@ -229,7 +265,7 @@ for s = 1:2 % boutons and neurons
     title(sprintf('%s (n = %d)', sets{s}, sum(~isnan(m))))
     io.saveFigure(gcf, fPlots, ...
         sprintf('prefDiffPerDataset_%s_direction', sets{s}))
-    figure('Position', glob.figPositionDefault)
+    figure
     m = cellfun(@mean, oriDiff, repmat({"omitnan"},1,length(oriDiff)));
     scatter(fovSize, m, 36, c, 'filled')
     xlim(fovLims(s,:))

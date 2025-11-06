@@ -1,4 +1,4 @@
-function Figure03(folders, glob)
+function Figure05(folders, glob)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -7,7 +7,7 @@ retinotopyRF = [false true]; % true: use RF positions estimated from
                              % false: use RF positions from RF mapping
 
 %% For all plots
-fPlots = fullfile(folders.plots, 'Figures', 'Figure03');
+fPlots = fullfile(folders.plots, 'Figures', 'Figure05');
 if ~isfolder(fPlots)
     mkdir(fPlots)
 end
@@ -59,7 +59,7 @@ io.saveFigure(gcf, fPlots, 'cartoon_orientationLatitudeVectors');
 
 %% Load data: RF position, tuning preferences
 % data: .rfPos, .oriPref, .OSI, .dirPref, .DSI, .set
-data = Figures_loadData(folders, sets, retinotopyRF);
+data = Figure04_loadData(folders, sets, retinotopyRF);
 
 %% Polar histograms of preferences per visual patch
-Figure03_polarHists(glob, fPlots, data, sets)
+Figure05_polarHists(data, fPlots, sets)

@@ -1,5 +1,4 @@
-function Figure01_tuning_prefs_selectivity(folders, glob, fPlots, sets, ...
-    maxP, minR2, ex)
+function Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlots)
 % Population tuning curves, preference histograms, DS vs OS
 minUnits = 20;
 
@@ -11,15 +10,15 @@ oriBinsFine = 0:1:180;
 oriEdges = (0:15:195) - 7.5;
 oriBins = 0:15:180;
 
-figDir = figure('Position', glob.figPositionDefault);
+figDir = figure;
 hDir = [0 0];
 hold on
-figOri = figure('Position', glob.figPositionDefault);
+figOri = figure;
 hOri = [0 0];
 hold on
-figDS = figure('Position', glob.figPositionDefault);
+figDS = figure;
 hold on
-figOS = figure('Position', glob.figPositionDefault);
+figOS = figure;
 hold on
 numDir = [0 0];
 numOri = [0 0];
@@ -194,7 +193,7 @@ for s = 1:2 % boutons and neurons
 
     %% Preference histograms for all datasets
     % direction
-    figure('Position', glob.figPositionDefault)
+    figure
     n1 = histcounts(dirPreferences(dirTuned & oriTuned), dirEdges);
     n2 = histcounts(dirPreferences(dirTuned & ~oriTuned), dirEdges);
     % merge counts in first and last bars (around 0 and 360 deg)
@@ -216,7 +215,7 @@ for s = 1:2 % boutons and neurons
     io.saveFigure(gcf, fPlots, sprintf('tuning_%s_directionPrefHist', sets{s}));
 
     % orientation
-    figure('Position', glob.figPositionDefault)
+    figure
     n1 = histcounts(oriPreferences(oriTuned & dirTuned), oriEdges);
     n2 = histcounts(oriPreferences(oriTuned & ~dirTuned), oriEdges);
     % merge counts in first and last bars (around 0 and 180 deg)
@@ -240,7 +239,7 @@ for s = 1:2 % boutons and neurons
 
     %% Direction vs orientation preference scatterplot
     ind = dirTuned & oriTuned;
-    figure('Position', glob.figPositionDefault)
+    figure
     hold on
     plot([0 180], [0 180], 'Color', [1 1 1].*0.5)
     plot([180 360], [0 180], 'Color', [1 1 1].*0.5)
@@ -258,7 +257,7 @@ for s = 1:2 % boutons and neurons
 
     %% DS vs OS scatterplot
     ind = dirTuned | oriTuned;
-    figure('Position', glob.figPositionDefault)
+    figure
     h = gscatter(dirSel(ind), oriSel(ind), dirTuned(ind) + ...
         2*oriTuned(ind), repmat([0.4 0.8 0]', 1, 3), [], 15);
     hold on
@@ -400,7 +399,7 @@ for s = 1:2 % boutons and neurons
     if s == 2
         % plot direction preference histogram
         % 1. only inhibitory neurons
-        figure('Position', glob.figPositionDefault)
+        figure
         n1 = histcounts(dirPreferences(dirTuned & oriTuned & isGad==1), dirEdges);
         n2 = histcounts(dirPreferences(dirTuned & ~oriTuned & isGad==1), dirEdges);
         b = bar(dirBinsCoarse, [n1' n2'], 'stacked');
@@ -417,7 +416,7 @@ for s = 1:2 % boutons and neurons
         io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
             sprintf('tuning_%s_inhibitory_directionPrefHist', sets{s}));
         % 2. only excitatory neurons
-        figure('Position', glob.figPositionDefault)
+        figure
         n1 = histcounts(dirPreferences(dirTuned & oriTuned & isGad==-1), dirEdges);
         n2 = histcounts(dirPreferences(dirTuned & ~oriTuned & isGad==-1), dirEdges);
         b = bar(dirBinsCoarse, [n1' n2'], 'stacked');
@@ -436,7 +435,7 @@ for s = 1:2 % boutons and neurons
 
         % plot orientation preference histogram
         % 1. only inhibitory neurons
-        figure('Position', glob.figPositionDefault)
+        figure
         n1 = histcounts(oriPreferences(dirTuned & oriTuned & isGad==1), oriEdges);
         n2 = histcounts(oriPreferences(~dirTuned & oriTuned & isGad==1), oriEdges);
         b = bar(oriBinsCoarse, [n1' n2'], 'stacked');
@@ -453,7 +452,7 @@ for s = 1:2 % boutons and neurons
         io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
             sprintf('tuning_%s_inhibitory_orientationPrefHist', sets{s}));
         % 2. only excitatory neurons
-        figure('Position', glob.figPositionDefault)
+        figure
         n1 = histcounts(oriPreferences(dirTuned & oriTuned & isGad==-1), oriEdges);
         n2 = histcounts(oriPreferences(~dirTuned & oriTuned & isGad==-1), oriEdges);
         b = bar(oriBinsCoarse, [n1' n2'], 'stacked');

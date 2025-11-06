@@ -22,7 +22,7 @@ Figure06S_LFP(folders, fPlots, exAnimal, exDate)
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figures_loadData(folders, maxP, minEV, minPeak);
+data = Figure06_loadData(folders, maxP, minEV, minPeak);
 
 %% Plot direction vs orientation preference and selectivity
 tuned = [cat(1, data.dirTuned), cat(1, data.oriTuned)];

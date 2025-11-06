@@ -1,0 +1,189 @@
+function Figure04S_prefDiff_vs_distance(folders, glob, sets, fPlots)
+
+%% Parameters
+% for evaluation of receptive fields (significance/goodness)
+minEV = 0.01;
+minPeak = 5;
+% for evaluation of tuning selectivity
+maxP = 0.05; % p-value threshold for direction/orientation selectivity
+% for plotting
+minROIs = 15;
+
+binSize = [1, 2];
+stepSize = [0.2, 1];
+xLims = [15 40];
+cLims = [0.004 0.0008];
+% for testing
+numPerm = 1000;
+
+%% Plot pairwise distance in brain versus difference in tuning preference
+numDirTuned = [0 0];
+numOriTuned = [0 0];
+numRFDirTuned = [0 0];
+numRFOriTuned = [0 0];
+numSessionsDir = [0 0];
+numAnimalsDir = [0 0];
+numSessionsOri = [0 0];
+numAnimalsOri = [0 0];
+for s = 1:2 % boutons and neurons
+    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+    dirDist = {};
+    dirDiff = {};
+    dirDiffNull = {};
+    dirDiffRelative = {};
+    rfDistBinnedDir = {};
+    oriDist = {};
+    oriDiff = {};
+    oriDiffNull = {};
+    oriDiffRelative = {};
+    rfDistBinnedOri = {};
+    rec = 1;
+    for subj = 1:length(subjDirs) % animals
+        name = subjDirs(subj).name;
+        fprintf('%s\n', name)
+        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+        tmp = [0 0];
+        for dt = 1:length(dateDirs) %dates
+            date = dateDirs(dt).name;
+            f = fullfile(folders.data, sets{s}, name, date);
+            % ignore session if stimulus was not presented
+            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy')) || ...
+                    ~isfile(fullfile(f, '_ss_rf.posRetinotopy.npy'))
+                continue
+            end
+                
+            % load data
+            data = io.getRFFits(f);
+            rfPos = data.fitParameters(:,[2 4]);
+            ev_rf = data.EV;
+            rf_peaks = data.peaks;
+            [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+
+            dp = dirTuning.preference;
+            valid = ~isnan(dp) & dirTuning.pValue < maxP & ...
+                ev_rf >= minEV & rf_peaks >= minPeak;
+            numDirTuned(s) = numDirTuned(s) + ...
+                sum(~isnan(dp) & dirTuning.pValue < maxP);
+            numRFDirTuned(s) = numRFDirTuned(s) + sum(valid);
+            if sum(~isnan(dp) & dirTuning.pValue < maxP) > 0
+                tmp(1) = tmp(1) + 1;
+            end
+            if sum(valid) < minROIs
+                dirDist{rec} = [];
+                dirDiff{rec} = [];
+                dirDiffNull{rec} = [];
+                dirDiffRelative{rec} = [];
+                rfDistBinnedDir{rec} = [];
+            else
+                % for all unit pairs, determine distance of RFs
+                ddist = spatial.determineDistance(rfPos(valid,1), ...
+                    rfPos(valid,2));
+                dp = dp(valid);
+                % for all unit pairs, determine difference between preferred
+                % directions
+                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
+                % permute preferences to test significance
+                ddiffPermuted = NaN(length(ddiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(dp));
+                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
+                end
+                % collect results
+                dirDist{rec} = ddist;
+                dirDiff{rec} = ddiff;
+                dirDiffNull{rec} = ddiffPermuted;
+            end
+
+            op = oriTuning.preference;
+            valid = ~isnan(op) & oriTuning.pValue < maxP & ...
+                ev_rf >= minEV & rf_peaks >= minPeak;
+            numOriTuned(s) = numOriTuned(s) + ...
+                sum(~isnan(op) & oriTuning.pValue < maxP);
+            numRFOriTuned(s) = numRFOriTuned(s) + sum(valid);
+            if sum(~isnan(op) & oriTuning.pValue < maxP) > 0
+                tmp(2) = tmp(2) + 1;
+            end
+            if sum(valid) < minROIs
+                oriDist{rec} = [];
+                oriDiff{rec} = [];
+                oriDiffNull{rec} = [];
+                oriDiffRelative{rec} = [];
+                rfDistBinnedOri{rec} = [];
+            else
+                % for all unit pairs, determine distance of RFs;
+                odist = spatial.determineDistance(rfPos(valid,1), ...
+                    rfPos(valid,2));
+                op = op(valid);
+                % for all unit pairs, determine difference between preferred
+                % orientations
+                odiff = tuning.determinePreferenceDiff(op, 'ori');
+                % permute preferences to test significance
+                odiffPermuted = NaN(length(odiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(op));
+                    odiffPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
+                end
+                % collect results
+                oriDist{rec} = odist;
+                oriDiff{rec} = odiff;
+                oriDiffNull{rec} = odiffPermuted;
+            end
+
+            rec = rec + 1;
+        end
+        if tmp(1) > 0
+            numSessionsDir(s) = numSessionsDir(s) + tmp(1);
+            numAnimalsDir(s) = numAnimalsDir(s) + 1;
+        end
+        if tmp(2) > 0
+            numSessionsOri(s) = numSessionsOri(s) + tmp(2);
+            numAnimalsOri(s) = numAnimalsOri(s) + 1;
+        end
+    end
+
+    % plot across all datasets
+    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
+    fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
+        cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
+        binSize(s), stepSize(s), false);
+    set(gcf, 'Position', glob.figPositionDefault)
+    set(gca, 'YTick', 0:45:180)
+    xlim([0 xLims(s)])
+    ylim([0 180])
+    clim([0 cLims(s)/2])
+    xlabel('Distance (vis. deg.)')
+    title(['\DeltaDirection pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
+        sprintf('rfDistanceAll_%s_direction', sets{s}))
+    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
+    fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
+        cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
+        binSize(s), stepSize(s), false);
+    set(gcf, 'Position', glob.figPositionDefault)
+    set(gca, 'YTick', 0:45:90)
+    xlim([0 xLims(s)])
+    ylim([0 90])
+    clim([0 cLims(s)])
+    xlabel('Distance (vis. deg.)')
+    title(['\DeltaOrientation pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
+        sprintf('rfDistanceAll_%s_orientation', sets{s}))
+end
+
+fprintf('Number of tuned units with significant RF:\n')
+fprintf('  Direction:\n')
+fprintf('    Boutons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFDirTuned(1), numDirTuned(1), numRFDirTuned(1)/numDirTuned(1)*100, ...
+    numSessionsDir(1), numAnimalsDir(1))
+fprintf('    Neurons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFDirTuned(2), numDirTuned(2), numRFDirTuned(2)/numDirTuned(2)*100, ...
+    numSessionsDir(2), numAnimalsDir(2))
+fprintf('  Orientation:\n')
+fprintf('    Boutons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFOriTuned(1), numOriTuned(1), numRFOriTuned(1)/numOriTuned(1)*100, ...
+    numSessionsOri(1), numAnimalsOri(1))
+fprintf('    Neurons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
+    numRFOriTuned(2), numOriTuned(2), numRFOriTuned(2)/numOriTuned(2)*100, ...
+    numSessionsOri(2), numAnimalsOri(2))

@@ -1,11 +1,11 @@
-function Figure05S(folders, glob)
+function Figure05S(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-measures = {'direction', 'orientation'};
 retinotopyRF = [false true]; % true: use RF positions estimated from 
                              % retinotopic mapping;
                              % false: use RF positions from RF mapping
+selectivityThresholds = [0.2 0.2; 0.1 0.2];
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure05S');
@@ -15,11 +15,7 @@ end
 
 %% Load data: RF position, tuning preferences
 % data: .rfPos, .oriPref, .OSI, .dirPref, .DSI, .set
-data = Figures_loadData(folders, sets, retinotopyRF);
+data = Figure04_loadData(folders, sets, retinotopyRF);
 
-%% Plot smoothed preference maps pooling datasets
-maps = Figure05_smoothedPreferenceMaps(glob, [], data, sets, retinotopyRF);
-
-%% Scatterplots: consistencies compared to null distribution
-Figure05S_consistenciesAll(glob, fPlots, maps, sets, retinotopyRF, ...
-    measures)
+%% Polar histograms for DS and OS only units
+Figure05_polarHists(data, fPlots, sets, selectivityThresholds)
