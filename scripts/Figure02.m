@@ -2,7 +2,7 @@ function Figure02(folders, glob)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-maxP = 0.05; % p-value threshold for response kernel and 
+% maxP = 0.05; % p-value threshold for response kernel and 
              % direction/orientation selectivity
 
 %% Examples
@@ -22,7 +22,7 @@ ex(2,:) = {'SS044', '2015-04-28', 3, [389 306 343 227]}; % also 427 (OFF)
 % % ex(2,:) = {'SS041', '2015-04-11'};
 % ex(2,:) = {'SS044', '2015-04-28'};
 
-retinotopyRF = [false true]; % true: use RF positions estimated from 
+% retinotopyRF = [false true]; % true: use RF positions estimated from 
                              % retinotopic mapping;
                              % false: use RF positions from RF mapping
 
@@ -40,31 +40,31 @@ Figure02_RFs(folders, sets, ex, fPlots)
 % Sizes of fitted RFs
 Figure02_measured_vs_retinotopic_RF(folders, glob, sets, fPlots)
 
-%% Example maps showing preferences of ROIs
-for s = 1:2 % boutons and neurons
-    str = sets{s};
-    f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
-    % load data
-    [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-    data = io.getRecordingInfo(f);
-    masks = data.roiMasks;
-    fovPix = data.fovPix;
-    fovM = data.fovMicrons;
-
-    tuning.plotOrientationMap(dirTuning.preference, ...
-        dirTuning.pValue < maxP, 'dir', masks, fovPix(1,:), fovM(1,:));
-    io.saveFigure(gcf, fPlots, sprintf('example_%s_directionMap_%s_%s', ...
-        str, ex{s,1}, ex{s,2}))
-    tuning.plotOrientationMap(oriTuning.preference, ...
-        oriTuning.pValue < maxP, 'ori', masks, fovPix(1,:), fovM(1,:));
-    io.saveFigure(gcf, fPlots, sprintf('example_%s_orientationMap_%s_%s', ...
-        str, ex{s,1}, ex{s,2}))
-end
-
-%% Load data: RF position, tuning preferences
-% data: .rfPos, .oriPref, .OSI, .dirPref, .DSI, .set
-data = Figures_loadData(folders, sets, retinotopyRF);
-
-%% Scatterplot showing preferred direction/orientation of each unit
-Figure02_preferenceMapsAcrossAllDatasets(glob, fPlots, data, sets, ...
-    retinotopyRF)
+% %% Example maps showing preferences of ROIs
+% for s = 1:2 % boutons and neurons
+%     str = sets{s};
+%     f = fullfile(folders.data, str, ex{s,1}, ex{s,2});
+%     % load data
+%     [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+%     data = io.getRecordingInfo(f);
+%     masks = data.roiMasks;
+%     fovPix = data.fovPix;
+%     fovM = data.fovMicrons;
+% 
+%     tuning.plotOrientationMap(dirTuning.preference, ...
+%         dirTuning.pValue < maxP, 'dir', masks, fovPix(1,:), fovM(1,:));
+%     io.saveFigure(gcf, fPlots, sprintf('example_%s_directionMap_%s_%s', ...
+%         str, ex{s,1}, ex{s,2}))
+%     tuning.plotOrientationMap(oriTuning.preference, ...
+%         oriTuning.pValue < maxP, 'ori', masks, fovPix(1,:), fovM(1,:));
+%     io.saveFigure(gcf, fPlots, sprintf('example_%s_orientationMap_%s_%s', ...
+%         str, ex{s,1}, ex{s,2}))
+% end
+% 
+% %% Load data: RF position, tuning preferences
+% % data: .rfPos, .oriPref, .OSI, .dirPref, .DSI, .set
+% data = Figures_loadData(folders, sets, retinotopyRF);
+% 
+% %% Scatterplot showing preferred direction/orientation of each unit
+% Figure02_preferenceMapsAcrossAllDatasets(glob, fPlots, data, sets, ...
+%     retinotopyRF)

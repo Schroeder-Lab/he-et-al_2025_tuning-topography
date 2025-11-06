@@ -28,7 +28,7 @@ Figure06_examplesTuning(folders, fPlots, exAnimal, exDate, exUnits)
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figures_loadData(folders, maxP, minEV, minPeak);
+data = Figure06_loadData(folders, maxP, minEV, minPeak);
 
 %% Plot example RFs
 exSession = strcmp(exAnimal, {data.animal}) & ...

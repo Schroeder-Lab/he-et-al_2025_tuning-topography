@@ -18,7 +18,7 @@ end
 data = Figures_loadData(folders, sets, retinotopyRF);
 
 %% Scatterplot showing preferred direction/orientation of each unit
-Figure02_preferenceMapsAcrossAllDatasets(glob, fPlots, data, sets, ...
+Figure05_preferenceMapsAcrossAllDatasets(glob, fPlots, data, sets, ...
     retinotopyRF)
 
 %% Plot smoothed preference maps pooling datasets
