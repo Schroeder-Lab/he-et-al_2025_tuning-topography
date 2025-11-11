@@ -42,15 +42,13 @@ for s = 1:2 % boutons and neurons
             end
 
             % load data
-            rfData = io.getRFFits(f);
-            fitPars = rfData.fitParameters;
+            rfData = io.getNoiseRFFits(f);
+            fitPars = rfData.gaussPars;
             rfPos = fitPars(:, [2 4]); % (azimuth, elevation) in visual degrees
             ev_rf = rfData.EV;
             rf_peaks = rfData.peaks;
             outliers = readNPY(fullfile(f, '_ss_rf.outliers.npy'));
             pred = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
-            numTotal(s) = numTotal(s) + length(ev_rf);
-            numSessions(s) = numSessions(s) + 1;
 
             % only consider significant RFs
             valid = ev_rf >= minEV & rf_peaks >= minPeak;
@@ -58,6 +56,8 @@ for s = 1:2 % boutons and neurons
             if sum(valid) < minUnits
                 continue
             end
+            numTotal(s) = numTotal(s) + length(ev_rf);
+            numSessions(s) = numSessions(s) + 1;
 
             % Eucleadian distances
             d = sqrt( ...
@@ -122,13 +122,13 @@ fprintf('  Neurons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
     numSessions(2), numAnimals(2))
 p = ranksum(dist_rf_pred{1}, dist_rf_pred{2});
 fprintf('Distance: mapped vs retinotopic RFs\n')
-fprintf('  Boutons: %.4f mean, %.4f median\n', mDist(1), median(dist_rf_pred{1}))
-fprintf('  Neurons: %.4f mean, %.4f median\n', mDist(2), median(dist_rf_pred{2}))
+fprintf('  Boutons: %.4f median\n', mDist(1))
+fprintf('  Neurons: %.4f median\n', mDist(2))
 fprintf('  Boutons - neurons (median): %.4f (p = %.6f)\n', ...
     median(dist_rf_pred{1}) - median(dist_rf_pred{2}), p)
 p = ranksum(diam_rf{1}, diam_rf{2});
 fprintf('RF sizes\n')
-fprintf('  Boutons: %.4f mean, %.4f median\n', mSize(1), median(diam_rf{1}))
-fprintf('  Neurons: %.4f mean, %.4f median\n', mSize(2), median(diam_rf{2}))
+fprintf('  Boutons: %.4f median\n', mSize(1))
+fprintf('  Neurons: %.4f median\n', mSize(2))
 fprintf('  Boutons - neurons (median): %.4f (p = %.6f)\n', ...
     median(diam_rf{1}) - median(diam_rf{2}), p)

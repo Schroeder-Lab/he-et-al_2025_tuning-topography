@@ -520,7 +520,7 @@ fprintf(' Comparison: boutons - neurons = %.4f (p = %.4f)\n', ...
     m(1) - m(2), ranksum(medianDS{1}, medianDS{2}))
 % OS
 m = [median(medianOS{1}, "omitnan"), median(medianOS{2}, "omitnan")];
-fprintf('Direction selectivity (median):\n')
+fprintf('Orientation selectivity (median):\n')
 fprintf(' Boutons: %.4f\n', m(1))
 fprintf(' Neurons: %.4f\n', m(2))
 fprintf(' Comparison: boutons - neurons = %.4f (p = %.4f)\n', ...

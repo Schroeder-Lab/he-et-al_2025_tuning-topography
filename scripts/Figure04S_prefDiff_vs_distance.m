@@ -53,8 +53,8 @@ for s = 1:2 % boutons and neurons
             end
                 
             % load data
-            data = io.getRFFits(f);
-            rfPos = data.fitParameters(:,[2 4]);
+            data = io.getNoiseRFFits(f);
+            rfPos = data.gaussPars(:,[2 4]);
             ev_rf = data.EV;
             rf_peaks = data.peaks;
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
