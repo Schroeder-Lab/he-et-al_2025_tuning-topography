@@ -55,13 +55,15 @@ h = gscatter(dirSel(any(tuned,2)), oriSel(any(tuned,2)), ...
 % hold on
 % scatter(dirSel(indExamples), oriSel(indExamples), 40, ...
 %     lines(length(indExamples)), "filled")
-l = legend(h, 'DS', 'OS', 'DS & OS', "Location", "bestoutside");
+l = legend(h, sprintf('DS (%d)', sum(tuned(:,1) & ~tuned(:,2))), ...
+    sprintf('OS (%d)', sum(tuned(:,2) & ~tuned(:,1))), ...
+    sprintf('DS & OS (%d)', sum(all(tuned,2))), "Location", "bestoutside");
 l.Box = "off";
 axis padded equal
 mini = -0.05;
 maxi = 1.05;
 axis([mini maxi mini maxi])
-set(gca, "Box", "off")
+set(gca, "Box", "off", "XTick", [0 0.5 1], "YTick", [0 0.5 1])
 xlabel('Direction selectivity')
 ylabel('Orientation selectivity')
 io.saveFigure(gcf, fPlots, 'tuning_selectivity_dirVsOriScatter');
