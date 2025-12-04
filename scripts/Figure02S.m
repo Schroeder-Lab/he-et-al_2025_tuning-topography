@@ -2,15 +2,19 @@ function Figure02S(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-selectivityThresholds = [0.2 0.2; 0.1 0.2];
-minROIs = 15;
-binSize = [5, 20];
-stepSize = [2.5, 5];
-xLims = [50 500];
-
-exp = {'bars', 'gratingsStatic'};
+% for evaluation of receptive fields (significance/goodness)
+minEV = 0.01;
+minPeak = 5;
+% for evaluation of tuning selectivity
 maxP = 0.05;
-numPerm = 1000;
+% to relate RF position to tuning preference
+minUnits = 20;
+smoothN = [201 29];
+smoothPars = [0.1 0.5];
+nPerm = 1000;
+% plotting
+labels = {'left', 'top'; 'direction', 'orientation'};
+stdLims = [0.7 1.4];
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure02S');
@@ -18,244 +22,136 @@ if ~isfolder(fPlots)
     mkdir(fPlots)
 end
 
-%% Plot pairwise distance versus tuning difference : DS- and OS-only units
+%% Plot distance to monitor edge (left/top) vs pref. dir./ori.
 for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    dirDist = {};
-    dirDiff = {};
-    dirDiffNull = {};
-    oriDist = {};
-    oriDiff = {};
-    oriDiffNull = {};
-    rec = 1;
+    rfDist = {}; % (1) from left edge, (2) from top edge
+    prefs = {};
+    tuned = {};
+
+    % Collect data
     for subj = 1:length(subjDirs) % animals
         name = subjDirs(subj).name;
-        fprintf('%s\n', name)
         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
         for dt = 1:length(dateDirs) %dates
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
-            % ignore session if stimulus was not presented
-            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
+            % ignore session if visual noise stimuolus was not present
+            if ~isfile(fullfile(f, '_ss_rf.gaussFitPars.npy')) || ...
+                    ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
                 continue
             end
-                
+
             % load data
-            data = io.getRecordingInfo(f);
-            roiPos = data.roiPositions(:,1:2);
-            [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-
-            dp = dirTuning.preference;
-            validDir = ~isnan(dp) & dirTuning.pValue < maxP & ...
-                dirTuning.selectivity >= selectivityThresholds(1,1) & ...
-                oriTuning.selectivity <= selectivityThresholds(1,2);
-            if sum(validDir) < minROIs
-                dirDist{rec} = [];
-                dirDiff{rec} = [];
-                dirDiffNull{rec} = [];
+            data = io.getRFFits(f);
+            fitPars = data.fitParameters;
+            rfPos = fitPars(:, [2 4]); % (azimuth, elevation) in visual degrees
+            ev_rf = data.EV;
+            rf_peaks = data.peaks;
+            edges = data.edges; % [left right top bottom]
+            if isfile(fullfile(f, '_ss_rf.outliers.npy'))
+                outliers = readNPY(fullfile(f, '_ss_rf.outliers.npy'));
             else
-                % for all unit pairs, determine distance in brain (ignore
-                % depth);
-                ddist = spatial.determineDistance(roiPos(validDir,1), ...
-                    roiPos(validDir,2));
-                dp = dp(validDir);
-                % for all unit pairs, determine difference between preferred
-                % directions
-                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
-                % permute preferences to test significance
-                ddiffPermuted = NaN(length(ddiff), numPerm);
-                rng('default');
-                for k = 1:numPerm
-                    order = randperm(length(dp));
-                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
-                end
-                % collect results
-                dirDist{rec} = ddist;
-                dirDiff{rec} = ddiff;
-                dirDiffNull{rec} = ddiffPermuted;
+                outliers = false(size(ev_rf));
             end
-            op = oriTuning.preference;
-            validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
-                oriTuning.selectivity >= selectivityThresholds(2,1) & ...
-                dirTuning.selectivity <= selectivityThresholds(2,2);
-            if sum(validOri) < minROIs
-                oriDist{rec} = [];
-                oriDiff{rec} = [];
-                oriDiffNull{rec} = [];
-            else
-                % for all unit pairs, determine distance in brain (ignore
-                % depth);
-                odist = spatial.determineDistance(roiPos(validOri,1), ...
-                    roiPos(validOri,2));
-                op = op(validOri);
-                % for all unit pairs, determine difference between preferred
-                % orientations
-                odiff = tuning.determinePreferenceDiff(op, 'ori');
-                % permute preferences to test significance
-                odiffPermuted = NaN(length(odiff), numPerm);
-                rng('default');
-                for k = 1:numPerm
-                    order = randperm(length(op));
-                    odiffPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
-                end
-                % collect results
-                oriDist{rec} = odist;
-                oriDiff{rec} = odiff;
-                oriDiffNull{rec} = odiffPermuted;
-            end
-            rec = rec + 1;
-        end
-    end
+            [dirTuning, oriTuning] = ...
+                io.getTuningResults(f, 'gratingsDrifting');
 
-    % plot distance vs tuning difference across all datasets
-    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
-    fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
-        cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
-        binSize(s), stepSize(s), false);
-    set(gca, 'YTick', 0:45:180)
-    xlim([0 xLims(s)])
-    ylim([0 180])
-    title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
-    io.saveFigure(fig, fPlots, ...
-        sprintf('distanceAll_%s_directionOnly', sets{s}))
-    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
-    fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
-        cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
-        binSize(s), stepSize(s), false);
-    set(gca, 'YTick', 0:45:90)
-    xlim([0 xLims(s)])
-    ylim([0 90])
-    title(['\DeltaOrientation pref. vs \Deltaposition (n = ' num2str(n) ')'])
-    io.saveFigure(fig, fPlots, ...
-        sprintf('distanceAll_%s_orientationOnly', sets{s}))
-end
-
-%% Plot pairwise distance in brain versus difference in tuning preference 
-% measured in response to bars and static gratings
-
-subjDirs = dir(fullfile(folders.data, 'neurons', 'SS*'));
-dist = {};
-dirDiff_bars = {};
-dirDiffNull_bars = {};
-oriDiff_bars = {};
-oriDiffNull_bars = {};
-oriDiff_static = {};
-oriDiffNull_static = {};
-rec = 1;
-for subj = 1:length(subjDirs) % animals
-    name = subjDirs(subj).name;
-    dateDirs = dir(fullfile(folders.data, 'neurons', name, '2*'));
-    for dt = 1:length(dateDirs) % dates
-        date = dateDirs(dt).name;
-        f = fullfile(folders.data, 'neurons', name, date);
-
-        % ignore session if neither stimulus was presented
-        if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', exp{1}))) && ...
-                ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', exp{2})))
-            continue
-        end
-
-        % load data
-        data = io.getRecordingInfo(f);
-        roiPos = data.roiPositions(:,1:2);
-        % for all unit pairs, determine distance in brain (ignore depth);
-        dist{rec} = spatial.determineDistance(roiPos(:,1), roiPos(:,2));
-        for k = 1:2
-            % ignore session if stimulus was not presented
-            if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', exp{k})))
-                if k == 1 % bars
-                    dirDiff_bars{rec} = [];
-                    dirDiffNull_bars{rec} = [];
-                    oriDiff_bars{rec} = [];
-                    oriDiffNull_bars{rec} = [];
-                else % static
-                    oriDiff_static{rec} = [];
-                    oriDiffNull_static{rec} = [];
-                end
+            % only consider significant RFs
+            valid = ev_rf >= minEV & rf_peaks >= minPeak;
+            valid = valid & ~outliers;
+            if sum(valid & dirTuning.pValue < maxP) < minUnits && ...
+                    sum(valid & oriTuning.pValue < maxP) < minUnits
                 continue
             end
-            [dirTuning, oriTuning] = io.getTuningResults(f, exp{k});
-            if k == 1 % bars
-                dp = dirTuning.preference;
-                invalid = dirTuning.pValue >= maxP;
-                dp(invalid) = NaN;
-                % for all unit pairs, determine difference between preferred
-                % directions
-                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
-                % permute preferences to test significance
-                ddiffPermuted = NaN(length(ddiff), numPerm);
-                rng('default');
-                for n = 1:numPerm
-                    order = randperm(length(dp));
-                    ddiffPermuted(:,n) = ...
-                        tuning.determinePreferenceDiff(dp(order), 'dir');
-                end
-                % collect results
-                dirDiff_bars{rec} = ddiff;
-                dirDiffNull_bars{rec} = ddiffPermuted;
-            end
 
-            op = oriTuning.preference;
-            invalid = oriTuning.pValue >= maxP;
-            op(invalid) = NaN;
-            % for all unit pairs, determine difference between preferred
-            % orientations
-            odiff = tuning.determinePreferenceDiff(op, 'ori');
-            % permute preferences to test significance
-            odiffPermuted = NaN(length(odiff), numPerm);
-            rng('default');
-            for n = 1:numPerm
-                order = randperm(length(op));
-                odiffPermuted(:,n) = ...
-                    tuning.determinePreferenceDiff(op(order), 'ori');
-            end
-            % collect results
-            if k == 1 % bars
-                oriDiff_bars{rec} = odiff;
-                oriDiffNull_bars{rec} = odiffPermuted;
-            else % static
-                oriDiff_static{rec} = odiff;
-                oriDiffNull_static{rec} = odiffPermuted;
-            end
+            % collect data
+            rfDist{end+1,1} = rfPos(valid,:).*[1 -1] + [-edges(1) edges(3)];
+            prefs{end+1,1} = dirTuning.preference(valid);
+            tuned{end+1,1} = dirTuning.pValue(valid);
+            prefs{end,2} = oriTuning.preference(valid);
+            tuned{end,2} = oriTuning.pValue(valid);
         end
-        rec = rec + 1;
     end
+    dst = cat(1, rfDist{:});
+
+    % Plot RF distance to monitor edge vs tuning preference for each unit
+    pr = [cat(1, prefs{:,1}), cat(1, prefs{:,2})];
+    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})] < maxP;
+    figure('Position', [40 580 1850 410])
+    tiledlayout(1, 4)
+    for feat = 1:2
+        for ed = 1:2 % left / top edge
+            nexttile
+            hold on
+            scatter(dst(tn(:,feat),ed), pr(tn(:,feat),feat), 15, 'k', ...
+                "filled")
+            xlim([0 max(dst(:,ed))])
+            ylim([-5 365]./feat)
+            set(gca, "Box", "off", "YTick", (0:90:360)./feat)
+            xlabel(sprintf('Distance to %s monitor edge (deg)', labels{1,ed}))
+            ylabel(sprintf('Preferred %s (deg)', labels{2,feat}))
+            title(sprintf('n = %d', sum(tn(:,feat))))
+        end
+    end
+    sgtitle(sets{s})
+    io.saveFigure(gcf, fPlots, ...
+        sprintf('rf-to-monitorEdge_%s_scatter', sets{s}))
+
+    % Plot circular STD as function of RF distance to monitor edge
+    pr = [cat(1, prefs{:,1}), cat(1, prefs{:,2})];
+    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})] < maxP;
+    figure('Position', [40 580 1850 410])
+    tiledlayout(1, 4)
+    for feat = 1:2
+        for ed = 1:2 % left / top edge
+            nexttile
+            hold on
+            [dst_sorted, order] = sort(dst(tn(:,feat),ed), "ascend");
+            pr_sorted = pr(tn(:,feat),feat);
+            pr_sorted = pr_sorted(order);
+            dst_sm = smoothdata(dst_sorted, "movmean", smoothN(1));
+            dst_sm = dst_sm(ceil(smoothN(1)/2) : end-floor(smoothN(1)/2));
+            std_sm  = NaN(length(pr_sorted) - smoothN(1) + 1, 1);
+            for k = 1:length(std_sm)
+                std_sm(k) = circ_std(deg2rad( ...
+                    pr_sorted(k:k+smoothN(1)-1) .* feat));
+            end
+            f1 = fit(dst_sm, std_sm, "smoothingspline", ...
+                "SmoothingParam", smoothPars(1));
+
+            % permutation test
+            std_null = NaN(size(std_sm,1), nPerm);
+            rng('default');
+            for n = 1:nPerm
+                order = randperm(length(pr_sorted));
+                pr_perm = pr_sorted(order);
+                for k = 1:size(std_null,1)
+                    std_null(k,n) = circ_std(deg2rad( ...
+                        pr_perm(k:k+smoothN(1)-1) .* feat));
+                end
+            end
+            std_prctl = prctile(std_null, [2.5 50 97.5], 2);
+            f2 = cell(1,3);
+            for k=1:3
+                f2{k} = fit(dst_sm, std_prctl(:,k), "smoothingspline", ...
+                    "SmoothingParam", smoothPars(1));
+            end
+
+            x = floor(dst_sm(1)*10)/10 : 0.1 : ceil(dst_sm(end)*10)/10;
+            fill([x flip(x)], [f2{1}(x); flip(f2{3}(x))], 'k', ...
+                'FaceAlpha', 0.3, 'EdgeColor', 'none')
+            plot(x, f2{2}(x), 'k', 'LineWidth', 2)
+            plot(x, f1(x), 'r', 'LineWidth', 2)
+
+            xlim([0 max(dst(:,ed))])
+            ylim(stdLims)
+            set(gca, "Box", "off")
+            xlabel(sprintf('Distance to %s monitor edge (deg)', labels{1,ed}))
+            ylabel(sprintf('STD across %ss', labels{2,feat}))
+        end
+    end
+    sgtitle(sets{s})
+    io.saveFigure(gcf, fPlots, ...
+        sprintf('rf-to-monitorEdge_%s_STD', sets{s}))
 end
-
-% Tuning to bars
-% 1. plot distance vs direction difference
-ind = ~cellfun(@isempty, dirDiff_bars);
-n = sum(~any(isnan([cat(1, dist{ind}) cat(1, dirDiff_bars{ind})]), 2));
-spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
-    cat(1, dirDiff_bars{ind}), cat(1, dirDiffNull_bars{ind}), ...
-    binSize(2), stepSize(2), false);
-xlim([0 400])
-ylim([0 180])
-clim([0 3.5e-5])
-title(['\DeltaDirection pref.: ' exp{1} ' (n = ' num2str(n) ')'])
-io.saveFigure(gcf, fPlots, sprintf('dirPref_%s', exp{1}))
-
-% 2. plot distance vs orientation difference
-ind = ~cellfun(@isempty, oriDiff_bars);
-n = sum(~any(isnan([cat(1, dist{ind}) cat(1, oriDiff_bars{ind})]), 2));
-spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
-    cat(1, oriDiff_bars{ind}), cat(1, oriDiffNull_bars{ind}), ...
-    binSize(2), stepSize(2), false);
-xlim([0 400])
-ylim([0 90])
-clim([0 7e-5])
-title(['\DeltaOrientation pref.: ' exp{1} ' (n = ' num2str(n) ')'])
-io.saveFigure(gcf, fPlots, sprintf('oriPref_%s', exp{1}))
-
-% Tuning to static gratings
-% plot distance vs orientation difference
-ind = ~cellfun(@isempty, oriDiff_static);
-n = sum(~any(isnan([cat(1, dist{ind}) cat(1, oriDiff_static{ind})]), 2));
-spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
-    cat(1, oriDiff_static{ind}), cat(1, oriDiffNull_static{ind}), ...
-    binSize(2), stepSize(2), false);
-xlim([0 400])
-ylim([0 90])
-clim([0 7e-5])
-title(['\DeltaOrientation pref.: ' exp{2} ' (n = ' num2str(n) ')'])
-io.saveFigure(gcf, fPlots, sprintf('oriPref_%s', exp{2}))

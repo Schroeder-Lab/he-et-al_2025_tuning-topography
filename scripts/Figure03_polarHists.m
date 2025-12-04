@@ -1,9 +1,12 @@
-function Figure05_polarHists(data, fPlots, sets, selectivityThresholds, suffix)
+function Figure03_polarHists(glob, fPlots, data, sets, ...
+    selectivityThresholds, suffix)
 
-if nargin < 4 
+warning('off', 'MATLAB:print:ContentTypeImageSuggested')
+
+if nargin < 5 
     selectivityThresholds = [0 1; 0 1];
 end
-if nargin  < 5
+if nargin  < 6
     suffix = '';
 end
 
@@ -20,9 +23,14 @@ pitchRange = [-29 0];
 gridSpace = 10;
 gridX = -130 : gridSpace : -90;
 gridY = 40 : -gridSpace : -10;
-
 polarEdges = deg2rad(-5:10:355);
 cols = {'k', 'b', 'r', 'm'};
+% matching vectors
+minCount = 20;
+% prediction errors
+edges_err = 0:5:60;
+yLimit = 350;
+height = 250;
 
 % Tests
 nPerm = 1000;
@@ -173,6 +181,7 @@ for s = 1:length(data)
         (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     dp = data(s).dirPref(valid); % preferred directions
+    dp_sets = data(s).set(valid); % IDs of datasets
     predictedDirs = modelDirs{s}(valid,:); % 4 direction vectors of DSGCs at RF position
     % orientation
     % only use units with minimum OSI and maximum DSI
@@ -180,6 +189,7 @@ for s = 1:length(data)
         (data(s).DSI <= selectivityThresholds(2,2) | isnan(data(s).DSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     op = data(s).oriPref(valid); % preferred orientations
+    op_sets = data(s).set(valid); % IDs of datasets
     % tranform angles from direction of motion (axial motion) to
     % orientation of grating
     op = mod(op + 90, 180);
@@ -191,25 +201,11 @@ for s = 1:length(data)
     ind = err > 180;
     err(ind) = 360 - err(ind);
     [errDir_original{s}, optTransVects] = min(err, [], 2);
-    figure
-    histogram(optTransVects, .5:4.5)
-    set(gca, 'XTick', 1:4, 'XTickLabel', ...
-        {'advance','retreat','rise','fall'}, 'Box', 'off')
-    title(sprintf('%s: Direction vectors (n = %d)', sets{s}, length(optTransVects)))
-    io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_direction%s', ...
-        sets{s}, suffix))
     % 2. orientation
     err = abs(op - predictedOris);
     ind = err > 90;
     err(ind) = 180 - err(ind);
     [errOri_original{s}, optOriVects] = min(err, [], 2);
-    figure
-    histogram(optOriVects, .5:4.5)
-    set(gca, 'XTick', 1:4, 'XTickLabel', ...
-        {'H_{long}','V_{long}','H_{lat}','V_{lat}'}, 'Box', 'off')
-    title(sprintf('%s: Orientation vectors (n = %d)', sets{s}, length(optOriVects)))
-    io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_orientation%s', ...
-        sets{s}, suffix))
 
     % prediction error for permuted data
     errDir_perm = NaN(1, nPerm);
@@ -233,8 +229,8 @@ for s = 1:length(data)
         err_tmp = min(err_tmp, [], 2);
         errOri_perm(p) = median(err_tmp);
     end
-    errDir_perm = prctile(errDir_perm, [2.5 97.5]);
-    errOri_perm = prctile(errOri_perm, [2.5 97.5]);
+    errDir_perm = prctile(errDir_perm, [2.5 50 97.5]);
+    errOri_perm = prctile(errOri_perm, [2.5 50 97.5]);
     
     % prediciton error for uniform data
     rng('default');
@@ -244,27 +240,124 @@ for s = 1:length(data)
     ind = err_tmp > 180;
     err_tmp(ind) = 360 - err_tmp(ind);
     err_tmp = squeeze(min(err_tmp, [], 2));
-    errDir_uni = prctile(median(err_tmp, 1), [2.5 97.5]);
+    errDir_uni = prctile(median(err_tmp, 1), [2.5 50 97.5]);
     % 2. orientation
     op_uni = rand(length(op), 1, nPerm) .* 180;
     err_tmp = abs(op_uni - predictedOris);
     ind = err_tmp > 90;
     err_tmp(ind) = 180 - err_tmp(ind);
     err_tmp = squeeze(min(err_tmp, [], 2));
-    errOri_uni = prctile(median(err_tmp, 1), [2.5 97.5]);
+    errOri_uni = prctile(median(err_tmp, 1), [2.5 50 97.5]);
 
+    % Plot histograms of closest vectors
+    edges = .5:4.5;
+    bins = 1:4;
+    % 1. direction
+    counts = NaN(max(dp_sets), length(bins));
+    for k = unique(dp_sets)'
+        ind = dp_sets == k;
+        counts(k,:) = histcounts(optTransVects(ind), edges);
+    end
+    n = sum(counts, 2);
+    counts(n < minCount,:) = [];
+    n(n < minCount) = [];
+    figure('Position', glob.figPositionDefault)
+    swarmchart(repmat(bins, length(n), 1), counts ./ n, n, ...
+        'filled', 'XJitter', 'density', 'XJitterWidth', 0.5);
+    hold on
+    plot([-0.4; 0.4] + (1:4), ...
+        repmat(median(counts ./ n, 1, "omitnan"), 2, 1), 'k', ...
+        'LineWidth', 4)
+    ylim([0 1])
+    set(gca, 'XTick', bins, 'XTickLabel', ...
+        {'advance','retreat','rise','fall'}, 'Box', 'off')
+    title(sprintf('%s: Direction vectors (n = %d)', sets{s}, sum(~isnan(n))))
+    io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_direction%s', ...
+        sets{s}, suffix))
+    % 2. orientation
+    counts = NaN(max(op_sets), length(bins));
+    for k = unique(op_sets)'
+        ind = op_sets == k;
+        counts(k,:) = histcounts(optOriVects(ind), edges);
+    end
+    n = sum(counts, 2);
+    counts(n < minCount,:) = [];
+    n(n < minCount) = [];
+    figure('Position', glob.figPositionDefault)
+    swarmchart(repmat(bins, length(n), 1), counts ./ n, n, ...
+        'filled', 'XJitter', 'density', 'XJitterWidth', 0.5);
+    hold on
+    plot([-0.4; 0.4] + (1:4), ...
+        repmat(median(counts ./ n, 1, "omitnan"), 2, 1), 'k', ...
+        'LineWidth', 4)
+    ylim([0 1])
+    set(gca, 'XTick', bins, 'XTickLabel', ...
+        {'H_{long}','V_{long}','H_{lat}','V_{lat}'}, 'Box', 'off')
+    title(sprintf('%s: Orientation vectors (n = %d)', sets{s}, sum(~isnan(n))))
+    io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_orientation%s', ...
+        sets{s}, suffix))
+
+    % plot prediction errors of original data and confidence intervals for
+    % permuted and uniform data
+    % 1. direction
+    h = [0 0];
+    figure('Position', glob.figPositionDefault)
+    histogram(errDir_original{s}, edges_err, "FaceColor", "k", "FaceAlpha", 1)
+    hold on
+    plot(median(errDir_original{s}), height, 'v', ...
+        "MarkerFaceColor", 'k', "MarkerEdgeColor", "none")
+    h(1) = plot(errDir_perm([1 3]), [1 1] .* height, ...
+        "Color", [1 1 1] .* 0.4, "LineWidth", 2);
+    plot(errDir_perm(2), height, '.', ...
+        "Color", [1 1 1] .* 0.4, "MarkerSize", 15)
+    h(2) = plot(errDir_uni([1 3]), [1 1] .* height, ...
+        "Color", [1 1 1] .* 0.8, "LineWidth", 2);
+    plot(errDir_uni(2), height, '.', ...
+        "Color", [1 1 1] .* 0.8, "MarkerSize", 15)
+    ylim([0 yLimit])
+    legend(h, 'permuted', 'uniform')
+    set(gca, "Box", "off")
+    xlabel('Prediction error (deg)')
+    ylabel(['#' sets{s}])
+    title('Preferred directions')
+    io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_directions%s', ...
+        sets{s}, suffix))
+    % 2. orientation
+    h = [0 0];
+    figure('Position', glob.figPositionDefault)
+    histogram(errOri_original{s}, edges_err, "FaceColor", "k", "FaceAlpha", 1)
+    hold on
+    plot(median(errOri_original{s}), height, 'v', ...
+        "MarkerFaceColor", 'k', "MarkerEdgeColor", "none")
+    h(1) = plot(errOri_perm([1 3]), [1 1] .* height, ...
+        "Color", [1 1 1] .* 0.4, "LineWidth", 2);
+    plot(errOri_perm(2), height, '.', ...
+        "Color", [1 1 1] .* 0.4, "MarkerSize", 15)
+    h(2) = plot(errOri_uni([1 3]), [1 1] .* height, ...
+        "Color", [1 1 1] .* 0.8, "LineWidth", 2);
+    plot(errOri_uni(2), height, '.', ...
+        "Color", [1 1 1] .* 0.8, "MarkerSize", 15)
+    ylim([0 yLimit])
+    legend(h, 'permuted', 'uniform')
+    set(gca, "Box", "off")
+    xlabel('Prediction error (deg)')
+    ylabel(['#' sets{s}])
+    title('Preferred orientations')
+    io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_orientations%s', ...
+        sets{s}, suffix))
+    
     fprintf('Prediction errors [95%% conf int: (1) permuted data, (2) uniform distribution]:\n')
     fprintf('  %s:\n', sets{s})
     fprintf('    Direction\n')
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
         median(errDir_original{s}), ...
-        errDir_perm, ...
-        errDir_uni)
+        errDir_perm([1 3]), ...
+        errDir_uni([1 3]))
     fprintf('    Orientation\n')
     fprintf('      Median: %.2f [%.2f-%.2f, %.2f-%.2f]\n', ...
         median(errOri_original{s}), ...
-        errOri_perm, ...
-        errOri_uni)
+        errOri_perm([1 3]), ...
+        errOri_uni([1 3]))
 end
 
 fprintf('Prediction error: boutons vs neurons:\n')

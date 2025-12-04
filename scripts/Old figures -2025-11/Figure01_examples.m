@@ -1,4 +1,4 @@
-function Figure01_examples(folders, fPlots, sets, ex)
+function Figure01_examples(folders, sets, ex, fPlots)
 % Example mean frames, calcium traces and tuning curves
 buffer = 1; % in sec (before and after stim period)
 for s = 1:2 % boutons and neurons

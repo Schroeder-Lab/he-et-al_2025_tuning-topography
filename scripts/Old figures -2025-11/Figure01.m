@@ -1,4 +1,4 @@
-function Figure01(folders, glob)
+function Figure01(folders)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -36,8 +36,7 @@ if ~isfolder(fPlots)
 end
 
 %% Example mean frames, calcium traces and tuning curves
-Figure01_examples(folders, fPlots, sets, ex);
+Figure01_examples(folders, sets, ex, fPlots);
 
 %% Population direction tuning curves
-Figure01_tuning_prefs_selectivity(folders, glob, fPlots, sets, maxP, ...
-    minR2, ex);
+Figure01_tuning_prefs_selectivity(folders, sets, maxP, minR2, ex, fPlots);

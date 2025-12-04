@@ -5,12 +5,19 @@
 % folders.repo:     current repository
 % folders.plots:    to save plots
 
-% % Mac
+% % Mac Airbook
 % folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
 % folders.results = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
 % folders.tools = '/Users/ss2302/dev/toolboxes';
 % folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
 % folders.plots = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
+
+% Mac mini
+folders.data = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
+folders.results = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
+folders.tools = '/Users/ss2302AA/dev/toolboxes';
+folders.repo = '/Users/ss2302AA/dev/Schroeder-Lab/he_schroeder_columns';
+folders.plots = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
 
 % % PC on campus (Sussex Desk)
 % folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
@@ -21,14 +28,14 @@
 % folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
 % folders.plots = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 
-% PC on campus (The Machine)
-folders.data = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
-folders.dataRawEphys = 'Z:\RawData';
-% folders.results = 'D:\Results\OrientationColumns';
-folders.results = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
-folders.tools = 'C:\dev\toolboxes';
-folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
-folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+% % PC on campus (The Machine)
+% folders.data = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+% folders.dataRawEphys = 'Z:\RawData';
+% % folders.results = 'D:\Results\OrientationColumns';
+% folders.results = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+% folders.tools = 'C:\dev\toolboxes';
+% folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
+% folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 
 %% Global parameters
 glob.figPositionDefault = [680 460 560 420];
@@ -105,7 +112,7 @@ Figure01S(folders, glob)
 
 % Pairwise difference in tuning preferences depending on horizontal distance
 Figure02(folders, glob)
-Figure02S(folders, glob)
+Figure02S(folders)
 
 % Receptive fields and pairwise tuning differences depending on RF distance
 Figure03(folders, glob)
@@ -119,7 +126,7 @@ Figure04S(folders, glob)
 % Match between direction/orientation preference and expected preference at
 % RF location (as predicted by longitudinal and latitudinal geometry)
 Figure05(folders, glob)
-Figure05S(folders, glob)
+Figure05S(folders)
 
 % Direction and orientation preferences across SC depth
 Figure06(folders, glob)
