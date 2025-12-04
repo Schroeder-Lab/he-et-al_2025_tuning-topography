@@ -65,6 +65,3 @@ set(gca, "Box", "off")
 xlabel('Direction selectivity')
 ylabel('Orientation selectivity')
 io.saveFigure(gcf, fPlots, 'tuning_selectivity_dirVsOriScatter');
-
-%% Compare preferred direction / orientation to expected value based on RF location
-Figure06S_polarHistograms(glob, fPlots, data)

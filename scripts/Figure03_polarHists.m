@@ -25,8 +25,10 @@ gridX = -130 : gridSpace : -90;
 gridY = 40 : -gridSpace : -10;
 polarEdges = deg2rad(-5:10:355);
 cols = {'k', 'b', 'r', 'm'};
+% matching vectors
+minCount = 20;
 % prediction errors
-edges = 0:5:60;
+edges_err = 0:5:60;
 yLimit = 350;
 height = 250;
 
@@ -179,6 +181,7 @@ for s = 1:length(data)
         (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     dp = data(s).dirPref(valid); % preferred directions
+    dp_sets = data(s).set(valid); % IDs of datasets
     predictedDirs = modelDirs{s}(valid,:); % 4 direction vectors of DSGCs at RF position
     % orientation
     % only use units with minimum OSI and maximum DSI
@@ -186,6 +189,7 @@ for s = 1:length(data)
         (data(s).DSI <= selectivityThresholds(2,2) | isnan(data(s).DSI)) & ...
         ~any(isnan(data(s).rfPos), 2));
     op = data(s).oriPref(valid); % preferred orientations
+    op_sets = data(s).set(valid); % IDs of datasets
     % tranform angles from direction of motion (axial motion) to
     % orientation of grating
     op = mod(op + 90, 180);
@@ -246,20 +250,50 @@ for s = 1:length(data)
     errOri_uni = prctile(median(err_tmp, 1), [2.5 50 97.5]);
 
     % Plot histograms of closest vectors
+    edges = .5:4.5;
+    bins = 1:4;
     % 1. direction
+    counts = NaN(max(dp_sets), length(bins));
+    for k = unique(dp_sets)'
+        ind = dp_sets == k;
+        counts(k,:) = histcounts(optTransVects(ind), edges);
+    end
+    n = sum(counts, 2);
+    counts(n < minCount,:) = [];
+    n(n < minCount) = [];
     figure('Position', glob.figPositionDefault)
-    histogram(optTransVects, .5:4.5)
-    set(gca, 'XTick', 1:4, 'XTickLabel', ...
+    swarmchart(repmat(bins, length(n), 1), counts ./ n, n, ...
+        'filled', 'XJitter', 'density', 'XJitterWidth', 0.5);
+    hold on
+    plot([-0.4; 0.4] + (1:4), ...
+        repmat(median(counts ./ n, 1, "omitnan"), 2, 1), 'k', ...
+        'LineWidth', 4)
+    ylim([0 1])
+    set(gca, 'XTick', bins, 'XTickLabel', ...
         {'advance','retreat','rise','fall'}, 'Box', 'off')
-    title(sprintf('%s: Direction vectors (n = %d)', sets{s}, length(optTransVects)))
+    title(sprintf('%s: Direction vectors (n = %d)', sets{s}, sum(~isnan(n))))
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_direction%s', ...
         sets{s}, suffix))
     % 2. orientation
+    counts = NaN(max(op_sets), length(bins));
+    for k = unique(op_sets)'
+        ind = op_sets == k;
+        counts(k,:) = histcounts(optOriVects(ind), edges);
+    end
+    n = sum(counts, 2);
+    counts(n < minCount,:) = [];
+    n(n < minCount) = [];
     figure('Position', glob.figPositionDefault)
-    histogram(optOriVects, .5:4.5)
-    set(gca, 'XTick', 1:4, 'XTickLabel', ...
+    swarmchart(repmat(bins, length(n), 1), counts ./ n, n, ...
+        'filled', 'XJitter', 'density', 'XJitterWidth', 0.5);
+    hold on
+    plot([-0.4; 0.4] + (1:4), ...
+        repmat(median(counts ./ n, 1, "omitnan"), 2, 1), 'k', ...
+        'LineWidth', 4)
+    ylim([0 1])
+    set(gca, 'XTick', bins, 'XTickLabel', ...
         {'H_{long}','V_{long}','H_{lat}','V_{lat}'}, 'Box', 'off')
-    title(sprintf('%s: Orientation vectors (n = %d)', sets{s}, length(optOriVects)))
+    title(sprintf('%s: Orientation vectors (n = %d)', sets{s}, sum(~isnan(n))))
     io.saveFigure(gcf, fPlots, sprintf('optimalVectors_%s_orientation%s', ...
         sets{s}, suffix))
 
@@ -268,7 +302,7 @@ for s = 1:length(data)
     % 1. direction
     h = [0 0];
     figure('Position', glob.figPositionDefault)
-    histogram(errDir_original{s}, edges, "FaceColor", "k", "FaceAlpha", 1)
+    histogram(errDir_original{s}, edges_err, "FaceColor", "k", "FaceAlpha", 1)
     hold on
     plot(median(errDir_original{s}), height, 'v', ...
         "MarkerFaceColor", 'k', "MarkerEdgeColor", "none")
@@ -291,7 +325,7 @@ for s = 1:length(data)
     % 2. orientation
     h = [0 0];
     figure('Position', glob.figPositionDefault)
-    histogram(errOri_original{s}, edges, "FaceColor", "k", "FaceAlpha", 1)
+    histogram(errOri_original{s}, edges_err, "FaceColor", "k", "FaceAlpha", 1)
     hold on
     plot(median(errOri_original{s}), height, 'v', ...
         "MarkerFaceColor", 'k', "MarkerEdgeColor", "none")
