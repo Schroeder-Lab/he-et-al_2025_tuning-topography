@@ -1,5 +1,16 @@
 function Figure06_plotTuningData(tuningData, fPlots)
 
+%% Parameters
+% tuning curves
+dirBins = 0:30:360;
+dirEdges = (0:30:390) - 15;
+dirBinsFine = 0:1:360;
+oriBins = 0:15:180;
+oriEdges = (0:15:195) - 7.5;
+oriBinsFine = 0:1:180;
+minUnits = 10;
+
+% preferences across depths
 scale = 30;
 colors = {colmaps.colorcet('C7'), colmaps.colorcet('C1')};
 depthLimits = [-300 850];
@@ -8,7 +19,73 @@ features = {'direction', 'orientation'};
 featureNames = {'dir', 'ori'};
 [~, ~, mouseID] = unique({tuningData.animal});
 
-% Preferences across depth (separately for each recording)
+%% Mean preference histograms across all datasets
+% determine histograms for each dataset
+dirHists = NaN(length(dirBins), length(tuningData));
+oriHists = NaN(length(oriBins), length(tuningData));
+for session = 1:length(tuningData)
+    if sum(tuningData(session).dirTuned) >= minUnits
+        pref = tuningData(session).dirPreferences(tuningData(session).dirTuned);
+        dirHists(:,session) = histcounts(pref, dirEdges);
+    end
+    if sum(tuningData(session).oriTuned)
+        pref = tuningData(session).oriPreferences(tuningData(session).oriTuned);
+        oriHists(:,session) = histcounts(pref, oriEdges);
+    end
+end
+indDir = ~any(isnan(dirHists), 1);
+indOri = ~any(isnan(oriHists), 1);
+% merge counts in first and last bars (around 0 and 360 or 180 deg)
+dirHists(1,:) = dirHists(1,:) + dirHists(end,:);
+dirHists(end,:) = dirHists(1,:);
+oriHists(1,:) = oriHists(1,:) + oriHists(end,:);
+oriHists(end,:) = oriHists(1,:);
+% normalize histograms (to sum 1, without last bin)
+dirHists = dirHists ./ sum(dirHists(1:end-1,:),1);
+oriHists = oriHists ./ sum(oriHists(1:end-1,:),1);
+% interpolate/smooth histograms
+dirHistsSmooth = interp1([-30 dirBins 390], ...
+    dirHists([end-1 1:end 2], indDir), dirBinsFine, 'pchip');
+oriHistsSmooth = interp1([-15 oriBins 195], ...
+    oriHists([end-1 1:end 2], indOri), oriBinsFine, 'pchip');
+
+% plot direction
+figure('Position', glob.figPositionDefault)
+hold on
+m = mean(dirHists, 2, "omitnan");
+mSm = mean(dirHistsSmooth, 2, "omitnan");
+sSm = std(dirHistsSmooth, 0, 2, "omitnan") ./ sqrt(sum(indDir));
+fill(dirBinsFine([1:end end:-1:1]), [mSm-sSm; flip(mSm+sSm)], 'k', ...
+    "FaceColor", 'k', "FaceAlpha", 0.5, "EdgeColor", "none")
+plot(dirBinsFine, mSm, 'Color', 'k', "LineWidth", 1);
+plot(dirBins, m, '.', 'Color', 'k', "MarkerSize", 30)
+set(gca, "Box", "off", "XTick", 0:90:360)
+xlim([-10 370])
+ylim([0 0.2])
+xlabel('Direction (deg)')
+ylabel('Proportion of units')
+title(sprintf('Direction tuning (%d sessions)', sum(indDir)))
+io.saveFigure(gcf, fPlots, 'tuning_directionPrefHist');
+
+% plot orientation
+figure('Position', glob.figPositionDefault)
+hold on
+m = mean(oriHists, 2, "omitnan");
+mSm = mean(oriHistsSmooth, 2, "omitnan");
+sSm = std(oriHistsSmooth, 0, 2, "omitnan") ./ sqrt(sum(indOri));
+fill(oriBinsFine([1:end end:-1:1]), [mSm-sSm; flip(mSm+sSm)], 'k', ...
+    "FaceColor", 'k', "FaceAlpha", 0.5, "EdgeColor", "none")
+plot(oriBinsFine, mSm, 'Color', 'k', "LineWidth", 1);
+plot(oriBins, m, '.', 'Color', 'k', "MarkerSize", 30)
+set(gca, "Box", "off", "XTick", 0:45:180)
+xlim([-10 190])
+ylim([0 0.2])
+xlabel('Orientation (deg)')
+ylabel('Proportion of units')
+title(sprintf('Orientation tuning (%d sessions)', sum(indOri)))
+io.saveFigure(gcf, fPlots, 'tuning_orientationPrefHist');
+
+%% Preferences across depth (separately for each recording)
 head = {'on', 'off'};
 for feat = 1:2 % direction and orientation preferences
     figure('Position', [100 100 1090 650])
@@ -59,7 +136,7 @@ for feat = 1:2 % direction and orientation preferences
         sprintf('tuning_preference_%sAcrossSCDepth', features{feat}))
 end
 
-% Selectivity across depth (pooled across recordings)
+%% Selectivity across depth (pooled across recordings)
 for feat = 1:2 % direction and orientation selectivities
     selectivities = [];
     depths_relative = [];
