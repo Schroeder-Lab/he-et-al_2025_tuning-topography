@@ -228,7 +228,7 @@ for s = 1:length(data)
     errDir_perm = prctile(errDir_perm, [2.5 50 97.5]);
     errOri_perm = prctile(errOri_perm, [2.5 50 97.5]);
     
-    % prediciton error for uniform data
+    % prediction error for uniform data
     rng('default');
     % 1. direction
     dp_uni = rand(length(dp), 1, nPerm) .* 360;

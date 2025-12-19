@@ -46,7 +46,7 @@ titles = {'ON field','OFF field'};
 
 sets = {'boutons', 'neurons'};
 
-%% Fit RFs and get cross-validated explained variance
+%% Fit RFs and get explained variance
 for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     for subj = 1:length(subjDirs) % animals

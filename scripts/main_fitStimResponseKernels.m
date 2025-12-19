@@ -57,7 +57,7 @@ for s = 1:2 % neurons and boutons
                         doShift = true;
                 end
 
-                % ignore clacium traces before and after stimulus paradigm
+                % ignore calcium traces before and after stimulus paradigm
                 ind = time_traces >= time_stim(1,1)-1 & ...
                     time_traces <= time_stim(end,end)+1;
                 t = time_traces(ind);
@@ -65,7 +65,7 @@ for s = 1:2 % neurons and boutons
                 % subtract 8th percentile of each trace
                 tr = tr - prctile(tr, 8, 1);
 
-                % ignore "blank"/gray sitmuli
+                % ignore "blank"/gray stimuli
                 sampleRate = 1 / median(diff(time_traces));
                 blankStim = find(isnan(stimDirs));
                 indNoBlank = stimIDs ~= blankStim;
