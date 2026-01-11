@@ -7,12 +7,12 @@
 % folders.results:  to save intermediate results
 % folders.plots:    to save plots
 
-% folders.data = 'C:\DataToPublish';
-% folders.dataRawEphys = 'Z:\RawData';
-% folders.tools = 'C:\dev\toolboxes';
-% folders.repo = 'C:\dev\he-et-al_2025_tuning-topography';
-% folders.results = 'C:\Results';
-% folders.plots = 'C:\Plots';
+folders.data = 'C:\DataToPublish';
+folders.dataRawEphys = 'Z:\RawData';
+folders.tools = 'C:\dev\toolboxes';
+folders.repo = 'C:\dev\he-et-al_2025_tuning-topography';
+folders.results = 'C:\Results';
+folders.plots = 'C:\Plots';
 
 %% Global parameters
 glob.figPositionDefault = [680 460 560 420];
