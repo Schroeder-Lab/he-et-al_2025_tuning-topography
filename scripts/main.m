@@ -1,42 +1,18 @@
 %% Folder definitions
 % Define locations of data, plots, and code.
 % folders.data:     pre-processed data; subfolders: [neurons/boutons]/[animal]/[date]
-% folders.tools:    code repositories (npy-matlab)
-% folders.repo:     current code repository
-% folders.plots:    to save plots
 % folders.dataRawEphys: raw electrophysiology data (if available)
+% folders.tools:    code repositories (npy-matlab, circstat-matlab)
+% folders.repo:     current code repository
+% folders.results:  to save intermediate results
+% folders.plots:    to save plots
 
-% Mac Airbook
-folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
-folders.results = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
-folders.tools = '/Users/ss2302/dev/toolboxes';
-folders.repo = '/Users/ss2302/dev/he_schroeder_columns';
-folders.plots = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
-
-% % Mac mini
-% folders.data = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
-% folders.results = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
-% folders.tools = '/Users/ss2302AA/dev/toolboxes';
-% folders.repo = '/Users/ss2302AA/dev/Schroeder-Lab/he_schroeder_columns';
-% folders.plots = '/Users/ss2302AA/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/Results_Sylvia';
-
-% % PC on campus (Sussex Desk)
-% folders.data = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+% folders.data = 'C:\DataToPublish';
 % folders.dataRawEphys = 'Z:\RawData';
-% % folders.results = 'D:\Results\OrientationColumns';
-% folders.results = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 % folders.tools = 'C:\dev\toolboxes';
-% folders.repo = 'C:\dev\workspaces\he_schroeder_columns';
-% folders.plots = 'C:\Users\Sylvia\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
-
-% % PC on campus (The Machine)
-% folders.data = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
-% folders.dataRawEphys = 'Z:\RawData';
-% % folders.results = 'D:\Results\OrientationColumns';
-% folders.results = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
-% folders.tools = 'C:\dev\toolboxes';
-% folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
-% folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+% folders.repo = 'C:\dev\he-et-al_2025_tuning-topography';
+% folders.results = 'C:\Results';
+% folders.plots = 'C:\Plots';
 
 %% Global parameters
 glob.figPositionDefault = [680 460 560 420];
