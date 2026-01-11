@@ -1,6 +1,6 @@
 function main_fitReceptiveFields_ephys(folders)
-% Given the spike responses to the visual noise or circles stimulus, fit spatial
-% receptive fields (ON and OFF fields).
+% Given the spike responses to the visual noise or circles stimulus, fit 
+% spatial receptive fields (ON and OFF fields).
 
 %% Parameters
 % for receptive field fits
@@ -60,7 +60,7 @@ for subj = 1:length(subjDirs) % animals
                 end
                 stimData = io.getCircleInfo(f);
                 [stimMatrix, gridX, gridY, diameters] = ...
-                    circles.getStimMatrix(stimData.times, ...
+                    stimuli.getCirclesStimMatrix( ...
                     stimData.xPos, stimData.yPos, stimData.diameter, ...
                     stimData.isWhite);
                 stimSize = [length(gridY) length(gridX) length(diameters)];
@@ -125,8 +125,10 @@ for subj = 1:length(subjDirs) % animals
 
             % fit Gaussian
             [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
-                bestSubFields, subFieldSigns, predictions, EVs, sizeTuning] = ...
-                rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz);
+                bestSubFields, subFieldSigns, predictions, EVs, ...
+                sizeTuning] = ...
+                rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, ...
+                toeplitz);
             % save results
             dims = 1:ndims(rFields);
             results.maps = permute(rFields, dims([end 1:end-1]));

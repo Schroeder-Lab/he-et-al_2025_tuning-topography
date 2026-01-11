@@ -1,6 +1,36 @@
 function [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
     bestSubFields, subFieldSigns, predictions, EVs, sizeTuning] = ...
     fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz)
+%FITALLRFS   Fit 2D Gaussian to each mapped RF.
+
+% INPUTS
+% rFields           [rows x columns x time x ON/OFF x units], mapped RF for
+%                   each unit and subfield
+% rfBins            1 x RFframes]; time of spatio-temporal RF relative
+%                   to response in number of sitmulus frames
+% gridX             Horizontal (along azimuth) locations of pixel centres
+% gridY             Vertical (along elevation) locations of pixel centres
+% zTraces           [t x ROIs]; z-scored calcium traces of units, sampled
+%                   at stimulus presentation times
+% toeplitz          [t x pixels]; noise stimulus
+
+% OUTPUTS
+% rfGaussPars       [ROIs x 7], parameters of fitted Gaussians: amplitude, 
+%                   xCenter, xStd, yCenter, yStd, rotation, offset
+% fitGaussians      [ROIs x rows x columns x ON/OFF], fitted Gaussians
+%                   sampled at same loctions as mapped RFs
+% fitWeights        [ROIs x RFframes], fitted weights of 2D Gaussians to
+%                   describe temporal dimension of spatio-temporal RFs
+% peakNoiseRatio    [ROIs], peak height of RF in SDs of residuals between
+%                   mapped RF and fitted Gaussian
+% bestSubFields     [ROIs], 1: ON, 2: OFF, 3: ON+OFF
+% subFieldSigns     [ROIs x 2], 1: enhanced response, -1: suppressed
+%                   response
+% predictions       [t x ROIs], predicted calcium traces based on fitted
+%                   spatio-temporal RFs and stimulus sequence
+% EVs               [ROIs], explained variance of fitted spatio-temporal RF
+% sizeTuning        [ROIs x sizes], size tuning curve, only in response to
+%                   circle stimuli, otherwise NaN
 
 thresh_diam = 0.75;
 
@@ -98,7 +128,7 @@ for iUnit = 1:numUnits
         weights; % [pix x t]
 
     if ndims(rFields) == 5 % visual noise
-        % spatTempMas: [rows x cols x t x ON/OFF]
+        % spatTempMask: [rows x cols x t x ON/OFF]
         spatTempMask = permute(reshape(spatTempMask, size(fitRFs,1), ...
             size(fitRFs,2), 2, length(weights)), [1 2 4 3]);
         spatTempMask(:,:,:,2) = -spatTempMask(:,:,:,2);

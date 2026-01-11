@@ -1,5 +1,5 @@
 function [fitRFs, RFsigns, MSEs] =  findRFGaussianMask(rfield)
-%FINDGAUSSIANMASK   Fit Gaussian mask to ON field only (* 1 and (-1)), 
+%FINDRFGAUSSIANMASK   Fit Gaussian mask to ON field only (* 1 and (-1)), 
 % OFF field only (* 1 and (-1)), and average of ON and OFF fields (using 
 % best signs determined before); determine errors of fits.
 

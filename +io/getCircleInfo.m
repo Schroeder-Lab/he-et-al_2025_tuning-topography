@@ -1,4 +1,18 @@
 function data = getCircleInfo(folder)
+%GETCIRCLEINFO   Load circle stimulus data.
+
+% INPUTS
+% folder        path to data of recording session
+
+% OUTPUTS
+% data
+%   .times      [t], times of each stimulus frame presentation in sec
+%   .diameter   [t], diameter of presented circle in each stimulus frame
+%   .isWhite    [t], gray value of presented circle in each stimulus frame,
+%               0: black, 1: white
+%   .xPos       [t], azimuth of presented circle in each stimulus frame
+%   .yPos       [t], elevation of presented circle in each stimulus frame
+%   .interval   [2], start and end of circle stimulus paradigm
 
 if ~isfile(fullfile(folder, 'circles.times.npy'))
     data = [];

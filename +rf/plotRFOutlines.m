@@ -1,5 +1,16 @@
 function plotRFOutlines(rfGaussPars, EVs, peaks, minEV, minPeak, ...
     exUnits, edges_rf, exColors)
+%PLOTRFOUTLINES   Plot contours of all fitted 2D Gaussians.
+
+% INPUTS
+% rfGaussPars   [units x 7], parameters of fitted 2D Gaussians
+% EVs           [units], explained variances of fitted spatio-temporal RFs
+% peaks         [units], peak heights of RFs
+% minEV         double, minimum EV for significant RFs
+% minPeak       double, minimum peak for significant RFs
+% exUnits       [k], indices of example units
+% edges_rf      [left rigth top bottom] of RF map to be plotted
+% exColors      [k, 3], RGBs for example units
 
 ellipse_x = linspace(-pi, pi, 100);
 

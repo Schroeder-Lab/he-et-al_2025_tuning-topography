@@ -43,8 +43,8 @@ for s = 1:2 % boutons and neurons
             end
 
             % load data
-            data = io.getRFFits(f);
-            fitPars = data.fitParameters;
+            data = io.getNoiseRFFits(f);
+            fitPars = data.gaussPars;
             rfPos = fitPars(:, [2 4]); % (azimuth, elevation) in visual degrees
             ev_rf = data.EV;
             rf_peaks = data.peaks;

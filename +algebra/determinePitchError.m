@@ -1,4 +1,23 @@
-function [error, errDir, errOri] = determinePitchError(pitchAngle, dirPrefs, oriPrefs, rfPos)
+function [error, errDir, errOri] = determinePitchError(pitchAngle, ...
+    dirPrefs, oriPrefs, rfPos)
+%DETERMINEPITCHERROR   Determine difference between measured and predicted 
+%direction and orientation preferences, given a specific pitch of the 
+%animal's head.
+
+% INPUTS
+% pitchAngle    double, pitch of head (zero if lambda and bregma at same
+%               height)
+% dirPrefs      [units], preferred directions
+% oriPrefs      [units], preferred orientations
+% rfPos         [units, 2], azimuth and elevation of RF locations
+
+% OUTPUTS
+% error         double, MSE across all units for direction and orientation
+%               preferences
+% errDir        [units], differences between measured and predicted
+%               direction preference
+% errOri        [units], differences between measured and predicted
+%               orientation preference
 
 [ds_trans, os_long, os_lat] = algebra.getDsOsAxes(pitchAngle);
 
@@ -42,5 +61,3 @@ errOri = min(err, [], 2);
 % total error (MSE)
 error = (sum(errDir .^ 2) + sum(errOri .^ 2)) / ...
     (length(errDir) + length(errOri));
-% error = (sum(errDir) + sum(errOri)) / ...
-%     (length(errDir) + length(errOri));

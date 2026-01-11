@@ -3,13 +3,12 @@ function [prediction, explainedVar] = predictFromRF(zTrace, toeplitz, ...
 %PREDICTFROMRF   Predict response trace from stimulus and receptive field.
 
 % INPUTS
-% trace             [t], traces of unit
-% traceTime         [t], sample times of traces
-% stimFrames        [t_st x rows x cols]; noise stimulus
-% stimTimes         [t_st]; times of stimulus frames
-% RFtimesInFrames   [1 x RFframes]; frames of receptive field relative
-% spatTempRF        [rows x columns x t_rf x ON/OFF], 2D masks of fitted ON
-%                   and OFF subfields
+% zTrce             [t], z-scored calcium trace sampled at stimulus 
+%                   presentation times
+% toeplitz          [t x pixels]; noise stimulus
+% spatTempRF        [rows x columns (x sizes) x t_rf x ON/OFF], 2D masks of
+%                   fitted ON and OFF subfields; in case of circle stimuli:
+%                   masks for each circle size
 
 % OUTPUTS
 % prediction        [t], predicted trace

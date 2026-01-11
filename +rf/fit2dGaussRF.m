@@ -3,8 +3,10 @@ function [parameters, gaussMap] = fit2dGaussRF(rfield, doPlot, ...
 %FIT2DGAUSSRF   Fit 2D Gaussian to 2D profile.
 
 % INPUTS
-% profile       [rows x columns], 2D profile to which Gauss is fitted
+% rfield        [rows x columns], 2D profile to which Gauss is fitted
 % doPlot        logical, make plot if true
+% (xcoords)     [1 x rows], horizontal locations of pixel columns (centres)
+% (ycoords)     [1 x columns], vertical locations of pixel rows (centres)
 
 % OUTPUTS
 % parameters    [amplitude, x-center, width, y-center, height, rotation],
@@ -23,14 +25,9 @@ xdata = cat(3, x, y);
 [indY, indX] = find(rfield == max(rfield(:)),1);
 maxX = xcoords(indX);
 maxY = ycoords(indY);
-% x0 = [1, maxX, mean(diff(xcoords))*5, maxY, mean(diff(ycoords))*5, 0];
 x0 = [1, maxX, mean(diff(xcoords))*5, maxY, mean(diff(ycoords))*5, 0, 0];
 
 % lower and upper bounds of parameters
-% lb = [0, min(xcoords), 0, min(ycoords), 0, -pi/4];
-% mx_std = max(range(xcoords(:)), range(ycoords(:))) / 4;
-% ub = [2 * max(rfield(:)), max(xcoords), mx_std, max(ycoords), ...
-%     mx_std, pi/4];
 lb = [0, min(xcoords), 0, min(ycoords), 0, -pi/4, ...
     min(rfield(:))-0.1*range(rfield(:))];
 mx_std = max(range(xcoords(:)), range(ycoords(:))) / 4;

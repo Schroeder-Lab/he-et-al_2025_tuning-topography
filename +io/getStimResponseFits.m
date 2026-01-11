@@ -1,5 +1,5 @@
 function data = getStimResponseFits(folder, type)
-%GETSTIMULUSRESPONSEFITS  Load results of kernel fitting procedure to
+%GETSTIMRESPONSEFITS   Load results of kernel fitting procedure to
 %explain calcium responses to visual stimuli
 
 % INPUTS

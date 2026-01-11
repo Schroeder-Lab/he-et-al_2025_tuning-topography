@@ -31,7 +31,9 @@ direction.selectivity = sel;
 direction.responseSign = sgn;
 
 % orientation tuning
+% treat opposite movement directions as the same orientation
 stimOrientations = mod(stimDirections, 180);
+% determine preference, selectivity, significance
 [pref, sel, sgn] = tuning.vectorAveraging(amplitudes, 2*stimOrientations);
 orientation.preference = pref/2;
 orientation.selectivity = sel;

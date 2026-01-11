@@ -3,15 +3,15 @@ function [newTraces, newTime] = alignSampling(traces, time, delayIDs, delays)
 %to a common time axis.
 
 % INPUTS
-% trace         [t x ROIs], traces of units
+% traces        [t x ROIs], traces of units
 % time          [t], sample times of traces
+% delayIDs      [ROIs], planeID of each unit
 % delays        [planes], time delay of each imaging plane relative to
 %               first plane
-% planes        [ROIs], planeID of each unit
 
 % OUTPUTS
-% tracesNew     [t_new x ROIs], aligned traces
-% time_new      [t_new], new time axis
+% newTraces     [t_new x ROIs], aligned traces
+% newTime       [t_new], new time axis
 
 if length(delays) <= 1
     newTraces = traces;

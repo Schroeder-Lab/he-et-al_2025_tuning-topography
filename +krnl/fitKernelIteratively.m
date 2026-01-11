@@ -11,12 +11,12 @@ function fitResults = ...
 %                       included
 % stimIDs               [t x 1], stimulus IDs
 % kernelLength          int; number of samples defining duration of kernel
-% doShift               calculate optimal shift of kernel relative to
-%                       stimulus onset; used for moving bars that enter RF
-%                       at different latencies
-% doPlot                if 1, data and kernels are plotted
-% doShuffle             if 1, calcium trace is shifted randomly to estimate
-%                       null distribution of explained variance
+% doShift               logical; calculate optimal shift of kernel relative
+%                       to stimulus onset; used for moving bars that enter 
+%                       RF at different latencies
+% doPlot                logical; if true, data and kernels are plotted
+% doShuffle             logical; if true, calcium trace is shifted randomly 
+%                       to estimate null distribution of explained variance
 % stimLength            int, stimulus duration in samples (time *
 %                       samplingRate); only important if kernelLength much
 %                       longer than stimLength

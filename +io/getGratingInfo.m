@@ -18,6 +18,10 @@ function data = getGratingInfo(folder, type)
 %                   [stim x 1], orientation for each stimulus
 %   (.phases)       (only for gratingsStatic) 
 %                   [stim x 1], spatial phase for each stimulus
+%   (.contrasts)    [stim x 1], contrast for each stimulus
+%   (.spatialFrequencies)   [stim x 1], spatial frequency for each stimulus
+%   (.temporalFrequencies)  [stim x 1], temporal frequency for each
+%                           stimulus
 
 if nargin < 2
     type = 'grating';

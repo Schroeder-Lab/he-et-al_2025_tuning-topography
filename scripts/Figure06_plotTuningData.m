@@ -153,7 +153,7 @@ for feat = 1:2 % direction and orientation selectivities
     scatter(selectivities, depths_relative, 20, [1 1 1] .* 0.7, 'filled')
     [d, order] = sort(depths_relative);
     s = selectivities(order);
-    f = fit(d, s, 'smoothingspline', 'SmoothingParam', 0.0001);
+    f = fit(double(d), s, 'smoothingspline', 'SmoothingParam', 0.0001);
     xd = linspace(d(1), d(end), 100);
     plot(f(xd), xd, 'Color', [1 1 1] .* 0.3, 'LineWidth', 2)
     plot([0 1], [0 0], 'k')

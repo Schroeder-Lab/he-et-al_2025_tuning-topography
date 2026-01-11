@@ -10,7 +10,6 @@ function data = getRecordingInfo(folder)
 %               masks
 %   .roiPositions [ROIs x 3], (horizontal, vertical, depth)-coordinates in
 %               microns
-%   .isInhibitory [ROIs x 1], 1 if GAD+, 0 if GAD-, NaN if not known
 %   .fovPix     [nPlanes x 2], size of field-of-view in pixels (height x
 %               width), size of reference frame for ROI masks
 %   .fovMicrons [nPlanes x 2], size of field-of-view in microns (height x
@@ -30,12 +29,6 @@ data.fovPix = readNPY(fullfile(folder, '_ss_2pPlanes.fovSizePix.npy'));
 data.fovMicrons = readNPY(fullfile(folder, '_ss_2pPlanes.fovSizeMicrons.npy'));
 data.fovBoundaries = readNPY(fullfile(folder, '_ss_2pPlanes.fovBoundariesPix.npy'));
 data.meanFrame = readNPY(fullfile(folder, '_ss_2pPlanes.meanFrame.npy'));
-
-if isfile(fullfile(folder, '_ss_2pRois.isGad.npy'))
-    data.isInhibitory = readNPY(fullfile(folder, '_ss_2pRois.isGad.npy'));
-else
-    data.isInhibitory = NaN(size(data.roiMaks,1), 1);
-end
 
 if isfile(fullfile(folder, '_ss_recordings.brainSurface.npy'))
     data.surface = readNPY(fullfile(folder, '_ss_recordings.brainSurface.npy'));

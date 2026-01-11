@@ -1,4 +1,8 @@
 function main_determineSCdepth(folders)
+% Determine surface of SC based on visually evoked LFP, and SGS-SO border
+% of SC from current-source-density
+% Note: this script will fail on provided pre-processed data, as raw
+% voltage traces were not shared
 
 %% Parameters
 smoothLFP = {5 21};
@@ -95,7 +99,8 @@ for subj = 1:length(subjDirs) % animals
         end
         clear F
 
-        % subtract mean lfp trace (across channels) from each channel
+        % subtract mean lfp (across channels) for each time point from each 
+        % channel
         lfp_mean = mean(lfp, 1);
         lfp = lfp - lfp_mean;
         
@@ -115,13 +120,13 @@ for subj = 1:length(subjDirs) % animals
         evokedPerFrame = (evokedPerFrame(1:2:end,:,:) + ...
             evokedPerFrame(2:2:end,:,:)) ./ 2;
 
-        % Get pixel-evoked LFP
-        fprintf('  Pixel-evoked LFP...\n')
+        % Get stimulus-evoked LFP
+        fprintf('  Stimulus-evoked LFP...\n')
         switch stimType
             case 'noise'
                 stimFlat = reshape(stim.frames, size(stim.frames,1), []);
             case 'circles'
-                stimFlat = stimuli.getStimMatrix(stim.times, ...
+                stimFlat = stimuli.getCirclesStimMatrix( ...
                     stim.xPos, stim.yPos, stim.diameter, stim.isWhite);
                 stimFlat = reshape(stimFlat, size(stimFlat,1), []);
         end
@@ -148,8 +153,8 @@ for subj = 1:length(subjDirs) % animals
         % Find superficial border of SC
         [minAmp, chanMin] = min(profile);
         ind = find(profile(chanMin+1:end) > minAmp * surfaceAmplitude, 1);
-        chanTop = ceil(interp1(profile(chanMin:chanMin+ind), chanMin:chanMin+ind, ...
-            minAmp * surfaceAmplitude)) * 2;
+        chanTop = ceil(interp1(profile(chanMin:chanMin+ind), ...
+            chanMin:chanMin+ind, minAmp * surfaceAmplitude)) * 2;
 
         %% Determine SGS-SO border based on CSD
         fprintf('  CSD...\n')
@@ -161,7 +166,8 @@ for subj = 1:length(subjDirs) % animals
         end
         evokedByBestPixel = evokedPerFrame(:,:,indBestPixelFrames);
         clear evokedPerFrame
-        csd = mean( diff( diff(evokedByBestPixel,1,1) ,1,1) ,3) ./ (chanDistance^2);
+        csd = mean( diff( diff(evokedByBestPixel,1,1) ,1,1) ,3) ./ ...
+            (chanDistance^2);
         csd = padarray(csd, 1, 0);
 
         % locate source and sink, then centre between them
@@ -191,6 +197,7 @@ for subj = 1:length(subjDirs) % animals
         figure('Position', [3 100 1466 700])
         tiledlayout(1,4)
 
+        % evoked LFP with SC surface and SGS-SO border
         nexttile
         m = max(abs(profile),[],"all");
         imagesc(stimWin, channelDepths, lfpEvoked(:,:,maxPix), [-m m])
@@ -216,6 +223,7 @@ for subj = 1:length(subjDirs) % animals
         title('Evoked LFP')
         legend('Top of SC', 'SGS-SO-border')
 
+        % current-source-density of LFP with SC surface and SGS-SO border
         nexttile
         m = max(abs(csd),[],"all");
         imagesc(stimWin, channelDepths, csd, [-m m])
@@ -239,6 +247,7 @@ for subj = 1:length(subjDirs) % animals
         xlabel('Time (s)')
         title('Current-source density')
 
+        % spike times across depth with SC surface and SGS-SO border
         nexttile([1 2])
         ind = spikes.times > stim.times(1) & spikes.times < stim.times(1)+100;
         c = spikes.amps(ind);

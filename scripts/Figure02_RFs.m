@@ -17,11 +17,11 @@ for s = 1:2 % boutons and neurons
 
     % load data
     recInfo = io.getRecordingInfo(f);
-    rfData = io.getRFFits(f);
+    rfData = io.getNoiseRFFits(f);
     edges = rfData.edges;
     gridW = diff(edges(1:2)) / size(rfData.maps,3);
     gridH = -diff(edges(3:4)) / size(rfData.maps,2);
-    rfGaussPars = rfData.fitParameters;
+    rfGaussPars = rfData.gaussPars;
     EVs = rfData.EV;
     peakNoiseRatio = rfData.peaks;
 
@@ -71,7 +71,7 @@ for s = 1:2 % boutons and neurons
 
     % RF outlines of all units in example dataset
     rf.plotRFOutlines(rfGaussPars, EVs, peakNoiseRatio, minEV, minPeak, ...
-        units, edges_rf)
+        units, edges_rf, colEx)
     n = sum(EVs >= minEV & peakNoiseRatio >= minPeak);
     title(sprintf('%s %s (n = %d)', ex{s,1}, ex{s,2}, n))
     io.saveFigure(gcf, fPlots, sprintf('example_%s_RFoutlines_%s_%s', ...

@@ -3,20 +3,20 @@ function receptiveFields = getReceptiveField(zTraces, toeplitz, ...
 %GETRECEPTIVEFIELD   Return response-triggered spatiotemporal receptive field.
 
 % INPUTS
-% traces              [t x ROIs]; calcium traces of units
-% traceTimes          [t]; sample times of calcium traces
-% stimFrames          [t_st x rows x cols]; noise stimulus
-% stimTimes           [t_st]; times of stimulus frames
-% RFtimesInFrames     [1 x RFframes]; frames of receptive field relative
-%                     to response
-% lambda              [1 x lambda]; regularisation lambda
+% zTraces           [t x ROIs]; z-scored calcium traces of units, sampled
+%                   at stimulus presentation times
+% toeplitz          [t x pixels]; noise stimulus
+% stimSize          [pixelRows, pixelColumns]; size of stimulus in pixels
+% rfBins            [1 x RFframes]; time of spatio-temporal RF relative
+%                   to response in number of sitmulus frames
+% lambda            [1 x lambda]; regularisation lambda
 
 % OUTPUTS
-% receptiveFields     [rows x cols x RFframes x RFtype x ROIs]
-%                     containing linear regression solution for x in Ax=B
-%                     where A is stimulus [rows x cols x time] and B is
-%                     calcium response, for each unit and ON/OFF response; 
-%                     ridge regression is performed using lambda
+% receptiveFields   [rows x cols x RFframes x RFtype x ROIs]
+%                   containing linear regression solution for x in Ax=B
+%                   where A is stimulus [rows x cols x time] and B is
+%                   calcium response, for each unit and ON/OFF response; 
+%                   ridge regression is performed using lambda
 
 % clean up neural traces (delete times where all traces are NaN; if NaN 
 % values < 10% in a neuron, exchange NaNs for 0; skip neurons that have only 

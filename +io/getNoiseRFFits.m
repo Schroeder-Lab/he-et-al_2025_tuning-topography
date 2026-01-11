@@ -1,5 +1,5 @@
 function data = getNoiseRFFits(folder)
-%GETRFFITS   Load receptive fields fitted to responses to visual noise.
+%GETNOISERFFITS   Load receptive fields fitted to responses to visual noise.
 
 % INPUTS
 % folder            path to data of recording session
@@ -9,7 +9,7 @@ function data = getNoiseRFFits(folder)
 %   .maps           [ROIs x rows x columns x t_rf x type], spatio-temporal
 %                   RF for ON (type=1) and OFF (type=2) subfields
 %   .bestSubFields  [ROIs], 1: 'ON', 2: 'OFF', or 3: 'ON+OFF'
-%   .subFieldSigns  [ROIs x 2], sings of ON and OFF fields
+%   .subFieldSigns  [ROIs x 2], signs of ON and OFF fields
 %   .gaussPars      [ROIs x parameters], (amplitude, xCenter, xSTD,
 %                   yCenter, ySTD, rotation, offset)
 %   .peaks          [ROIs], amplitude of RF peak (of best type) in STD of

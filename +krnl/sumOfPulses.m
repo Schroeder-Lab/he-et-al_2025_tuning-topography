@@ -1,10 +1,25 @@
 function [amplitudes, kernel, lags, prediction, R2] = ...
     sumOfPulses(trace, onsets, doShift, stimIDs, len, lenEssential)
-% function [amplitudes, kernel] = SumOfPulses(trace, PulseOnsets, PulseLen, Pulse, RealAmps)
-% splits the tracenal trace into a sum of pulses of a single estimated shape kernel
-% of user-specified length PulseLen, occuring at user-specified times PulseOnsets, 
-% with estimated amplitudes amplitudes.
-% StimID is just for plotting purposes, and the last two arguments are optional, only for if you test it on synthetic data
+%SUMOFPULSES   Split trace into a sum of pulses of a single estimated shape
+%kernel of user-specified length, occuring at user-specified times, with
+%estimated amplitudes.
+
+% INPUTS
+% trace         [t], activity trace of neuron
+% onsets        [ev], event times provided in indices of trace time
+% doShift       logical, if true find optimal lag of kernel for each stimID
+% stimIDs       [ev], stimulus ID of each event
+% len           integer, length of kernel
+% (lenEssential) integer, minimum samples that trace needs to cover of
+%               kernel, if end of trace is shorter than 0.7 * lenEssential 
+%               after an event occurred this event will be ignored
+
+% OUTPUTS
+% amplitudes    [ev], estimated kernel amplitude for each event
+% kernel        [len], estimated kernel, max(|kernel|) set to 1
+% lags          [ev], lag of kernel at each event
+% prediction    [t], prediction of trace
+% R2            double, error between prediction and trace
 
 if nargin < 6
     lenEssential = len;
@@ -93,10 +108,6 @@ for i=1:MaxIter
     % break if tolerance achieved
     if norm(amplitudes-Oldamplitudes)<BreakTol; break; end
     
-    % CONTINUE HERE-------------------------------------------------
-    % todo: is zscoring better? is dividing by max better? don't set lag to
-    % 0 if it was larger than maxShift. instead set to median(lags)?
-    % consider maxShift because lags are ADDED!
     % determine lags
     if doShift
         oldLags = lagsTrials;
@@ -124,8 +135,6 @@ for i=1:MaxIter
             [corrs, l] = xcorr(pulse, pulseModel, maxShift, 'unbiased');
             [~,indCorr] = max(corrs);
             lagsTrials(trials) = l(indCorr);
-
-            % figure,plot((1:len)-l(indCorr),pulse),hold on,plot(pulseModel)
         end
         lagsTrials = oldLags + lagsTrials;
         lagsTrials = lagsTrials - max(lagsTrials);
@@ -144,6 +153,3 @@ lags(indValid) = lagsTrials';
 
 R2 = 1 - sum((traceNoNaN - prediction).^2) / ...
     sum((traceNoNaN - mean(traceNoNaN)).^2);
-% adjR2 = 1 - (sum((traceNoNaN - prediction).^2) / ...
-%     (traceLen - length(indNaN) - len - mPulses)) / ...
-%     (sum((traceNoNaN - mean(traceNoNaN)).^2) / (traceLen - length(indNaN) - 1));

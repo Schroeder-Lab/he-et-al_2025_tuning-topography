@@ -6,7 +6,6 @@ function main_plotBrainDistanceVersusPreferenceDifference(folders)
 %% Parameters
 maxP = 0.05; % p-value threshold for response kernel and 
              % direction/orientation selectivity
-minROIs = 15;
 binSize = [5, 20];
 stepSize = [2.5, 5];
 numPerm = 1000;
@@ -74,6 +73,7 @@ for s = 1:2 % neurons and boutons
             oriDiffRec{rec} = [];
             oriDiffRecNull{rec} = [];
             for p = 1:size(indPlanes,2)
+                % direction tuning
                 % get tuning preferences of ROIs within plane
                 validDir = indPlanes(:,p) & dirTuning.pValue < maxP;
                 % for all unit pairs, determine distance in brain (ignore
@@ -93,6 +93,8 @@ for s = 1:2 % neurons and boutons
                         dp(order), 'dir');
                 end
 
+                % orientation tuning
+                % get tuning preferences of ROIs within plane
                 validOri = indPlanes(:,p) & oriTuning.pValue < maxP;
                 % for all unit pairs, determine distance in brain (ignore
                 % depth);
@@ -158,6 +160,7 @@ for s = 1:2 % neurons and boutons
     % plot across all datasets
     fPlots = fullfile(folders.plots, ...
         'PreferenceDiffVsBrainDistance', sets{s});
+    % considering only pairs within each plane
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDistPlane{:}), ...
         cat(1, dirDiffPlane{:}), cat(1, dirDiffPlaneNull{:}), ...
         binSize(s), stepSize(s), false);
@@ -174,6 +177,7 @@ for s = 1:2 % neurons and boutons
         saveas(gcf, fullfile(fPlots, 'Orientation_withinPlanes.jpg'))
         close gcf
     end
+    % considering all pairs within and across planes
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDistRec{:}), ...
         cat(1, dirDiffRec{:}), cat(1, dirDiffRecNull{:}), ...
         binSize(s), stepSize(s), false);

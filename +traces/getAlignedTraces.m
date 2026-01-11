@@ -5,7 +5,7 @@ function [aligned, t] = getAlignedTraces(trace, time, eventTimes, window)
 % trace         [t x ROIs], traces of units
 % time          [t], sample times of traces
 % eventTimes    [events], event times
-% window        [1 or events x 2], start and end of window relative to each
+% window        [(1 or events) x 2], start and end of window relative to each
 %               event time, specify one if window is the same for all
 %               events, or speficy one window per event
 

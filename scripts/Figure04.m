@@ -3,13 +3,18 @@ function Figure04(folders, glob)
 %% Parameters
 sets = {'boutons', 'neurons'};
 fovLims = [20 160; 400 900];
+maxP = 0.05; % p-value threshold for direction/orientation selectivity
+minROIs = 15;
+numPerm = 1000;
+binSize = [5, 20];
+stepSize = [2.5, 5];
+xLims = [50 500];
+cLims = [0.00032 0.00004];
 
 %% Examples
-ROIs in imaging planes
+% ROIs in imaging planes
 ex(1,:) = {'SS078', '2017-10-05'};
-% ex(1,:) = {'SS078', '2017-09-28', 1};
 ex(2,:) = {'SS041', '2015-04-11'};
-% ex(2,:) = {'SS044', '2015-04-28'};
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure04');

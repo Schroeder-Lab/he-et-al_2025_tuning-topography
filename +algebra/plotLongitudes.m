@@ -1,8 +1,9 @@
 function plotLongitudes(axisPole, numLong, colour)
+%PLOTLONGITUDES   Plot longitudinal fields on sphere given specific axis.
 
-% axisPole  [azimuth, elevation], in degrees
-% numLong
-% colour
+% axisPole  [azimuth, elevation], axis in degrees
+% numLat    integer, number of longitudes to plot
+% colour    colour of longitudes
 
 nPoints = 200;
 

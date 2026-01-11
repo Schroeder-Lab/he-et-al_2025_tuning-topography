@@ -1,4 +1,15 @@
 function [ds_trans, os_long, os_lat] = getDsOsAxes(pitchAngle)
+%GETDSOSAXES   Get axes defining direction longitudes and orientation
+%longitudes and latitudes, given a specific pitch of the animal's head.
+
+% INPUTS
+% pitchAngle    double, pitch of head (zero if lambda and bregma at same
+%               height)
+
+% OUTPUTS
+% ds_trans      [azimuth, elevation], vector defining direciton longitudes
+% os_long       [azimuth, elevation], vector defining orientation longitudes
+% os_lat        [azimuth, elevation], vector defining orientation latitudes
 
 % Email from Shai Sabbah, 03.04.2025, all axes in [azimuth, elevation], 
 % all axes provided for right eye!

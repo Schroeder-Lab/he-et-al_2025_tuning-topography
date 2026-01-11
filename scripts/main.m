@@ -1,9 +1,10 @@
 %% Folder definitions
 % Define locations of data, plots, and code.
-% folders.data:     raw data; subfolders: [neurons/boutons]/[animal]/[date]
-% folders.tools:    code repositories
-% folders.repo:     current repository
+% folders.data:     pre-processed data; subfolders: [neurons/boutons]/[animal]/[date]
+% folders.tools:    code repositories (npy-matlab)
+% folders.repo:     current code repository
 % folders.plots:    to save plots
+% folders.dataRawEphys: raw electrophysiology data (if available)
 
 % Mac Airbook
 folders.data = '/Users/ss2302/Library/CloudStorage/OneDrive-UniversityofSussex/Projects/2023_OrientationColumns/DataToPublish';
@@ -42,7 +43,7 @@ glob.figPositionDefault = [680 460 560 420];
 
 %% Add paths
 addpath(genpath(fullfile(folders.tools, 'npy-matlab')))
-% addpath(genpath(fullfile(folders.tools, 'CircStat2012a')))
+addpath(genpath(fullfile(folders.tools, 'circstat-matlab')))
 addpath(genpath(fullfile(folders.repo)))
 
 %% 2P data
@@ -86,9 +87,13 @@ main_mapRFposToRetinotopy(folders)
 %% Ephys data
 
 %% Determine SC depth along probe
+% Determine surface of SC based on visually evoked LFP, and SGS-SO border
+% of SC from current-source-density
 main_determineSCdepth(folders);
 
 %% Determine depth of each unit relative to SC layers
+% Given the site of the SC surface and its SGS-SO border, determine depth
+% of each unit within SC (postive values -> microns below surface).
 main_determineUnitDepths(folders);
 
 %% Map receptive fields

@@ -5,14 +5,12 @@ function [stim, time, stimBin] = ...
 % INPUTS
 %   stimFrames          [time x rows x cols]; noise stimulus
 %   stimTimes           [time x 1]; times of stimulus frames
-%   RFtimesInFrames     [1 x RFframes]; frames of receptive field relative
-%                       to stimulus frames
+%   rfBins              [1 x RFframes]; time of spatio-temporal RF relative
+%                       to response in number of sitmulus frames
 
 % OUTPUTS
 %   stim                [time x pixels]; toeplitz matrix
 %   time                [time x 1]; time of stimulus frames (no gaps)
-%   stimFrames          [time x rows x cols]; stimulus frames, gaps filled
-%                       with zeros
 %   stimBin             double; duration of each stimulus frame
 
 % generate toeplitz matrix for stimuli: [time x pixels]

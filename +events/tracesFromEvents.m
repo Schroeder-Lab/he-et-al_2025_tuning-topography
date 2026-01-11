@@ -1,11 +1,8 @@
 function [traces, bins] = tracesFromEvents(times, trials, groups, limits, ...
     binSize, sigma, isCausal)
+%TRACESFROMEVENTS   Calculate smooth PSTHs from spike times.
 
-% Calculate smoother PSTHs from spike times.
-%
-% traces    [group x t]; One trace per group in spikes per second
-% bins      [1 x t]; time of traces
-%
+% INTPUTS
 % times     [st x 1]; spike times aligned to event of interest
 % trials    [st x 1]; trial ID of spike
 % groups    [trial x 1]; group ID of each trial
@@ -14,6 +11,10 @@ function [traces, bins] = tracesFromEvents(times, trials, groups, limits, ...
 % binSize   binSize
 % sigma     sigma of smoothing Gaussian
 % isCausal  logical; if true, smoothing kernel is causal
+
+% OUTPUTS
+% traces    [group x t]; One trace per group in spikes per second
+% bins      [1 x t]; time of traces
 
 if nargin < 7
     isCausal = true;

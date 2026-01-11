@@ -18,6 +18,120 @@ if ~isfolder(fPlots)
     mkdir(fPlots)
 end
 
+%% Plot pairwise distance versus tuning difference : DS- and OS-only units
+for s = 1:2 % boutons and neurons
+    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+    dirDist = {};
+    dirDiff = {};
+    dirDiffNull = {};
+    oriDist = {};
+    oriDiff = {};
+    oriDiffNull = {};
+    rec = 1;
+    for subj = 1:length(subjDirs) % animals
+        name = subjDirs(subj).name;
+        fprintf('%s\n', name)
+        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+        for dt = 1:length(dateDirs) %dates
+            date = dateDirs(dt).name;
+            f = fullfile(folders.data, sets{s}, name, date);
+            % ignore session if stimulus was not presented
+            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
+                continue
+            end
+                
+            % load data
+            data = io.getRecordingInfo(f);
+            roiPos = data.roiPositions(:,1:2);
+            [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
+
+            dp = dirTuning.preference;
+            validDir = ~isnan(dp) & dirTuning.pValue < maxP & ...
+                dirTuning.selectivity >= selectivityThresholds(1,1) & ...
+                oriTuning.selectivity <= selectivityThresholds(1,2);
+            if sum(validDir) < minROIs
+                dirDist{rec} = [];
+                dirDiff{rec} = [];
+                dirDiffNull{rec} = [];
+            else
+                % for all unit pairs, determine distance in brain (ignore
+                % depth);
+                ddist = spatial.determineDistance(roiPos(validDir,1), ...
+                    roiPos(validDir,2));
+                dp = dp(validDir);
+                % for all unit pairs, determine difference between preferred
+                % directions
+                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
+                % permute preferences to test significance
+                ddiffPermuted = NaN(length(ddiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(dp));
+                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
+                end
+                % collect results
+                dirDist{rec} = ddist;
+                dirDiff{rec} = ddiff;
+                dirDiffNull{rec} = ddiffPermuted;
+            end
+            op = oriTuning.preference;
+            validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
+                oriTuning.selectivity >= selectivityThresholds(2,1) & ...
+                dirTuning.selectivity <= selectivityThresholds(2,2);
+            if sum(validOri) < minROIs
+                oriDist{rec} = [];
+                oriDiff{rec} = [];
+                oriDiffNull{rec} = [];
+            else
+                % for all unit pairs, determine distance in brain (ignore
+                % depth);
+                odist = spatial.determineDistance(roiPos(validOri,1), ...
+                    roiPos(validOri,2));
+                op = op(validOri);
+                % for all unit pairs, determine difference between preferred
+                % orientations
+                odiff = tuning.determinePreferenceDiff(op, 'ori');
+                % permute preferences to test significance
+                odiffPermuted = NaN(length(odiff), numPerm);
+                rng('default');
+                for k = 1:numPerm
+                    order = randperm(length(op));
+                    odiffPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
+                end
+                % collect results
+                oriDist{rec} = odist;
+                oriDiff{rec} = odiff;
+                oriDiffNull{rec} = odiffPermuted;
+            end
+            rec = rec + 1;
+        end
+    end
+
+    % plot distance vs tuning difference across all datasets
+    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
+    fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
+        cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
+        binSize(s), stepSize(s), false);
+    set(gcf, 'Position', glob.figPositionDefault)
+    set(gca, 'YTick', 0:45:180)
+    xlim([0 xLims(s)])
+    ylim([0 180])
+    title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
+        sprintf('distanceAll_%s_directionOnly', sets{s}))
+    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
+    fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
+        cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
+        binSize(s), stepSize(s), false);
+    set(gcf, 'Position', glob.figPositionDefault)
+    set(gca, 'YTick', 0:45:90)
+    xlim([0 xLims(s)])
+    ylim([0 90])
+    title(['\DeltaOrientation pref. vs \Deltaposition (n = ' num2str(n) ')'])
+    io.saveFigure(fig, fPlots, ...
+        sprintf('distanceAll_%s_orientationOnly', sets{s}))
+end
+
 %% Scatterplots: 
 % Pairwise difference in pref. dir./ori. dependent on distance between RFs
 Figure04S_prefDiff_vs_distance(folders, glob, sets, fPlots)
@@ -154,117 +268,3 @@ ylim([0 90])
 clim([0 7e-5])
 title(['\DeltaOrientation pref.: ' exp{2} ' (n = ' num2str(n) ')'])
 io.saveFigure(gcf, fPlots, sprintf('oriPref_%s', exp{2}))
-
-%% Plot pairwise distance versus tuning difference : DS- and OS-only units
-for s = 1:2 % boutons and neurons
-    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    dirDist = {};
-    dirDiff = {};
-    dirDiffNull = {};
-    oriDist = {};
-    oriDiff = {};
-    oriDiffNull = {};
-    rec = 1;
-    for subj = 1:length(subjDirs) % animals
-        name = subjDirs(subj).name;
-        fprintf('%s\n', name)
-        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs) %dates
-            date = dateDirs(dt).name;
-            f = fullfile(folders.data, sets{s}, name, date);
-            % ignore session if stimulus was not presented
-            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
-                continue
-            end
-                
-            % load data
-            data = io.getRecordingInfo(f);
-            roiPos = data.roiPositions(:,1:2);
-            [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-
-            dp = dirTuning.preference;
-            validDir = ~isnan(dp) & dirTuning.pValue < maxP & ...
-                dirTuning.selectivity >= selectivityThresholds(1,1) & ...
-                oriTuning.selectivity <= selectivityThresholds(1,2);
-            if sum(validDir) < minROIs
-                dirDist{rec} = [];
-                dirDiff{rec} = [];
-                dirDiffNull{rec} = [];
-            else
-                % for all unit pairs, determine distance in brain (ignore
-                % depth);
-                ddist = spatial.determineDistance(roiPos(validDir,1), ...
-                    roiPos(validDir,2));
-                dp = dp(validDir);
-                % for all unit pairs, determine difference between preferred
-                % directions
-                ddiff = tuning.determinePreferenceDiff(dp, 'dir');
-                % permute preferences to test significance
-                ddiffPermuted = NaN(length(ddiff), numPerm);
-                rng('default');
-                for k = 1:numPerm
-                    order = randperm(length(dp));
-                    ddiffPermuted(:,k) = tuning.determinePreferenceDiff(dp(order), 'dir');
-                end
-                % collect results
-                dirDist{rec} = ddist;
-                dirDiff{rec} = ddiff;
-                dirDiffNull{rec} = ddiffPermuted;
-            end
-            op = oriTuning.preference;
-            validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
-                oriTuning.selectivity >= selectivityThresholds(2,1) & ...
-                dirTuning.selectivity <= selectivityThresholds(2,2);
-            if sum(validOri) < minROIs
-                oriDist{rec} = [];
-                oriDiff{rec} = [];
-                oriDiffNull{rec} = [];
-            else
-                % for all unit pairs, determine distance in brain (ignore
-                % depth);
-                odist = spatial.determineDistance(roiPos(validOri,1), ...
-                    roiPos(validOri,2));
-                op = op(validOri);
-                % for all unit pairs, determine difference between preferred
-                % orientations
-                odiff = tuning.determinePreferenceDiff(op, 'ori');
-                % permute preferences to test significance
-                odiffPermuted = NaN(length(odiff), numPerm);
-                rng('default');
-                for k = 1:numPerm
-                    order = randperm(length(op));
-                    odiffPermuted(:,k) = tuning.determinePreferenceDiff(op(order), 'ori');
-                end
-                % collect results
-                oriDist{rec} = odist;
-                oriDiff{rec} = odiff;
-                oriDiffNull{rec} = odiffPermuted;
-            end
-            rec = rec + 1;
-        end
-    end
-
-    % plot distance vs tuning difference across all datasets
-    n = sum(~any(isnan([cat(1, dirDist{:}) cat(1, dirDiff{:})]), 2));
-    fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
-        cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
-        binSize(s), stepSize(s), false);
-    set(gcf, 'Position', glob.figPositionDefault)
-    set(gca, 'YTick', 0:45:180)
-    xlim([0 xLims(s)])
-    ylim([0 180])
-    title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
-    io.saveFigure(fig, fPlots, ...
-        sprintf('distanceAll_%s_directionOnly', sets{s}))
-    n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
-    fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
-        cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
-        binSize(s), stepSize(s), false);
-    set(gcf, 'Position', glob.figPositionDefault)
-    set(gca, 'YTick', 0:45:90)
-    xlim([0 xLims(s)])
-    ylim([0 90])
-    title(['\DeltaOrientation pref. vs \Deltaposition (n = ' num2str(n) ')'])
-    io.saveFigure(fig, fPlots, ...
-        sprintf('distanceAll_%s_orientationOnly', sets{s}))
-end

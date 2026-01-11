@@ -16,7 +16,8 @@ function [direction, length, respSign] = vectorAveraging(amplitudes, stimDirecti
 % determine mean response across repetitions
 meanAmps = mean(amplitudes,1,'omitnan')';
 respSign = 1;
-% if most responses are negative, multiply by -1
+% if most responses are negative, multiply by -1; this means that the unit
+% is mostly suppressed by the visual stimuli
 if sum(meanAmps) < 0
     meanAmps = -meanAmps;
     respSign = -1;

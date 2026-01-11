@@ -5,12 +5,12 @@ function newTraces = removeInitialDecay(traces, time, window_decay, ...
 % INPUTS
 % traces        [t x ROIs], traces of units
 % time          [t], sample times of traces
-% decayWin      double, duration at start over which decay is considered
-% decayThresh   double, threshold of minimum decay in terms of STDs of
+% window_decay  double, duration from start over which decay is considered
+% threshold     double, threshold of minimum decay in terms of STDs of
 %               trace
 
 % OUTPUTS
-% tracesNew     [t x ROIs], corrected traces
+% newTraces     [t x ROIs], corrected traces
 
 newTraces = traces;
 timeBin = median(diff(time));

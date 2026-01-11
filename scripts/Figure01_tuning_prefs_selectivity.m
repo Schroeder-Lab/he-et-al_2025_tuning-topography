@@ -40,7 +40,6 @@ for s = 1:2 % boutons and neurons
     dirTuned = false(0,0);
     oriTuned = false(0,0);
     depth = [];
-    isGad = NaN(0,0);
     dataset = [];
     totalN = [];
     stimAll = 0:30:330;
@@ -87,7 +86,6 @@ for s = 1:2 % boutons and neurons
             oriTuned = [oriTuned; oriTuning.pValue(unitsResponsive) < maxP];
             depth = [depth; recData.surface - ...
                 recData.roiPositions(unitsResponsive, 3)];
-            isGad = [isGad; recData.isInhibitory(unitsResponsive)];
             dataset = [dataset; ones(sum(unitsResponsive),1) .* sessions];
             totalN = [totalN; length(krnlFits.pValue)];
 
@@ -175,7 +173,7 @@ for s = 1:2 % boutons and neurons
     hold on
     h = plot(3, indExOrderedDir, '>');
     legend(h, num2str(ex{s,4}'))
-    set(gca, "Box", "off", "XTick", 1:6:length(dirBinsFine), "XTickLabel", dirBinsCoarse)
+    set(gca, "Box", "off", "XTick", 1:30:length(dirBinsFine), "XTickLabel", dirBinsCoarse)
     xlabel('Direction (deg)')
     ylabel(sets{s})
     io.saveFigure(gcf, fPlots, sprintf('tuning_%s_directionHeatmap', sets{s}));
@@ -187,7 +185,7 @@ for s = 1:2 % boutons and neurons
     hold on
     h = plot(3, indExOrderedOri, '>');
     legend(h, num2str(ex{s,4}'))
-    set(gca, "Box", "off", "XTick", 1:6:length(oriBinsFine), "XTickLabel", oriBinsCoarse)
+    set(gca, "Box", "off", "XTick", 1:30:length(oriBinsFine), "XTickLabel", oriBinsCoarse)
     xlabel('Orientation (deg)')
     ylabel(sets{s})
     io.saveFigure(gcf, fPlots, sprintf('tuning_%s_orientationHeatmap', sets{s}));
@@ -329,7 +327,7 @@ for s = 1:2 % boutons and neurons
     hOri(s) = plot(oriBinsFine, mSm, 'Color', colSets(s,:), "LineWidth", 1);
     plot(oriBins, m, '.', 'Color', colSets(s,:), "MarkerSize", 30)
 
-    %% Mean DS and OS histograms across datasets
+    %% Mean DS and OS histograms across datasets (in Figure S1)
     selEdges = 0:0.1:0.8;
     selBins = selEdges(1:end-1) + 0.05;
     dirHists = NaN(length(selBins), max(dataset));
@@ -371,105 +369,6 @@ for s = 1:2 % boutons and neurons
     m = median(medianOS{s}, "omitnan");
     plot(m, 0.5, 'v', "MarkerFaceColor", colSets(s,:), ...
         "MarkerEdgeColor", "none", "MarkerSize", 10)
-
-    %% Extra plots
-    % plot DS and OS against brain depth
-    figure('Position', [680 60 440 915])
-    scatter(dirSel(dirTuned), depth(dirTuned), 'k', 'filled')
-    set(gca, 'YDir', 'reverse')
-    xlim([0 0.8])
-    ylim([0 100])
-    xlabel('DS')
-    ylabel('Depth from surface')
-    title(sets{s})
-    io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-        sprintf('tuning_%s_DSvsDepth', sets{s}));
-    figure('Position', [1150 60 440 915])
-    scatter(oriSel(oriTuned), depth(oriTuned), 'k', 'filled')
-    set(gca, 'YDir', 'reverse')
-    xlim([0 0.8])
-    ylim([0 100])
-    xlabel('OS')
-    ylabel('Depth from surface')
-    title(sets{s})
-    io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-        sprintf('tuning_%s_OSvsDepth', sets{s}));
-
-    % plot direction/orientation preferences separately for inhibitory and
-    % excitatory neurons
-    if s == 2
-        % plot direction preference histogram
-        % 1. only inhibitory neurons
-        figure('Position', glob.figPositionDefault)
-        n1 = histcounts(dirPreferences(dirTuned & oriTuned & isGad==1), dirEdges);
-        n2 = histcounts(dirPreferences(dirTuned & ~oriTuned & isGad==1), dirEdges);
-        b = bar(dirBinsCoarse, [n1' n2'], 'stacked');
-        b(1).FaceColor = 'k';
-        b(2).FaceColor = [.5 .5 .5];
-        ylabel(sets{s})
-        set(gca, "Box", "off", "XTick", 0:90:360)
-        l = legend(b, sprintf('DS & OS (%d)', sum(n1)), ...
-            sprintf('DS (%d)', sum(n2)));
-        l.Box = "off";
-        xlim([-10 370])
-        xlabel('Direction (deg)')
-        title(sprintf('Inhibitory neurons (n = %d)', sum(n1+n2)))
-        io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-            sprintf('tuning_%s_inhibitory_directionPrefHist', sets{s}));
-        % 2. only excitatory neurons
-        figure('Position', glob.figPositionDefault)
-        n1 = histcounts(dirPreferences(dirTuned & oriTuned & isGad==-1), dirEdges);
-        n2 = histcounts(dirPreferences(dirTuned & ~oriTuned & isGad==-1), dirEdges);
-        b = bar(dirBinsCoarse, [n1' n2'], 'stacked');
-        b(1).FaceColor = 'k';
-        b(2).FaceColor = [.5 .5 .5];
-        ylabel(sets{s})
-        set(gca, "Box", "off", "XTick", 0:90:360)
-        l = legend(b, sprintf('DS & OS (%d)', sum(n1)), ...
-            sprintf('DS (%d)', sum(n2)));
-        l.Box = "off";
-        xlim([-10 370])
-        xlabel('Direction (deg)')
-        title(sprintf('Excitatory neurons (n = %d)', sum(n1+n2)))
-        io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-            sprintf('tuning_%s_excitatory_directionPrefHist', sets{s}));
-
-        % plot orientation preference histogram
-        % 1. only inhibitory neurons
-        figure('Position', glob.figPositionDefault)
-        n1 = histcounts(oriPreferences(dirTuned & oriTuned & isGad==1), oriEdges);
-        n2 = histcounts(oriPreferences(~dirTuned & oriTuned & isGad==1), oriEdges);
-        b = bar(oriBinsCoarse, [n1' n2'], 'stacked');
-        b(1).FaceColor = 'k';
-        b(2).FaceColor = [.8 .8 .8];
-        ylabel(sets{s})
-        set(gca, "Box", "off", "XTick", 0:90:180)
-        l = legend(b, sprintf('DS & OS (%d)', sum(n1)), ...
-            sprintf('OS (%d)', sum(n2)));
-        l.Box = "off";
-        xlim([-10 190])
-        xlabel('Orientation (deg)')
-        title(sprintf('Inhibitory neurons (n = %d)', sum(n1+n2)))
-        io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-            sprintf('tuning_%s_inhibitory_orientationPrefHist', sets{s}));
-        % 2. only excitatory neurons
-        figure('Position', glob.figPositionDefault)
-        n1 = histcounts(oriPreferences(dirTuned & oriTuned & isGad==-1), oriEdges);
-        n2 = histcounts(oriPreferences(~dirTuned & oriTuned & isGad==-1), oriEdges);
-        b = bar(oriBinsCoarse, [n1' n2'], 'stacked');
-        b(1).FaceColor = 'k';
-        b(2).FaceColor = [.8 .8 .8];
-        ylabel(sets{s})
-        set(gca, "Box", "off", "XTick", 0:90:180)
-        l = legend(b, sprintf('DS & OS (%d)', sum(n1)), ...
-            sprintf('OS (%d)', sum(n2)));
-        l.Box = "off";
-        xlim([-10 190])
-        xlabel('Orientation (deg)')
-        title(sprintf('Excitatory neurons (n = %d)', sum(n1+n2)))
-        io.saveFigure(gcf, fullfile(fPlots, 'extra'), ...
-            sprintf('tuning_%s_excitatory_orientationPrefHist', sets{s}));
-    end
 end
 
 figure(figDir)

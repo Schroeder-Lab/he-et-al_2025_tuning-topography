@@ -1,4 +1,6 @@
 function [vecDir, dir_rad, dir_vis] = getTranslationDir(T, r)
+%GETTRANSLATIONDIR   Determine preferred direction predicted from 
+%longitudes at RF location.
 
 % INPUTS
 % T     [azimuth elevation], translation vector pointing into direction the
@@ -6,6 +8,12 @@ function [vecDir, dir_rad, dir_vis] = getTranslationDir(T, r)
 %       translation of subject/eye)
 % r     [azimuth elevation], position of receptive field or point on
 %       unitsphere at which translational flow is measured
+
+% OUTPUTS
+% vecDir    [x y], direction vector projected onto tangent plane of RF 
+%           with sphere
+% dir_rad   double, preferred direction in radian
+% dir_vis   double, preferred direction in degrees
 
 % transform translation vector to cartesian coordinates
 % (dimensions: AP (+ -> anterior), ML (+ -> right), DV (+ -> up))

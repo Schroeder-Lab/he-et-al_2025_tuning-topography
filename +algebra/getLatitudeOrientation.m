@@ -1,9 +1,17 @@
 function [vecOri, ori_rad, ori_vis] = getLatitudeOrientation(A, r)
+%GETLATITUDEORIENTATION   Determine preferred orientation predicted from
+%latitudes at RF location.
 
 % INPUTS
-% A     [azimuth elevation], vector which is perpendicular to latitudes
-% r     [azimuth elevation], position of receptive field or point on
-%       unitsphere at which translational flow is measured
+% A         [azimuth elevation], vector which is perpendicular to latitudes
+% r         [azimuth elevation], position of receptive field or point on
+%           unitsphere at which translational flow is measured
+
+% OUTPUTS
+% vecOri    [x y], orientation vector projected onto tangent plane of RF 
+%           with sphere
+% ori_rad   double, preferred orientation in radian
+% ori_vis   double, preferred orientation in degrees
 
 % transform vector spanning latitudes to cartesian coordinates
 % (dimensions: AP, ML, DV)
@@ -35,43 +43,3 @@ ori_rad = atan(vecOri(2) / vecOri(1));
 ori_rad = mod(2*pi - ori_rad, pi);
 % transform to degrees
 ori_vis = rad2deg(ori_rad);
-
-
-% % make plots
-% figure
-% % sphere
-% [X,Y,Z] = sphere;
-% surf(X, Y, Z, 'FaceAlpha', 0.5)
-% axis equal
-% set(gca, 'YDir', 'reverse')
-% xlabel('X (AP)')
-% ylabel('Y (ML)')
-% zlabel('Z (DV)')
-% 
-% hold on
-% % translation vector from origin
-% l = 1.5;
-% plot3(l*[0 A(1)], l*[0 A(2)], l*[0 A(3)], 'b', 'LineWidth', 2)
-% 
-% % vector to RF
-% plot3([0 r_cart(1)], [0 r_cart(2)], [0 r_cart(3)], ...
-%     'k.-', 'LineWidth', 2, 'MarkerSize', 30)
-% 
-% % 3D orientation vector
-% plot3(r_cart(1) + [0 v(1)], r_cart(2) + [0 v(2)], r_cart(3) + [0 v(3)], ...
-%     'r.-', 'LineWidth', 2, 'MarkerSize', 20)
-% 
-% % vectors spanning tangent plane
-% plot3(r_cart(1) + [0 e_phi(1)], r_cart(2) + [0 e_phi(2)], r_cart(3) + [0 0], ...
-%     'r', 'LineWidth', 2)
-% plot3(r_cart(1) + [0 e_theta(1)], r_cart(2) + [0 e_theta(2)], ...
-%     r_cart(3) + [0 e_theta(3)], ...
-%     'r', 'LineWidth', 2)
-% 
-% % plot flow vector projected into tengant plane
-% figure
-% hold on
-% plot([-1 1], [0 0], 'k')
-% plot([0 0], [-1 1], 'k')
-% plot([0 vecOri(1)], [0 vecOri(2)], 'r', 'LineWidth', 2)
-% axis equal tight

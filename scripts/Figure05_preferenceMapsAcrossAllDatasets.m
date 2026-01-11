@@ -5,8 +5,6 @@ if nargin < 6
     selectivityThresholds = [0 1; 0 1];
 end
 
-minUnits = 3;
-
 limits = [-132 -84 -16 38];
 for s = 1:2
     if retinotopyRF(s)
@@ -26,17 +24,6 @@ for s = 1:2
     ind = valid & ~any(isnan(data(s).rfPos),2) & ~isnan(data(s).dirPref);
     scatter(data(s).rfPos(ind,1), data(s).rfPos(ind,2), [], ...
         angles(ind), "filled")
-    hold on
-    % plot Gaussian fit (bivariate normal distribution)
-    for k = 1:max(data(s).set)
-        ind = data(s).set == k & ~any(isnan(data(s).rfPos),2);
-        if sum(ind) < minUnits
-            continue
-        end
-        [x, y] = algebra.getGaussianContour(data(s).rfPos(ind,1), ...
-            data(s).rfPos(ind,2));
-        plot(x, y, 'k')
-    end
     clim([0 360])
     colormap(colors)
     c = colorbar;
@@ -67,17 +54,6 @@ for s = 1:2
     ind = valid & ~any(isnan(data(s).rfPos),2) & ~isnan(data(s).oriPref);
     scatter(data(s).rfPos(ind,1), data(s).rfPos(ind,2), [], ...
         angles(ind), "filled")
-    hold on
-    % plot Gaussian fit (bivariate normal distribution)
-    for k = 1:max(data(s).set)
-        ind = data(s).set == k & ~any(isnan(data(s).rfPos),2);
-        if sum(ind) < minUnits
-            continue
-        end
-        [x, y] = algebra.getGaussianContour(data(s).rfPos(ind,1), ...
-            data(s).rfPos(ind,2));
-        plot(x, y, 'k')
-    end
     clim([0 180])
     colormap(colors)
     c = colorbar;

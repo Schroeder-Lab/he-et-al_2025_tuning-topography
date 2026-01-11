@@ -1,4 +1,15 @@
 function [azimuth2, elevation2] = rotateY(azimuth, elevation, alpha)
+%ROTATEY   Determine new vector position on sphere after changing pitch of
+%sphere (rotation around y-axis).
+
+% INPUTS
+% azimuth       double, azimuth of vector
+% elevation     double, elevation of vector
+% alpha         double, rotation angle in degrees
+
+% OUTPUTS
+% azimuth2      double, azimuth of vector after rotation
+% elevation2    double, elevation of vector after rotation
 
 % Convert to radians
 azimuth = deg2rad(azimuth);

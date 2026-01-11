@@ -12,9 +12,7 @@ exp = {'gratingsDrifting', 'bars', 'gratingsStatic'};
 
 %% Examples
 % datasets with drifting gratings, static gratings, and bars
-ex = {'SS044', '2015-05-15', [176 330 5 364]}; % IDs updated since 
-                                           % duplicate neurons were removed
-% ex = {'SS044', '2015-05-15', [205 382 5 422]}; 
+ex = {'SS044', '2015-05-15', [176 330 5 364]};
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure01S');

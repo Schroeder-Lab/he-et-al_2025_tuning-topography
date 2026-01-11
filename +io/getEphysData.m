@@ -1,18 +1,20 @@
 function data = getEphysData(folder)
-%GETEPHYSDATA   Load ephys data. Only consider single- and multi-unit
+%GETEPHYSDATA   Load spiking data. Only consider single- and multi-unit
 %activity.
 
 % INPUTS
 % folder        path to data of recording session
-% properties    .samplingRate (Hz)
 
 % OUTPUTS
 % data
-%   .times
-%   .amps
-%   .clusters
-%   .depths
-%   .clusterIDs
+%   .times      [k], times of spikes of all considered units
+%   .amps       [k], amplitudes of spikes of all considered units
+%   .clusters   [k], cluster ID of spikes of all considered units
+%   .depths     [k], depths of spikes of all considered units
+%   .clusterIDs [units], IDs of considered units as returned after manual
+%               spike sorting
+%   .clusterDepths  [units], median depth of all spikes of each considered
+%               unit
 
 data.times = readNPY(fullfile(folder, "spikes.times.npy"));
 data.amps = readNPY(fullfile(folder, "spikes.amps.npy"));

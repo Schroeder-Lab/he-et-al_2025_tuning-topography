@@ -128,7 +128,7 @@ for s = 1:2 % boutons and neurons
             % rFields = permute(rFields, [2:5 1]);
             %--------------------------------------------------------------
 
-            % fit Gaussian
+            % fit Gaussian to mapped RFs
             [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
                 bestSubFields, subFieldSigns, predictions, EVs] = ...
                 rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz);
@@ -254,7 +254,7 @@ for s = 1:2 % boutons and neurons
                 continue
             end
 
-            caData = io.getRFFits(f);
+            caData = io.getNoiseRFFits(f);
             rfGaussPars = caData.fitParameters;
             EVs = caData.EV;
             peakNoiseRatio = caData.peaks;

@@ -1,4 +1,8 @@
 function colormap = getBlueWhiteRedMap(n)
+%GETBLUEWHITEREDMAP   Return colormap that with a blue-white-red gradient.
+
+% INPUTS
+% n     integer, length of colormap (number of color entries)
 
 colormap = ones(n,3);
 

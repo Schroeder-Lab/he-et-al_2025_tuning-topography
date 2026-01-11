@@ -2,8 +2,8 @@ function distance = determineDistance(x, y)
 %DETERMINEDISTANCE   Calculate all pairwise distances in brain.
 
 % INPUTS
-% x         [ROIs x 1], horizontal position in brain
-% y         [ROIs x 1], vertical position in brain
+% x         [ROIs x 1], horizontal position in imaging plane
+% y         [ROIs x 1], vertical position in imaging plane
 
 % OUTPUTS
 % distance  [pairs x 1], pairwise distances

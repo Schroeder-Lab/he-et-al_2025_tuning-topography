@@ -1,4 +1,16 @@
-function plotRF(rf, rfGaussPars, bestSubField, edges, edges_rf, gridW, gridH)
+function plotRF(rf, rfGaussPars, bestSubField, edges, edges_rf, gridW, ...
+    gridH)
+%PLOTRF   Plot mapped ON and OFF subfields with contour of fitted 2D
+%Gaussian.
+
+% INPUTS
+% rf            [rows x columns x subfield], mapped RF
+% rfGaussPars   [1 x 7], parameters of fitted 2D Gaussian
+% bestSubField  integer, 1: 'ON', 2: 'OFF', or 3: 'ON+OFF'
+% edges         [left rigth top bottom] of RF map
+% edges_rf      [left rigth top bottom] of RF map to be plotted
+% gridW         double, sample spacing along azimuth
+% gridH         double, sample spacing along elevation
 
 ellipse_x = linspace(-pi, pi, 100);
 [cm_ON, cm_OFF] = colmaps.getRFMaps;

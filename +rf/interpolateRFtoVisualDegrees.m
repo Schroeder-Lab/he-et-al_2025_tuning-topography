@@ -8,6 +8,8 @@ function [rf_visDeg, x2, y2] = interpolateRFtoVisualDegrees(rf, stimPos)
 
 % OUTPUTS
 % rf_visDeg [newRows x newColumns], 2D RF profile resampled
+% x2        [newRows x newColumns], azimuth of each RF sample point
+% y2        [newRows x newColumns], elevation of each RF sample point
 
 [x0, y0] = meshgrid((1:size(rf,2))-0.5, (1:size(rf,1))-0.5);
 % [x0, y0] = meshgrid(1:size(rf,2), 1:size(rf,1));

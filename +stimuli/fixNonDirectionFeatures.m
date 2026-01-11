@@ -1,4 +1,30 @@
 function [stimData_new, dirExp] = fixNonDirectionFeatures(stimData)
+%FIXNONDIRECTIONFEATURES   Select experiments and trials where only
+%direction of stimulus was varied, while other stimulus features are kept
+%constant.
+
+% INPUTS
+% stimData
+%   .contrasts              [stim x 1], contrast for each stimulus
+%   .spatialFrequencies     [stim x 1], spatial frequency for each stimulus
+%   .temporalFrequencies    [stim x 1], temporal frequency for each
+%                           stimulus
+%   .times                  [trials x 2], time of stimulus onsets (1st 
+%                           column) and offsets (2nd column)
+%   .ids                    [trials x 1], ID of stimulus presented in each 
+%                           trial
+
+% OUTPUTS
+% stimData_new
+%   .contrasts              [stim x 1], contrast for each stimulus
+%   .spatialFrequencies     [stim x 1], spatial frequency for each stimulus
+%   .temporalFrequencies    [stim x 1], temporal frequency for each
+%                           stimulus
+%   .times                  [trials x 2], time of stimulus onsets (1st 
+%                           column) and offsets (2nd column)
+%   .ids                    [trials x 1], ID of stimulus presented in each 
+%                           trial
+% dirExp                    [k], IDs of valid experiments
 
 stimData_new = stimData;
 

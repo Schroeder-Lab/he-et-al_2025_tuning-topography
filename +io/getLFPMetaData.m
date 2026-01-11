@@ -1,4 +1,16 @@
 function data = getLFPMetaData(folder)
+%GETLFPMETADATA   Load LFP meta-data.
+
+% INPUTS
+% folder            path to data of recording session
+
+% OUTPUTS
+% data
+%   .samplingRate   double, sampling rate of LFP signal
+%   .numChans       double, number of recorded channels
+%   .Imax           double, dynamic range of signal
+%   .Vmax           double, maximum voltage covered by dynamic range
+%   .lfpGain        double, gain during recording
 
 opts = detectImportOptions(folder, ...
     "FileType", "text", "ReadVariableNames", false, ...

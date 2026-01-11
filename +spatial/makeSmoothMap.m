@@ -1,5 +1,14 @@
 function [x, y, preferences, consistencies, counts] = ...
     makeSmoothMap(rfPos, directions, binSize, radius, limits)
+%MAKESMOOTHMAP   2D smoothing across tuning preferences at RF locations.
+
+% INPUTS
+% rfPos         [units, 2], azimuth and elevation of RF locations
+% directions    [units], preferred directions
+% binSize       double, step size for moving average
+% radius        double, radius of moving average
+% (limits)      [left right bottom top], boundaries of visual space to be
+%               plotted
 
 valid = ~any(isnan([rfPos, directions]), 2);
 

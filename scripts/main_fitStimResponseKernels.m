@@ -38,13 +38,11 @@ for s = 1:2 % neurons and boutons
                 time_traces = data.time;
                 tr = data.traces;
                 planes = data.planes;
-                cellIDs = data.ids;
                 delays = data.delays;
                 
                 data = io.getGratingInfo(f, type);
                 time_stim = data.times;
                 stimIDs = data.ids;
-                stimRecording = data.interval;
 
                 doShift = false;
                 switch type
@@ -62,7 +60,8 @@ for s = 1:2 % neurons and boutons
                     time_traces <= time_stim(end,end)+1;
                 t = time_traces(ind);
                 tr = tr(ind,:);
-                % subtract 8th percentile of each trace
+                % subtract 8th percentile of each trace (so that "baseline"
+                % activity is near zero)
                 tr = tr - prctile(tr, 8, 1);
 
                 % ignore "blank"/gray stimuli

@@ -6,8 +6,6 @@ function main_mapRFposToRetinotopy(folders)
 minUnits = 10;
 minEV = 0.01;
 minPeak = 5;
-% minEV = [0.01 0];
-% minPeak = [6 12];
 sets = {'boutons', 'neurons'};
 
 %% Use linear regression to fit RF based on brain position 
@@ -34,7 +32,7 @@ for s = 1:2 % boutons and neurons
             data = io.getRecordingInfo(f);
             brainPos = data.roiPositions; % (x,y,z) in microns
             brainPos(:,3) = [];
-            data = io.getRFFits(f);
+            data = io.getNoiseRFFits(f);
             fits = data.fitParameters;
             rfPos = fits(:, [2 4]); % (azimuth, elevation) in visual degrees
             ev_rf = data.EV;
@@ -69,17 +67,20 @@ for s = 1:2 % boutons and neurons
                 'Weights', ev_rf(valid));
             cy = coeffvalues(fit_rf_y);
 
+            % fit model
             [fit_rf1, gof1] = fit(reshape(brainPos(valid,:),[],1), ...
                 reshape(rfPos(valid,:),[],1), ft, ...
                 'StartPoint', [cx(1) cx(2) cx(3) cy(1) vecnorm(cy(2:3))], ...
                 'Weights', repmat(ev_rf(valid),2,1));
 
+            % choose the better of the two fits
             if gof1.sse < gof0.sse
                 fit_rf = fit_rf1;
             else
                 fit_rf = fit_rf0;
             end
 
+            % predict RF positions using the model
             predict_rf = fit_rf(reshape(brainPos,[],1));
             predict_rf = reshape(predict_rf, [], 2);
 
@@ -122,7 +123,7 @@ for s = 1:2 % boutons and neurons
             ids = data.ids;
             data = io.getVisNoiseInfo(f);
             edges = data.edges;
-            data = io.getRFFits(f);
+            data = io.getNoiseRFFits(f);
             fitPars = data.fitParameters;
             rfPos = fitPars(:, [2 4]); % (azimuth, elevation) in visual degrees
             ev_rf = data.EV;
@@ -167,6 +168,9 @@ for s = 1:2 % boutons and neurons
             contourLimits = fit_rfPos([plotLimits([1 1 2 2]), ...
                 plotLimits([3 4 3 4])]);
 
+            % plot all units' position in FOV, color-code (1) RF azimuth
+            % and (2) RF elevation; background gradient shows predicted RF
+            % position
             figure('Position', [80 255 1105 420])
             tiledlayout(1,2)
 
@@ -212,7 +216,7 @@ for s = 1:2 % boutons and neurons
                 name, date)))
             close gcf
 
-            % plot fits
+            % plot mapped versus fitted RF positions
             figure('WindowState', 'maximized')
             drawnow
             sz = get(gcf, 'Position');

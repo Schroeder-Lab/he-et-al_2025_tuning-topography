@@ -16,7 +16,7 @@ minR2 = 0; % threshold for explained variance for response kernel
 cols = [1 0 0; 1 0.8 0.8];
 phaseCols = lines(6);
 
-%% Plot kernel, direction and orientation tuning curves
+%% Determine and plot direction and orientation tuning
 sets = {'neurons', 'boutons'};
 stimTypes = {'gratingsDrifting', 'bars', 'gratingsStatic'};
 for s = 1:2 % neurons and boutons
@@ -159,7 +159,7 @@ for s = 1:2 % neurons and boutons
                     end
                     if strcmp(type, stimTypes{3}) % for static gratings
                         hold on
-                        % color code responses for difference phases
+                        % color codes responses for different phases
                         for ph = 1:length(phases)
                             indSt = stimPhasesCirc == phases(ph);
                             hs = plot(stimOrisCirc(indSt)' + ...

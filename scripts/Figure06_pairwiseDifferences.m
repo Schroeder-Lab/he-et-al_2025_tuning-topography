@@ -40,22 +40,6 @@ for feat = 1:2 % direction and orientation preferences
     end
 end
 
-%% Plot distance vs tuning difference across all datasets
-for feat = 1:2
-    n = sum(~any(isnan([cat(1, dist{:, feat}) cat(1, diff{:, feat})]), 2));
-    fig = spatial.plotPrefDiffVsDist(cat(1, dist{:, feat}), ...
-        cat(1, diff{:, feat}), cat(1, diffNull{:, feat}), ...
-        binSize, stepSize, false);
-    set(gcf, 'Position', glob.figPositionDefault)
-    set(gca, 'YTick', yTicks{feat})
-    xlim([0 xLims])
-    ylim([0 180/feat])
-    clim([0 cLims/(3-feat)])
-    title(['\Delta' features{feat} ' pref. vs \Deltaposition (n = ' ...
-        num2str(n) ')'])
-    io.saveFigure(fig, fPlots, sprintf('distanceAll_%s', features{feat}))
-end
-
 %% Plot mean pairwise preference difference in each recording
 % (and permutation test with preference permutation across recordings)
 [~, ~, mouseID] = unique({data.animal});
@@ -100,4 +84,20 @@ for feat = 1:2
     ylabel(['\Delta' features{feat} ' preference'])
     io.saveFigure(gcf, fPlots, ...
         sprintf('tuningDifference_%s', features{feat}))
+end
+
+%% Plot distance vs tuning difference across all datasets
+for feat = 1:2
+    n = sum(~any(isnan([cat(1, dist{:, feat}) cat(1, diff{:, feat})]), 2));
+    fig = spatial.plotPrefDiffVsDist(cat(1, dist{:, feat}), ...
+        cat(1, diff{:, feat}), cat(1, diffNull{:, feat}), ...
+        binSize, stepSize, false);
+    set(gcf, 'Position', glob.figPositionDefault)
+    set(gca, 'YTick', yTicks{feat})
+    xlim([0 xLims])
+    ylim([0 180/feat])
+    clim([0 cLims/(3-feat)])
+    title(['\Delta' features{feat} ' pref. vs \Deltaposition (n = ' ...
+        num2str(n) ')'])
+    io.saveFigure(fig, fPlots, sprintf('distanceAll_%s', features{feat}))
 end

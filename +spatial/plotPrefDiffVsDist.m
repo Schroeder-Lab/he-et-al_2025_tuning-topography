@@ -10,7 +10,7 @@ function fig = plotPrefDiffVsDist(distances, prefDiffs, prefDiffsPermuted, ...
 %               ROIs
 % binSize       int, bin size to determine average differences
 % stepSize      int, step size for moving average
-% doSmooth      true/false, if true smooth the mean preference differences
+% doSmooth      logical, if true smooth the mean preference differences
 %               across x-axis (brain distance)
 
 % OUTPUTS

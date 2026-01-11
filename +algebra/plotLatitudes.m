@@ -1,8 +1,10 @@
 function plotLatitudes(axisPole, numLat, colour)
+%PLOTLATITUDES   Plot latitudinal fields on sphere given specific axis.
 
-% axisPole  [azimuth, elevation], in degrees
-% numLat
-% colour
+% INPUTS
+% axisPole  [azimuth, elevation], axis in degrees
+% numLat    integer, number of latitudes to plot
+% colour    colour of latitudes
 
 nPoints = 200;
 
