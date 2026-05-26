@@ -1,4 +1,4 @@
-function Figure05S(folders, glob)
+function Figure04S(folders, glob)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
@@ -8,7 +8,7 @@ retinotopyRF = [false true]; % true: use RF positions estimated from
                              % false: use RF positions from RF mapping
 
 %% For all plots
-fPlots = fullfile(folders.plots, 'Figures', 'Figure05S');
+fPlots = fullfile(folders.plots, 'Figures', 'Figure04S');
 if ~isfolder(fPlots)
     mkdir(fPlots)
 end
@@ -18,8 +18,8 @@ end
 data = Figures_loadData(folders, sets, retinotopyRF);
 
 %% Plot smoothed preference maps pooling datasets
-maps = Figure05_smoothedPreferenceMaps(glob, [], data, sets, retinotopyRF);
+maps = Figure04_smoothedPreferenceMaps(glob, [], data, sets, retinotopyRF);
 
 %% Scatterplots: consistencies compared to null distribution
-Figure05S_consistenciesAll(glob, fPlots, maps, sets, retinotopyRF, ...
+Figure04S_consistenciesAll(glob, fPlots, maps, sets, retinotopyRF, ...
     measures)

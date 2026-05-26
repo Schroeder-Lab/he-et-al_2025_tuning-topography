@@ -1,10 +1,7 @@
-function Figure04S(folders, glob)
+function Figure05S(folders, glob)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-retinotopyRF = [false true]; % true: use RF positions estimated from 
-                             % retinotopic mapping;
-                             % false: use RF positions from RF mapping
 selectivityThresholds = [0.2 0.2; 0.1 0.2];
 minROIs = 15;
 binSize = [5, 20];
@@ -16,7 +13,7 @@ maxP = 0.05;
 numPerm = 1000;
 
 %% For all plots
-fPlots = fullfile(folders.plots, 'Figures', 'Figure04S');
+fPlots = fullfile(folders.plots, 'Figures', 'Figure05S');
 if ~isfolder(fPlots)
     mkdir(fPlots)
 end
@@ -137,7 +134,7 @@ end
 
 %% Scatterplots: 
 % Pairwise difference in pref. dir./ori. dependent on distance between RFs
-Figure04S_prefDiff_vs_distance(folders, glob, sets, fPlots)
+Figure05S_prefDiff_vs_distance(folders, glob, sets, fPlots)
 
 %% Plot pairwise distance in brain versus difference in tuning preference 
 % measured in response to bars and static gratings
@@ -167,8 +164,20 @@ for subj = 1:length(subjDirs) % animals
         % load data
         data = io.getRecordingInfo(f);
         roiPos = data.roiPositions(:,1:2);
+        if ~isfile(fullfile(f, '_ss_rf.posRetinotopy.npy'))
+            continue
+        end
+        pos = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
+        edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
+        % exclude all RFs too close to monitor edge
+        invalidRF = pos(:,1) < edges(1)+dist2edge | ...
+            pos(:,1) > edges(2)-dist2edge | ...
+            pos(:,2) > edges(3)-dist2edge | ...
+            pos(:,2) < edges(4)+dist2edge;
+
         % for all unit pairs, determine distance in brain (ignore depth);
-        dist{rec} = spatial.determineDistance(roiPos(:,1), roiPos(:,2));
+        dist{rec} = spatial.determineDistance(roiPos(~invalidRF,1), ...
+            roiPos(~invalidRF,2));
         for k = 1:2
             % ignore session if stimulus was not presented
             if ~isfile(fullfile(f, sprintf('_ss_%s.intervals.npy', exp{k})))
@@ -188,6 +197,8 @@ for subj = 1:length(subjDirs) % animals
                 dp = dirTuning.preference;
                 invalid = dirTuning.pValue >= maxP;
                 dp(invalid) = NaN;
+                dp = dp(~invalidRF);
+                
                 % for all unit pairs, determine difference between preferred
                 % directions
                 ddiff = tuning.determinePreferenceDiff(dp, 'dir');
@@ -207,6 +218,8 @@ for subj = 1:length(subjDirs) % animals
             op = oriTuning.preference;
             invalid = oriTuning.pValue >= maxP;
             op(invalid) = NaN;
+            op = op(~invalidRF);
+
             % for all unit pairs, determine difference between preferred
             % orientations
             odiff = tuning.determinePreferenceDiff(op, 'ori');

@@ -6,6 +6,7 @@ maxP = 0.05; % p-value threshold
 % to evaluate RFs
 minEV = 0.01; % minimum explained variance
 minPeak = 5; % minimum peak of RF (compared to noise)
+dist2edge = 5; % minimum distance of RF centre to monitor edge
 
 %% Examples
 % RFs
@@ -22,7 +23,7 @@ end
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figure06_loadData(folders, maxP, minEV, minPeak);
+data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge);
 
 %% Plot example RFs
 exSession = strcmp(exAnimal, {data.animal}) & ...

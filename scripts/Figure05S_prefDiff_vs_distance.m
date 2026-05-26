@@ -1,4 +1,4 @@
-function Figure04S_prefDiff_vs_distance(folders, glob, sets, fPlots)
+function Figure05S_prefDiff_vs_distance(folders, glob, sets, fPlots)
 
 %% Parameters
 % for evaluation of dsitance of receptive fields to monitor edges
@@ -65,7 +65,7 @@ for s = 1:2 % boutons and neurons
             if ~retinotopyRF(s)
                 edges = data.edges; % [left right top bottom]
                 % exclude all RFs too close to monitor edge
-                validRF = data.EV < minEV | data.peaks < minPeak | ...
+                invalidRF = ... % dataRF.EV < minEV | dataRF.peaks < minPeak | ...
                     rfPos(:,1) < edges(1)+dist2edge | ...
                     rfPos(:,1) > edges(2)-dist2edge | ...
                     rfPos(:,2) > edges(3)-dist2edge | ...
@@ -78,7 +78,7 @@ for s = 1:2 % boutons and neurons
                 rfPos = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
                 edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
                 % exclude all RFs too close to monitor edge
-                validRF = rfPos(:,1) < edges(1)+dist2edge | ...
+                invalidRF = rfPos(:,1) < edges(1)+dist2edge | ...
                     rfPos(:,1) > edges(2)-dist2edge | ...
                     rfPos(:,2) > edges(3)-dist2edge | ...
                     rfPos(:,2) < edges(4)+dist2edge;
@@ -87,9 +87,9 @@ for s = 1:2 % boutons and neurons
 
             dp = dirTuning.preference;
             valid = ~isnan(dp) & dirTuning.pValue < maxP & ...
-                ev_rf >= minEV & rf_peaks >= minPeak;
+                ev_rf >= minEV & rf_peaks >= minPeak & ~invalidRF;
             numDirTuned(s) = numDirTuned(s) + ...
-                sum(~isnan(dp) & dirTuning.pValue < maxP);
+                sum(~isnan(dp) & dirTuning.pValue < maxP & ~invalidRF);
             numRFDirTuned(s) = numRFDirTuned(s) + sum(valid);
             if sum(~isnan(dp) & dirTuning.pValue < maxP) > 0
                 tmp(1) = tmp(1) + 1;
@@ -123,9 +123,9 @@ for s = 1:2 % boutons and neurons
 
             op = oriTuning.preference;
             valid = ~isnan(op) & oriTuning.pValue < maxP & ...
-                ev_rf >= minEV & rf_peaks >= minPeak;
+                ev_rf >= minEV & rf_peaks >= minPeak & ~invalidRF;
             numOriTuned(s) = numOriTuned(s) + ...
-                sum(~isnan(op) & oriTuning.pValue < maxP);
+                sum(~isnan(op) & oriTuning.pValue < maxP & ~invalidRF);
             numRFOriTuned(s) = numRFOriTuned(s) + sum(valid);
             if sum(~isnan(op) & oriTuning.pValue < maxP) > 0
                 tmp(2) = tmp(2) + 1;

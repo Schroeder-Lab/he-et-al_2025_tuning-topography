@@ -1,4 +1,4 @@
-function data = Figure06_loadData(folders, maxP, minEV, minPeak)
+function data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge)
 
 data = struct('animal', {}, 'date', {}, ...
     'dirPreferences', {}, 'oriPreferences', {}, ...
@@ -38,7 +38,7 @@ for subj = 1:length(subjDirs) % animals
         end
 
         % select units with good RFs from noise or circles
-        stimTypes = rf.selectRFStim(rfData, minEV, minPeak);
+        stimTypes = rf.selectRFStim(rfData, minEV, minPeak, dist2edge);
         
         unitsSC = spikeData.clusterDepths(:,2) > 0;
         if sum(unitsSC) < 1

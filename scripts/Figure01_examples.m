@@ -58,20 +58,6 @@ for s = 1:2 % boutons and neurons
             dirTuning.pValue(units(iUnit)), oriTuning.selectivity(units(iUnit)), ...
             oriTuning.pValue(units(iUnit))))
 
-        % plot fitted kernel
-        mini = min(krnlFits.kernel(:,units(iUnit)));
-        f2 = figure('Position', [150 150 475 325]);
-        hold on
-        fill([0 0 stimDur stimDur], [mini 1 1 mini], 'k', ...
-                'FaceColor', [1 1 1].*0.9, 'EdgeColor', 'none')
-        plot(krnlFits.time_kernel, krnlFits.kernel(:,units(iUnit)), ...
-            'k', "LineWidth", 1)
-        set(gca, "Box", "off")
-        xlim(krnlFits.time_kernel([1 end]))
-        ylim([mini 1])
-        xlabel('Time (s)')
-        title(sprintf('ROI %03d: kernel', units(iUnit)))
-
         % plot direction tuning curve
         amps = krnlFits.amplitudes(:, validStims([1:end 1]), units(iUnit));
         drct = [stim.directions(validStims); 360]';

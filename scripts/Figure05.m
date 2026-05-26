@@ -25,7 +25,7 @@ ex(1,:) = {'SS078', '2017-10-05'};
 ex(2,:) = {'SS041', '2015-04-11'};
 
 %% For all plots
-fPlots = fullfile(folders.plots, 'Figures', 'Figure04');
+fPlots = fullfile(folders.plots, 'Figures', 'Figure05');
 if ~isfolder(fPlots)
     mkdir(fPlots)
 end
@@ -90,7 +90,7 @@ for s = 1:2 % boutons and neurons
                 edges = dataRF.edges; % [left right top bottom]
                 pos = dataRF.gaussPars(:,[2 4]);
                 % exclude all RFs too close to monitor edge
-                validRF = dataRF.EV < minEV | dataRF.peaks < minPeak | ...
+                invalidRF = dataRF.EV < minEV | dataRF.peaks < minPeak | ...
                     pos(:,1) < edges(1)+dist2edge | ...
                     pos(:,1) > edges(2)-dist2edge | ...
                     pos(:,2) > edges(3)-dist2edge | ...
@@ -103,7 +103,7 @@ for s = 1:2 % boutons and neurons
                 pos = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
                 edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
                 % exclude all RFs too close to monitor edge
-                validRF = pos(:,1) < edges(1)+dist2edge | ...
+                invalidRF = pos(:,1) < edges(1)+dist2edge | ...
                     pos(:,1) > edges(2)-dist2edge | ...
                     pos(:,2) > edges(3)-dist2edge | ...
                     pos(:,2) < edges(4)+dist2edge;
@@ -111,7 +111,7 @@ for s = 1:2 % boutons and neurons
 
             dp = dirTuning.preference;
             validDir = ~isnan(dp) & dirTuning.pValue < maxP;
-            valid = validDir & validRF;
+            valid = validDir & ~invalidRF;
             if sum(valid) < minROIs
                 dirDist{rec} = [];
                 dirDiff{rec} = [];
@@ -148,7 +148,7 @@ for s = 1:2 % boutons and neurons
 
             op = oriTuning.preference;
             validOri = ~isnan(op) & oriTuning.pValue < maxP;
-            valid = validOri & validRF;
+            valid = validOri & ~invalidRF;
             if sum(valid) < minROIs
                 oriDist{rec} = [];
                 oriDiff{rec} = [];
