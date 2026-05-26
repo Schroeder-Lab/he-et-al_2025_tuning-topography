@@ -55,7 +55,7 @@ main_plotBrainDistanceVersusPreferenceDifference(folders)
 % receptive fields (ON and OFF fields).
 main_fitReceptiveFields(folders)
 
-%% Fit retinotopy (relatioship: brain position - RF position)
+%% Fit retinotopy (relationship: brain position - RF position)
 % Find mapping between RF position and brain position (retinotopy). Then
 % infer RF position of units where RF could not be mapped.
 main_mapRFposToRetinotopy(folders)
@@ -99,14 +99,14 @@ Figure02S(folders)
 Figure03(folders, glob)
 Figure03S(folders, glob)
 
-% Pairwise difference in tuning preferences depending on horizontal distance
-Figure04(folders, glob)
-Figure04S(folders, glob)
-
 % Global distribution of direction and orientation preferences across
 % visual field
+Figure04(folders, glob)
+Figure04S(folders)
+
+% Pairwise difference in tuning preferences depending on horizontal distance
 Figure05(folders, glob)
-Figure05S(folders)
+Figure05S(folders, glob)
 
 % Direction and orientation preferences across SC depth
 Figure06(folders, glob)

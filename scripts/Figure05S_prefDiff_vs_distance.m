@@ -1,6 +1,11 @@
 function Figure04S_prefDiff_vs_distance(folders, glob, sets, fPlots)
 
 %% Parameters
+% for evaluation of dsitance of receptive fields to monitor edges
+retinotopyRF = [false true]; % true: use RF positions estimated from 
+                             % retinotopic mapping;
+                             % false: use RF positions from RF mapping
+dist2edge = 5; % minimum distance of RF centre to monitor edge
 % for evaluation of receptive fields (significance/goodness)
 minEV = 0.01;
 minPeak = 5;
@@ -57,6 +62,27 @@ for s = 1:2 % boutons and neurons
             rfPos = data.gaussPars(:,[2 4]);
             ev_rf = data.EV;
             rf_peaks = data.peaks;
+            if ~retinotopyRF(s)
+                edges = data.edges; % [left right top bottom]
+                % exclude all RFs too close to monitor edge
+                validRF = data.EV < minEV | data.peaks < minPeak | ...
+                    rfPos(:,1) < edges(1)+dist2edge | ...
+                    rfPos(:,1) > edges(2)-dist2edge | ...
+                    rfPos(:,2) > edges(3)-dist2edge | ...
+                    rfPos(:,2) < edges(4)+dist2edge;
+                clear data
+            else
+                if ~isfile(fullfile(f, '_ss_rf.posRetinotopy.npy'))
+                    continue
+                end
+                rfPos = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
+                edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
+                % exclude all RFs too close to monitor edge
+                validRF = rfPos(:,1) < edges(1)+dist2edge | ...
+                    rfPos(:,1) > edges(2)-dist2edge | ...
+                    rfPos(:,2) > edges(3)-dist2edge | ...
+                    rfPos(:,2) < edges(4)+dist2edge;
+            end
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
             dp = dirTuning.preference;
