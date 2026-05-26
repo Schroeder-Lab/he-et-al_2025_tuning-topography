@@ -5,6 +5,7 @@ sets = {'boutons', 'neurons'};
 maxP = 0.05; % p-value threshold for response kernel and 
              % direction/orientation selectivity
 minR2 = 0; % threshold for explained variance for response kernel
+minSI = 0.1;
 
 %% Examples
 ex = cell(2,4); % rows: (1) bouton, (2) neuron
@@ -22,4 +23,4 @@ Figure01_examples(folders, fPlots, sets, ex);
 
 %% Population direction tuning curves
 Figure01_tuning_prefs_selectivity(folders, glob, fPlots, sets, maxP, ...
-    minR2, ex);
+    minR2, minSI, ex);

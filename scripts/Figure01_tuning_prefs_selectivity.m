@@ -1,5 +1,5 @@
 function Figure01_tuning_prefs_selectivity(folders, glob, fPlots, sets, ...
-    maxP, minR2, ex)
+    maxP, minR2, minSI, ex)
 % Population tuning curves, preference histograms, DS vs OS
 minUnits = 20;
 
@@ -82,8 +82,11 @@ for s = 1:2 % boutons and neurons
             oriPreferences = [oriPreferences; oriTuning.preference(unitsResponsive)];
             dirSel = [dirSel; dirTuning.selectivity(unitsResponsive)];
             oriSel = [oriSel; oriTuning.selectivity(unitsResponsive)];
-            dirTuned = [dirTuned; dirTuning.pValue(unitsResponsive) < maxP];
-            oriTuned = [oriTuned; oriTuning.pValue(unitsResponsive) < maxP];
+            dirTuned = [dirTuned; ...
+                dirTuning.pValue(unitsResponsive) < maxP];
+            oriTuned = [oriTuned; ...
+                oriTuning.pValue(unitsResponsive) < maxP & ...
+                oriTuning.selectivity(unitsResponsive) >= minSI];
             depth = [depth; recData.surface - ...
                 recData.roiPositions(unitsResponsive, 3)];
             dataset = [dataset; ones(sum(unitsResponsive),1) .* sessions];
@@ -104,33 +107,59 @@ for s = 1:2 % boutons and neurons
     end
     dirPreferences = mod(dirPreferences, 360);
     oriPreferences = mod(oriPreferences, 180);
+    dirValid = dirTuned & dirSel >= minSI;
+    oriValid = oriTuned & oriSel >= minSI;
     
     fprintf('    %d were recorded across %d sessions from %d mice\n', ...
         sum(totalN), sessions-1, animals-1)
     fprintf('    Explained variance of kernel-based predictions (mean +- STD): %.4f +- %.4f\n', ...
-        mean(R2(R2 > minR2)), std(R2(R2 > minR2)))
+        mean(R2), std(R2))
     fprintf('    Of %d responsives, %d (%.1f%%) were tuned to direction, %d (%.1f%%) were tuned to orientation\n', ...
-        sum(R2 > minR2), sum(dirTuned), sum(dirTuned)/length(dataset)*100, ...
-        sum(oriTuned), sum(oriTuned)/length(dataset)*100)
+        length(R2), sum(dirValid), ...
+        sum(dirValid)/length(dataset)*100, ...
+        sum(oriValid), sum(oriValid)/length(dataset)*100)
 
     indEx = zeros(size(dataset));
     for k = 1:length(indExamples)
         indEx(indExamples(k)) = k;
     end
 
+    %% SI versus preference (for review)
+    % figure('Position', glob.figPositionDefault)
+    % scatter(dirPreferences(dirTuned), dirSel(dirTuned))
+    % xlabel('Direction preference')
+    % ylabel('Direction selectivity')
+    % figure('Position', glob.figPositionDefault)
+    % ksdensity([dirPreferences(dirTuned), dirSel(dirTuned)], ...
+    %     [reshape(repmat(0:10:360, 15, 1), [], 1), ...
+    %     reshape(repmat((0:0.05:0.7)', 1, 37), [], 1)])
+    % xlabel('Direction preference')
+    % ylabel('Direction selectivity')
+    % 
+    % figure('Position', glob.figPositionDefault)
+    % scatter(oriPreferences(dirTuned), oriSel(dirTuned))
+    % xlabel('Orientation preference')
+    % ylabel('Orientation selectivity')
+    % figure('Position', glob.figPositionDefault)
+    % ksdensity([oriPreferences(dirTuned), oriSel(dirTuned)], ...
+    %     [reshape(repmat(0:10:180, 8, 1), [], 1), ...
+    %     reshape(repmat((0:0.05:0.35)', 1, 19), [], 1)])
+    % xlabel('Orientation preference')
+    % ylabel('Orientation selectivity')
+
     %% Heatmaps of tuning curves
     % direction tuning curves: direction selective units (sorted by pref.
     % dir.) + gap + non-selective units
-    dc = curves(dirTuned,:);
-    [~, order] = sort(dirPreferences(dirTuned));
+    dc = curves(dirValid,:);
+    [~, order] = sort(dirPreferences(dirValid));
     dirCurves = [dc(order,:); zeros(100,length(stimAll))];
-    indExDir = indEx(dirTuned);
+    indExDir = indEx(dirValid);
     indExOrderedDir = NaN(size(indExamples));
     for k = 1:length(indExamples)
         indExOrderedDir(k) = find(order == find(indExDir == k));
     end
-    dc = curves(~dirTuned & R2>minR2,:);
-    [~, order] = sort(dirPreferences(~dirTuned & R2>minR2));
+    dc = curves(~dirValid,:);
+    [~, order] = sort(dirPreferences(~dirValid));
     dirCurves = [dirCurves; dc(order,:)];
 
     % determine orientation tuning curves
@@ -140,16 +169,16 @@ for s = 1:2 % boutons and neurons
     oCurves = permute(oCurves, [3 1 2]);
     % orientation tuning curves: orientation selective units (sorted by pref.
     % dir.) + gap + non-selective units
-    oc = oCurves(oriTuned,:);
-    [~, order] = sort(oriPreferences(oriTuned));
+    oc = oCurves(oriValid,:);
+    [~, order] = sort(oriPreferences(oriValid));
     oriCurves = [oc(order,:); NaN(100, size(oc,2))];
-    indExOri = indEx(oriTuned);
+    indExOri = indEx(oriValid);
     indExOrderedOri = NaN(size(indExamples));
     for k = 1:length(indExamples)
         indExOrderedOri(k) = find(order == find(indExOri == k));
     end
-    oc = oCurves(~oriTuned & R2>minR2,:);
-    [~, order] = sort(oriPreferences(~oriTuned & R2>minR2));
+    oc = oCurves(~oriValid,:);
+    [~, order] = sort(oriPreferences(~oriValid));
     oriCurves = [oriCurves; oc(order,:)];
 
     % normalize tuning curves to range [0 1]
@@ -190,94 +219,9 @@ for s = 1:2 % boutons and neurons
     ylabel(sets{s})
     io.saveFigure(gcf, fPlots, sprintf('tuning_%s_orientationHeatmap', sets{s}));
 
-    %% Preference histograms for all datasets
-    % direction
-    figure('Position', glob.figPositionDefault)
-    n1 = histcounts(dirPreferences(dirTuned & oriTuned), dirEdges);
-    n2 = histcounts(dirPreferences(dirTuned & ~oriTuned), dirEdges);
-    % merge counts in first and last bars (around 0 and 360 deg)
-    n1(1) = n1(1) + n1(end);
-    n1(end) = n1(1);
-    n2(1) = n2(1) + n2(end);
-    n2(end) = n2(1);
-    b = bar(dirBinsCoarse, [n1' n2'], 'stacked');
-    b(1).FaceColor = 'k';
-    b(2).FaceColor = [.5 .5 .5];
-    ylim([0 400])
-    ylabel(sets{s})
-    set(gca, "Box", "off", "XTick", 0:90:360)
-    l = legend(b, sprintf('DS & OS (%d)', sum(dirTuned & oriTuned)), ...
-        sprintf('DS (%d)', sum(dirTuned & ~oriTuned)));
-    l.Box = "off";
-    xlim([-20 380])
-    xlabel('Direction (deg)')
-    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_directionPrefHist', sets{s}));
-
-    % orientation
-    figure('Position', glob.figPositionDefault)
-    n1 = histcounts(oriPreferences(oriTuned & dirTuned), oriEdges);
-    n2 = histcounts(oriPreferences(oriTuned & ~dirTuned), oriEdges);
-    % merge counts in first and last bars (around 0 and 180 deg)
-    n1(1) = n1(1) + n1(end);
-    n1(end) = n1(1);
-    n2(1) = n2(1) + n2(end);
-    n2(end) = n2(1);
-    b = bar(oriEdges(1:end-1)+7.5, [n1' n2'], 'stacked');
-    b(1).FaceColor = 'k';
-    b(2).FaceColor = [.75 .75 .75];
-    ylim([0 400])
-    ylabel(sets{s})
-    set(gca, "Box", "off", "XTick", 0:45:180)
-    l = legend(b, sprintf('OS & DS (%d)', sum(dirTuned & oriTuned)), ...
-        sprintf('OS (%d)', sum(~dirTuned & oriTuned)));
-    l.Box = "off";
-    xlim([-10 190])
-    xlabel('Orientation (deg)')
-    ylabel(sprintf('Proportion %s', sets{s}))
-    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_orientationPrefHist', sets{s}));
-
-    %% Direction vs orientation preference scatterplot
-    ind = dirTuned & oriTuned;
-    figure('Position', glob.figPositionDefault)
-    hold on
-    plot([0 180], [0 180], 'Color', [1 1 1].*0.5)
-    plot([180 360], [0 180], 'Color', [1 1 1].*0.5)
-    scatter(dirPreferences(ind), oriPreferences(ind), 15, 'k', 'filled')
-    scatter(dirPreferences(indExamples), oriPreferences(indExamples), ...
-        40, lines(length(indExamples)), 'filled')
-    axis equal
-    xlim([-10 370])
-    ylim([-10 190])
-    set(gca, "Box", "off", "XTick", 0:90:360, "YTick", 0:90:180)
-    xlabel('Direction (deg)')
-    ylabel('Orientation (deg)')
-    title(sprintf('%s (n=%d)', sets{s}, sum(ind)))
-    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_dirVsOriScatter', sets{s}));
-
-    %% DS vs OS scatterplot
-    ind = dirTuned | oriTuned;
-    figure('Position', glob.figPositionDefault)
-    h = gscatter(dirSel(ind), oriSel(ind), dirTuned(ind) + ...
-        2*oriTuned(ind), repmat([0.4 0.8 0]', 1, 3), [], 15);
-    hold on
-    scatter(dirSel(indExamples), oriSel(indExamples), 40, ...
-        lines(length(indExamples)), "filled")
-    l = legend(h, 'DS', 'OS', 'DS & OS', "Location", "bestoutside");
-    l.Box = "off";
-    axis padded equal
-    mini = -0.05;
-    maxi = 0.85;
-    axis([mini maxi mini maxi])
-    set(gca, "Box", "off")
-    xlabel('Direction selectivity')
-    ylabel('Orientation selectivity')
-    title(sprintf('%s', sets{s}))
-    io.saveFigure(gcf, fPlots, ...
-        sprintf('tuning_%s_selectivityDirVsOri', sets{s}));
-
     %% Direct comparison: boutons vs neurons + mean across datasets
-    nDir = histcounts(dataset(dirTuned), 0.5:max(dataset)+1);
-    nOri = histcounts(dataset(oriTuned), 0.5:max(dataset)+1);
+    nDir = histcounts(dataset(dirValid), 0.5:max(dataset)+1);
+    nOri = histcounts(dataset(oriValid), 0.5:max(dataset)+1);
     indSetsDir = nDir >= minUnits;
     indSetsOri = nOri >= minUnits;
     numDir(s) = sum(indSetsDir);
@@ -288,9 +232,9 @@ for s = 1:2 % boutons and neurons
     dirHists = NaN(length(dirBinsCoarse), max(dataset));
     oriHists = NaN(length(oriBins), max(dataset));
     for c = 1:max(dataset)
-        pref = dirPreferences(dirTuned & c==dataset);
+        pref = dirPreferences(dirValid & c==dataset);
         dirHists(:,c) = histcounts(pref, dirEdges);
-        pref = oriPreferences(oriTuned & c==dataset);
+        pref = oriPreferences(oriValid & c==dataset);
         oriHists(:,c) = histcounts(pref, oriEdges);
     end
     % merge counts in first and last bars (around 0 and 360 or 180 deg)
@@ -299,8 +243,8 @@ for s = 1:2 % boutons and neurons
     oriHists(1,:) = oriHists(1,:) + oriHists(end,:);
     oriHists(end,:) = oriHists(1,:);
     % normalize histograms (to sum 1, without last bin)
-    dirHists = dirHists ./ sum(dirHists(1:end-1,:),1);
-    oriHists = oriHists ./ sum(oriHists(1:end-1,:),1);
+    dirHists = dirHists ./ max(1, sum(dirHists(1:end-1,:),1));
+    oriHists = oriHists ./ max(1, sum(oriHists(1:end-1,:),1));
     % interpolate/smooth histograms
     dirHistsSmooth = interp1([-30 dirBinsCoarse 390], ...
         dirHists([end-1 1:end 2],:), dirBinsFine, 'pchip');
@@ -327,6 +271,54 @@ for s = 1:2 % boutons and neurons
     hOri(s) = plot(oriBinsFine, mSm, 'Color', colSets(s,:), "LineWidth", 1);
     plot(oriBins, m, '.', 'Color', colSets(s,:), "MarkerSize", 30)
 
+    %% Direction vs orientation preference scatterplot
+    ind = dirValid & oriValid;
+    figure('Position', glob.figPositionDefault)
+    hold on
+    plot([0 180], [0 180], 'Color', [1 1 1].*0.5)
+    plot([180 360], [0 180], 'Color', [1 1 1].*0.5)
+    scatter(dirPreferences(ind), oriPreferences(ind), 15, 'k', 'filled')
+    scatter(dirPreferences(indExamples), oriPreferences(indExamples), ...
+        40, lines(length(indExamples)), 'filled')
+    axis equal
+    xlim([-10 370])
+    ylim([-10 190])
+    set(gca, "Box", "off", "XTick", 0:90:360, "YTick", 0:90:180)
+    xlabel('Direction (deg)')
+    ylabel('Orientation (deg)')
+    title(sprintf('%s (n=%d)', sets{s}, sum(ind)))
+    io.saveFigure(gcf, fPlots, sprintf('tuning_%s_dirVsOriScatter', sets{s}));
+
+    %% DS vs OS scatterplot
+    ind = dirValid | oriValid;
+    figure('Position', glob.figPositionDefault)
+    h = gscatter(dirSel(ind), oriSel(ind), dirValid(ind) + ...
+        2*oriValid(ind), repmat([0.4 0.8 0]', 1, 3), [], 15);
+    hold on
+    scatter(dirSel(indExamples), oriSel(indExamples), 40, ...
+        lines(length(indExamples)), "filled")
+    l = legend(h, 'DS', 'OS', 'DS & OS', "Location", "bestoutside");
+    l.Box = "off";
+    axis padded equal
+    mini = -0.05;
+    maxi = 0.85;
+    axis([mini maxi mini maxi])
+    set(gca, "Box", "off")
+    xlabel('Direction selectivity')
+    ylabel('Orientation selectivity')
+    title(sprintf('%s', sets{s}))
+    io.saveFigure(gcf, fPlots, ...
+        sprintf('tuning_%s_selectivityDirVsOri', sets{s}));
+
+    %% DS & OS, DS, OS counts
+    figure('Position', glob.figPositionDefault)
+    bar(1:3, [sum(dirValid & oriValid), sum(dirValid & ~oriValid), ...
+        sum(~dirValid & oriValid)], "FaceColor", "flat", "CData", repmat([0 0.4 0.8]', 1, 3))
+    set(gca, "XTick", 1:3, "XTickLabel", {"DS & OS", "DS", "OS"})
+    ylabel(sprintf('#%s', sets{s}))
+    io.saveFigure(gcf, fPlots, ...
+        sprintf('tuning_%s_counts', sets{s}));
+
     %% Mean DS and OS histograms across datasets (in Figure S1)
     selEdges = 0:0.1:0.8;
     selBins = selEdges(1:end-1) + 0.05;
@@ -335,10 +327,10 @@ for s = 1:2 % boutons and neurons
     oriHists = NaN(length(selBins), max(dataset));
     medianOS{s} = NaN(max(dataset),1);
     for c = 1:max(dataset)
-        sel = dirSel(dirTuned & c==dataset);
+        sel = dirSel(dirValid & c==dataset);
         dirHists(:,c) = histcounts(sel, selEdges);
         medianDS{s}(c) = median(sel);
-        sel = oriSel(oriTuned & c==dataset);
+        sel = oriSel(oriValid & c==dataset);
         oriHists(:,c) = histcounts(sel, selEdges);
         medianOS{s}(c) = median(sel);
     end
