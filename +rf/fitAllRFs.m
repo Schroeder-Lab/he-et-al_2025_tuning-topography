@@ -1,6 +1,6 @@
 function [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
-    bestSubFields, subFieldSigns, predictions, EVs, sizeTuning] = ...
-    fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz)
+    bestSubFields, subFieldSigns, sizeTuning] = ...
+    fitAllRFs(rFields, rfBins, gridX, gridY, zTraces)
 %FITALLRFS   Fit 2D Gaussian to each mapped RF.
 
 % INPUTS
@@ -12,7 +12,6 @@ function [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
 % gridY             Vertical (along elevation) locations of pixel centres
 % zTraces           [t x ROIs]; z-scored calcium traces of units, sampled
 %                   at stimulus presentation times
-% toeplitz          [t x pixels]; noise stimulus
 
 % OUTPUTS
 % rfGaussPars       [ROIs x 7], parameters of fitted Gaussians: amplitude, 
@@ -26,9 +25,6 @@ function [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
 % bestSubFields     [ROIs], 1: ON, 2: OFF, 3: ON+OFF
 % subFieldSigns     [ROIs x 2], 1: enhanced response, -1: suppressed
 %                   response
-% predictions       [t x ROIs], predicted calcium traces based on fitted
-%                   spatio-temporal RFs and stimulus sequence
-% EVs               [ROIs], explained variance of fitted spatio-temporal RF
 % sizeTuning        [ROIs x sizes], size tuning curve, only in response to
 %                   circle stimuli, otherwise NaN
 
@@ -44,8 +40,7 @@ fitWeights = NaN(numUnits, length(rfBins));
 peakNoiseRatio = NaN(numUnits, 1);
 bestSubFields = NaN(numUnits, 1);
 subFieldSigns = NaN(numUnits, 2);
-predictions = NaN(size(toeplitz, 1), numUnits);
-EVs = NaN(numUnits, 1);
+
 if ndims(rFields) == 5 % visual noise
     sizeTuning = NaN;
 elseif ndims(rFields) == 6 % circle paradigm
@@ -122,30 +117,5 @@ for iUnit = 1:numUnits
     % amplitudes (weights) of spatial RF across time span of RF
     weights = reshape(fitRFs(:,:,:,bestSubField), [], 1) \ ...
         reshape(permute(rfield, [1 2 4 3]), [], size(rfield,3));
-    % generate spatio-temporal RF from fitted Gaussian and
-    % temporal weights
-    spatTempMask = reshape(fitRFs(:,:,:,bestSubField), [], 1) * ...
-        weights; % [pix x t]
-
-    if ndims(rFields) == 5 % visual noise
-        % spatTempMask: [rows x cols x t x ON/OFF]
-        spatTempMask = permute(reshape(spatTempMask, size(fitRFs,1), ...
-            size(fitRFs,2), 2, length(weights)), [1 2 4 3]);
-        spatTempMask(:,:,:,2) = -spatTempMask(:,:,:,2);
-    elseif ndims(rFields) == 6 % circle paradigm
-        % repeat spatio-temporal RF for each diameter, weighted according
-        % to size tuning
-        spatTempMask = reshape(spatTempMask, [], 1) * ...
-            (mx ./ max(mx)); % [(pix * t) x diameters]
-        % spatTempMas: [rows x cols x diameters x t x ON/OFF]
-        spatTempMask = permute(reshape(spatTempMask, size(fitRFs,1), ...
-            size(fitRFs,2), 2, length(weights), length(mx)), [1 2 5 4 3]);
-        spatTempMask(:,:,:,:,2) = -spatTempMask(:,:,:,:,2);
-    end
-
-    % predict calcium trace based on generated spatio-temporal
-    % RF
-    [predictions(:, iUnit), EVs(iUnit)] = ...
-        rf.predictFromRF(zTraces(:,iUnit), toeplitz, spatTempMask);
     fitWeights(iUnit,:) = weights;
 end

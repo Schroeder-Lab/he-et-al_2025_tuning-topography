@@ -95,17 +95,22 @@ for s = 1:2 % boutons and neurons
             caTraces = traces.highPassFilter(caTraces, t_ca, smoothWin);
 
             %% Map RFs
+            % reshape stimulus frames to [time x px]; this represents a single
+            % "stimulus block", i.e. the pixels to estimate a single time point of the
+            % receptive field
+            stim = reshape(stimFrames, size(stimFrames,1), []);
+            
+            % fill time gaps in stimulus with zeros
+            [t_stim, stim] = stimuli.fillGapsInNoiseStim(t_stim, stim);
 
             % generate toplitz matrix for stimulus
-            [toeplitz, t_toeplitz] = ...
-                rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+            toeplitz = rf.makeStimToeplitz(stim, t_stim, rfBins);
 
             % resample neural response at stimulus times
             tBin_ca = median(diff(t_ca));
-            tBin_stim = median(diff(t_toeplitz));
             numBins = round(tBin_stim / tBin_ca);
             zTraces = smoothdata(caTraces, 1, 'movmean', numBins, 'omitnan');
-            zTraces = interp1(t_ca, zTraces, t_toeplitz);
+            zTraces = interp1(t_ca, zTraces, t_stim);
             % z-score neural response
             zTraces = (zTraces - mean(zTraces,1,'omitnan')) ./ ...
                 std(zTraces,0,1,'omitnan');
@@ -130,8 +135,12 @@ for s = 1:2 % boutons and neurons
 
             % fit Gaussian to mapped RFs
             [rfGaussPars, fitGaussians, fitWeights, peakNoiseRatio, ...
-                bestSubFields, subFieldSigns, predictions, EVs] = ...
-                rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces, toeplitz);
+                bestSubFields, subFieldSigns] = ...
+                rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces);
+
+            % predict responses and get EVs
+            [predictions, EVs] = rf.makeAllPredictions(zTraces, ...
+                toeplitz, fitGaussians, fitWeights);
 
             % save results
             writeNPY(permute(rFields, [5 1 2 3 4]), fullfile(f, '_ss_rf.maps.npy'))
@@ -143,7 +152,7 @@ for s = 1:2 % boutons and neurons
             writeNPY(fitWeights, fullfile(f, '_ss_rf.gaussTimeWeights.npy'))
             writeNPY(EVs, fullfile(f, '_ss_rf.explVars.npy'))
             writeNPY(predictions, fullfile(f, '_ss_rfPrediction.traces.npy'))
-            writeNPY(t_toeplitz, fullfile(f, '_ss_rfPrediction.timestamps.npy'))
+            writeNPY(t_stim, fullfile(f, '_ss_rfPrediction.timestamps.npy'))
             writeNPY(edges, fullfile(f, '_ss_rfDescr.edges.npy'))
             writeNPY(rfBins * tBin_stim, fullfile(f, '_ss_rfDescr.timestamps.npy'))
         end
