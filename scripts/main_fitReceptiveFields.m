@@ -40,7 +40,6 @@ minPeak_plot = 3.5; % minimum peak of RF (compared to noise) to plot RF
 % colormaps
 [cm_ON, cm_OFF] = colmaps.getRFMaps;
 cms = cat(3, cm_ON, cm_OFF);
-ellipse_x = linspace(-pi, pi, 100);
 
 titles = {'ON field','OFF field'};
 
@@ -139,7 +138,7 @@ for s = 1:2 % boutons and neurons
                 rf.fitAllRFs(rFields, rfBins, gridX, gridY, zTraces);
 
             % predict responses and get EVs
-            [predictions, EVs] = rf.makeAllPredictions(zTraces, ...
+            [predictions, EVs] = rf.makeAllNoisePredictions(zTraces, ...
                 toeplitz, fitGaussians, fitWeights);
 
             % save results
@@ -181,7 +180,8 @@ for s = 1:2 % boutons and neurons
             end
 
             % load data
-            results = io.getRFFits(f);
+            results = getNoiseRFFits(f);
+
             edges = results.edges;
             gridW = diff(edges(1:2)) / size(results.maps,3);
             gridH = -diff(edges(3:4)) / size(results.maps,2);
@@ -189,49 +189,13 @@ for s = 1:2 % boutons and neurons
                 % plot RF (if explained var. and peak-to-noise high enough
                 if results.EV(iUnit) >= minEV_plot && ...
                         results.peaks(iUnit) >= minPeak_plot
-                    line = ':';
-                    if results.EV(iUnit) >= minEV && ...
-                            results.peaks(iUnit) >= minPeak
-                        line = '-';
-                    end
                     % rf_tmp: [rows x columns x subfield]
                     rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
-                    rf_tmp(:,:,2) = -rf_tmp(:,:,2);
-                    mx = max(abs(rf_tmp),[],"all");
-                    rfGaussPars = results.fitParameters(iUnit,:);
-                    figure('Position', [75 195 1470 475])
-                    for sf = 1:2
-                        subplot(1,2,sf)
-                        % STA
-                        imagesc([edges(1)+gridW/2 edges(2)-gridW/2], ...
-                            [edges(3)-gridH/2 edges(4)+gridH/2], ...
-                            rf_tmp(:,:,sf),[-mx mx])
-                        hold on
-                        if ismember(results.bestSubFields(iUnit), [sf 3])
-                            % ellipse at 2 STD (x and y), not rotated, not shifted
-                            x = rfGaussPars(3) * cos(ellipse_x);
-                            y = rfGaussPars(5) * sin(ellipse_x);
-                            % rotate and shift ellipse
-                            x_rot = rfGaussPars(2) + ...
-                                x .* cos(rfGaussPars(6)) - ...
-                                y .* sin(rfGaussPars(6));
-                            y_rot = rfGaussPars(4) + ...
-                                x .* sin(rfGaussPars(6)) + ...
-                                y .* cos(rfGaussPars(6));
-                            n = x_rot < edges(1) | x_rot > edges(2) | ...
-                                y_rot > edges(3) | y_rot < edges(4);
-                            x_rot(n) = NaN;
-                            y_rot(n) = NaN;
-                            plot(x_rot, y_rot, ['k' line], 'LineWidth', 2)
-                        end
-                        axis image
-                        set(gca, 'box', 'off', 'YDir', 'normal')
-                        xlim(edges([1 2]))
-                        ylim(edges([4 3])) 
-                        colormap(gca, cms(:,:,sf))
-                        title(titles{sf})
-                        colorbar
-                    end
+
+                    rf.plotRF(rf_tmp, results.fitParameters(iUnit,:), ...
+                        results.bestSubFields(iUnit), ...
+                        edges, edges, gridW, gridH)
+
                     sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
                         iUnit, results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}))
@@ -263,32 +227,11 @@ for s = 1:2 % boutons and neurons
                 continue
             end
 
-            caData = io.getNoiseRFFits(f);
-            rfGaussPars = caData.fitParameters;
-            EVs = caData.EV;
-            peakNoiseRatio = caData.peaks;
-            figure
-            hold on
-            for iUnit = 1:size(rfGaussPars,1)
-                if EVs(iUnit) < minEV || peakNoiseRatio(iUnit) < minPeak
-                    continue
-                end
-                % ellipse at 2 STD (x and y), not rotated, not shifted
-                x = rfGaussPars(iUnit,3) * cos(ellipse_x);
-                y = rfGaussPars(iUnit,5) * sin(ellipse_x);
-                % rotate and shift ellipse
-                x_rot = rfGaussPars(iUnit,2) + ...
-                    x .* cos(rfGaussPars(iUnit,6)) - ...
-                    y .* sin(rfGaussPars(iUnit,6));
-                y_rot = rfGaussPars(iUnit,4) + ...
-                    x .* sin(rfGaussPars(iUnit,6)) + ...
-                    y .* cos(rfGaussPars(iUnit,6));
-                plot(x_rot, y_rot, 'k')
-            end
-            axis image
-            axis(caData.edges([1 2 4 3]))
-            xlabel('Azimuth (visual degrees)')
-            ylabel('Elevation (visual degrees)')
+            data = io.getNoiseRFFits(f);
+
+            rf.plotRFOutlines(data.fitParameters, data.EV, data.peaks, ...
+                minEV, minPeak, [], data.edges, [])
+
             title(sprintf('%s %s', name, date))
 
             saveas(gcf, fullfile(fPlots, sprintf('%s_%s.jpg', name, date)));

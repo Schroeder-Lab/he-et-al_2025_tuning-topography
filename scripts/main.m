@@ -63,6 +63,16 @@ main_plotBrainDistanceVersusPreferenceDifference(folders)
 % receptive fields (ON and OFF fields).
 main_fitReceptiveFields(folders)
 
+%% Map receptive fields (accounting for eye movements)
+% Given the calcium responses and the eye positions during the visual noise
+% stimulus, fit spatial receptive fields (ON and OFF fields) suing an
+% iterative algorithm: (1) given a fixed transformation from eye position
+% to gaze (in visual degrees), fit RFs after shifting the stimulus frames; 
+% (2) given the fixed RFs, find the optimal transformation from eye
+% position to gaze that shifts all RFs so that the error between measured 
+% and predicted traces is minimized.
+main_fitReceptiveFields_wEyePos(folders)
+
 %% Fit retinotopy (relationship: brain position - RF position)
 % Find mapping between RF position and brain position (retinotopy). Then
 % infer RF position of units where RF could not be mapped.

@@ -24,6 +24,11 @@ function receptiveFields = getReceptiveField(zTraces, toeplitz, ...
 validTimes = ~all(isnan(zTraces),2);
 toeplitz(~validTimes,:) = [];
 zTraces(~validTimes,:) = [];
+
+% set NaN stimulus frames (when pupil data invalid, e.g. during blinks) to 
+% zero
+toeplitz(isnan(toeplitz)) = 0;
+
 % if NaN values < 10% in a neuron, exchange NaNs for 0
 ind = any(isnan(zTraces),1) & sum(isnan(zTraces),1)/size(zTraces,1) <= 0.1;
 if sum(ind) > 0

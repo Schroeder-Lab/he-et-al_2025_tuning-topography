@@ -39,7 +39,9 @@ for k = 1:length(exUnits)
     uistack(h(iUnit),'top')
     set(h(iUnit),'LineWidth',2)
 end
-legend(h(exUnits))
+if ~isempty(exUnits)
+    legend(h(exUnits))
+end
 axis image
 axis(edges_rf([1 2 4 3]))
 xlabel('Azimuth (visual degrees)')

@@ -86,7 +86,7 @@ for iUnit = 1:numUnits
     % is best fit to only ON, only OFF, or ON-OFF subfields,
     % and optimal sign of each subfield.
     % average across time
-    rf_tmp = squeeze(mean(rfield,3));
+    rf_tmp = squeeze(mean(rfield,3)); % [rows x cols x ON/OFF]
     % fitRFs: Gaussian masks with best sign (pos or neg)
     [fitRFs, RFsigns, MSEs] = rf.findRFGaussianMask(rf_tmp);
     [~, bestSubField] = min(MSEs);
@@ -113,7 +113,6 @@ for iUnit = 1:numUnits
     % distance of peak from noise
     peakNoiseRatio(iUnit) = rfGaussPars(iUnit,1) / std(noise(:));
 
-    % predict response from RF
     % amplitudes (weights) of spatial RF across time span of RF
     weights = reshape(fitRFs(:,:,:,bestSubField), [], 1) \ ...
         reshape(permute(rfield, [1 2 4 3]), [], size(rfield,3));
