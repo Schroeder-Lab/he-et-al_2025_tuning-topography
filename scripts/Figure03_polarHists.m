@@ -1,12 +1,12 @@
-function Figure03_polarHists(glob, fPlots, data, sets, ...
+function Figure03_polarHists(glob, fPlots, data, sets, yLimit, ...
     selectivityThresholds, suffix)
 
 warning('off', 'MATLAB:print:ContentTypeImageSuggested')
 
-if nargin < 5 
+if nargin < 6 
     selectivityThresholds = [0 1; 0 1];
 end
-if nargin  < 6
+if nargin  < 7
     suffix = '';
 end
 
@@ -29,8 +29,7 @@ cols = {'k', 'b', 'r', 'm'};
 minCount = 20;
 % prediction errors
 edges_err = 0:5:60;
-yLimit = 350;
-height = 250;
+height = 0.9 * yLimit;
 
 % Tests
 nPerm = 1000;
@@ -92,7 +91,7 @@ for s = 1:length(data)
     % direction
     % only use units with minimum DSI and maximum OSI
     valid = data(s).DSI >= selectivityThresholds(1,1) & ...
-        (data(s).OSI <= selectivityThresholds(1,2) | isnan(data(s).OSI));
+        (data(s).OSI < selectivityThresholds(1,2) | isnan(data(s).OSI));
     figure('Position', [1 49 1920 955])
     tiledlayout(length(gridY), length(gridX), "TileSpacing", "tight")
     for x = 1:length(gridX)
@@ -126,7 +125,7 @@ for s = 1:length(data)
     % orientation
     % only use units with minimum OSI and maximum DSI
     valid = data(s).OSI >= selectivityThresholds(2,1) & ...
-        (data(s).DSI <= selectivityThresholds(2,2) | isnan(data(s).DSI));
+        (data(s).DSI < selectivityThresholds(2,2) | isnan(data(s).DSI));
     figure('Position', [1 49 1920 955])
     tiledlayout(length(gridY), length(gridX), "TileSpacing", "tight")
     for x = 1:length(gridX)
@@ -231,7 +230,7 @@ for s = 1:length(data)
     end
     errDir_perm = prctile(errDir_perm, [2.5 50 97.5]);
     errOri_perm = prctile(errOri_perm, [2.5 50 97.5]);
-    
+
     % prediction error for uniform data
     rng('default');
     % 1. direction
@@ -345,7 +344,7 @@ for s = 1:length(data)
     title('Preferred orientations')
     io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_orientations%s', ...
         sets{s}, suffix))
-    
+
     fprintf('Prediction errors [95%% conf int: (1) permuted data, (2) uniform distribution]:\n')
     fprintf('  %s:\n', sets{s})
     fprintf('    Direction\n')
@@ -369,3 +368,16 @@ fprintf('  Orientation:\n')
 fprintf('    Boutons - neurons (median): %.2f (p = %.4f, Wilcoxon rank-sum)\n', ...
     median(errOri_original{1})-median(errOri_original{2}), ...
     ranksum(errOri_original{1}, errOri_original{2}))
+
+%% Plot distribution of best pitches
+if all(selectivityThresholds(1,:) == [0 1])
+    figure
+    ch = swarmchart([ones(length(bestPitches{1}),1); ...
+        ones(length(bestPitches{2}),1) .* 2], ...
+        [bestPitches{1}; bestPitches{2}], ...
+        80, 'k', 'o', 'filled');
+    ch.XJitterWidth = 0.5;
+    ylabel('Head pitch (deg.)')
+    set(gca, 'XTick', [1 2], 'XTickLabel', sets)
+    io.saveFigure(gcf, [fPlots 'S'], 'pitchAngles')
+end

@@ -7,6 +7,7 @@ minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
 dist2edge = 5; % minimum distance of RF centre to monitor edge
 % for evaluation of direction/orientation selectivity
 maxP = 0.05;
+minSI = 0.1;
 
 %% Load data: RF position, tuning preferences
 data = struct('rfPos', cell(length(sets),1), 'dirPref', [], 'DSI', [], ...
@@ -52,19 +53,25 @@ for s = 1:length(sets)
                 pos(ind,:) = NaN;
             end
             data(s).rfPos = [data(s).rfPos; pos];
+
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
             dp = dirTuning.preference;
             dsi = dirTuning.selectivity;
-            dp(dirTuning.pValue >= maxP) = NaN;
-            dsi(dirTuning.pValue >= maxP) = NaN;
+            invalid = dirTuning.pValue >= maxP | ...
+                dirTuning.selectivity < minSI;
+            dp(invalid) = NaN;
+            dsi(invalid) = NaN;
             op = oriTuning.preference;
             osi = oriTuning.selectivity;
-            op(oriTuning.pValue >= maxP) = NaN;
-            osi(oriTuning.pValue >= maxP) = NaN;
+            invalid = oriTuning.pValue >= maxP | ...
+                oriTuning.selectivity < minSI;
+            op(invalid) = NaN;
+            osi(invalid) = NaN;
             data(s).dirPref = [data(s).dirPref; dp];
             data(s).DSI = [data(s).DSI; dsi];
             data(s).oriPref = [data(s).oriPref; op];
             data(s).OSI = [data(s).OSI; osi];
+
             data(s).set = [data(s).set; ones(size(dp)) .* count];
             data(s).animal = [data(s).animal; ...
                 repmat({name}, length(dp), 1)];

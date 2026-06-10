@@ -7,8 +7,9 @@ minEV = 0.01;
 minPeak = 5;
 % for evaluation of tuning selectivity
 maxP = 0.05;
+minSI = 0.1;
 % to relate RF position to tuning preference
-minUnits = 20;
+minUnits_tuning = 20;
 smoothN = [201 29];
 smoothPars = [0.1 0.5];
 nPerm = 1000;
@@ -58,26 +59,30 @@ for s = 1:2 % boutons and neurons
                 io.getTuningResults(f, 'gratingsDrifting');
 
             % only consider significant RFs
-            valid = ev_rf >= minEV & rf_peaks >= minPeak;
-            valid = valid & ~outliers;
-            if sum(valid & dirTuning.pValue < maxP) < minUnits && ...
-                    sum(valid & oriTuning.pValue < maxP) < minUnits
+            valid_rf = ev_rf >= minEV & rf_peaks >= minPeak;
+            valid_dir = dirTuning.pValue < maxP & ...
+                dirTuning.selectivity >= minSI;
+            valid_ori = oriTuning.pValue < maxP & ...
+                oriTuning.selectivity >= minSI;
+            valid = valid_rf & ~outliers;
+            if sum(valid & valid_dir) < minUnits_tuning && ...
+                    sum(valid & valid_ori) < minUnits_tuning
                 continue
             end
 
             % collect data
             rfDist{end+1,1} = rfPos(valid,:).*[1 -1] + [-edges(1) edges(3)];
             prefs{end+1,1} = dirTuning.preference(valid);
-            tuned{end+1,1} = dirTuning.pValue(valid);
+            tuned{end+1,1} = valid_dir(valid);
             prefs{end,2} = oriTuning.preference(valid);
-            tuned{end,2} = oriTuning.pValue(valid);
+            tuned{end,2} = valid_ori(valid);
         end
     end
     dst = cat(1, rfDist{:});
 
     % Plot RF distance to monitor edge vs tuning preference for each unit
     pr = [cat(1, prefs{:,1}), cat(1, prefs{:,2})];
-    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})] < maxP;
+    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})];
     figure('Position', [40 580 1850 410])
     tiledlayout(1, 4)
     for feat = 1:2
@@ -100,7 +105,7 @@ for s = 1:2 % boutons and neurons
 
     % Plot circular STD as function of RF distance to monitor edge
     pr = [cat(1, prefs{:,1}), cat(1, prefs{:,2})];
-    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})] < maxP;
+    tn = [cat(1, tuned{:,1}), cat(1, tuned{:,2})];
     figure('Position', [40 580 1850 410])
     tiledlayout(1, 4)
     for feat = 1:2

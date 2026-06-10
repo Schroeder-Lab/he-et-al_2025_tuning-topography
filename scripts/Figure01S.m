@@ -7,7 +7,10 @@ buffer = 1; % in sec (before and after stim period)
 % for tuning curves
 yLims = [-1.1 14.7; -0.8 6.0; -1.6 13.1; -0.4 7.1];
 
-maxP = 0.05;
+maxP = 0.05; % p-value threshold for response kernel and 
+             % direction/ori
+minR2 = 0; % threshold for explained variance for response kernel
+minSI = 0.1;
 exp = {'gratingsDrifting', 'bars', 'gratingsStatic'};
 
 %% Examples
@@ -85,7 +88,16 @@ for k = 1:3
                     stimPars(validStims(st)), stim.phases(validStims(st))))
             end
         end
-        sgtitle(sprintf('ROI %03d', units(iUnit)))
+        if k < 3
+            sgtitle(sprintf('ROI %03d: DS = %.2f (p=%.3f), OS = %.2f (p=%.3f)', ...
+                units(iUnit), dirTuning.selectivity(units(iUnit)), ...
+                dirTuning.pValue(units(iUnit)), oriTuning.selectivity(units(iUnit)), ...
+                oriTuning.pValue(units(iUnit))))
+        else
+            sgtitle(sprintf('ROI %03d: OS = %.2f (p=%.3f)', ...
+                units(iUnit), oriTuning.selectivity(units(iUnit)), ...
+                oriTuning.pValue(units(iUnit))))
+        end
         io.saveFigure(gcf, fPlots, sprintf('example_%s_stimTraces_%s_%s_%03d', ...
             exp{k}, ex{1}, ex{2}, units(iUnit)))
 
@@ -195,16 +207,18 @@ for subj = 1:length(subjDirs) % animals
             pKernel(:,k) = krnlFits.pValue;
             if ~isempty(dirTuning)
                 dp(:,k) = dirTuning.preference;
-                dt(:,k) = dirTuning.pValue < maxP;
-                nDirTuned(k) = nDirTuned(k) + sum(dirTuning.pValue < maxP);
+                dt(:,k) = dirTuning.pValue < maxP & ...
+                    dirTuning.selectivity >= minSI;
+                nDirTuned(k) = nDirTuned(k) + sum(dt(:,k));
             end
             op(:,k) = oriTuning.preference;
-            ot(:,k) = oriTuning.pValue < maxP;
+            ot(:,k) = oriTuning.pValue < maxP & ...
+                oriTuning.selectivity >= minSI;
 
             nRecorded(k) = nRecorded(k) + numUnits;
             nResponsive(k) = nResponsive(k) + ...
                 sum(krnlFits.pValue < maxP & krnlFits.R2 > 0);
-            nOriTuned(k) = nOriTuned(k) + sum(oriTuning.pValue < maxP);
+            nOriTuned(k) = nOriTuned(k) + sum(ot(:,k));
             nSessions(k) = nSessions(k) + 1;
         end
         R2 = [R2; r2];
@@ -225,7 +239,7 @@ for k = 1:3
     fprintf('%s:\n', exp{k})
     fprintf('  %d neurons were recorded across %d sessions\n', ...
         nRecorded(k), nSessions(k))
-    ind = P(:,k) < maxP & R2(:,k) > 0;
+    ind = P(:,k) < maxP & R2(:,k) > minR2;
     fprintf('  Explained variance of kernel-based predictions (mean +- STD): %.4f +- %.4f\n', ...
         mean(R2(ind, k)), std(R2(ind, k)))
     fprintf('  Of %d responsive neurons, %d were tuned to direction, %d were tuned to orientation\n', ...

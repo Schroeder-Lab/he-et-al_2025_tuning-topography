@@ -5,7 +5,7 @@ sets = {'boutons', 'neurons'};
 retinotopyRF = [false true]; % true: use RF positions estimated from 
                              % retinotopic mapping;
                              % false: use RF positions from RF mapping
-selectivityThresholds = [0.2 0.2; 0.1 0.2];
+selectivityThresholds = [0.1 0.1; 0.1 0.1];
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure03S');
@@ -18,4 +18,4 @@ end
 data = Figures_loadData(folders, sets, retinotopyRF);
 
 %% Polar histograms for DS and OS only units
-Figure03_polarHists(glob, fPlots, data, sets, selectivityThresholds)
+Figure03_polarHists(glob, fPlots, data, sets, 80, selectivityThresholds)

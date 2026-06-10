@@ -1,7 +1,7 @@
 function Figure01_tuning_prefs_selectivity(folders, glob, fPlots, sets, ...
     maxP, minR2, minSI, ex)
 % Population tuning curves, preference histograms, DS vs OS
-minUnits = 20;
+minUnits_tuning = 20;
 
 dirBinsCoarse = 0:30:360;
 dirEdges = (0:30:390) - 15;
@@ -85,8 +85,7 @@ for s = 1:2 % boutons and neurons
             dirTuned = [dirTuned; ...
                 dirTuning.pValue(unitsResponsive) < maxP];
             oriTuned = [oriTuned; ...
-                oriTuning.pValue(unitsResponsive) < maxP & ...
-                oriTuning.selectivity(unitsResponsive) >= minSI];
+                oriTuning.pValue(unitsResponsive) < maxP];
             depth = [depth; recData.surface - ...
                 recData.roiPositions(unitsResponsive, 3)];
             dataset = [dataset; ones(sum(unitsResponsive),1) .* sessions];
@@ -125,27 +124,27 @@ for s = 1:2 % boutons and neurons
     end
 
     %% SI versus preference (for review)
-    % figure('Position', glob.figPositionDefault)
-    % scatter(dirPreferences(dirTuned), dirSel(dirTuned))
-    % xlabel('Direction preference')
-    % ylabel('Direction selectivity')
-    % figure('Position', glob.figPositionDefault)
-    % ksdensity([dirPreferences(dirTuned), dirSel(dirTuned)], ...
-    %     [reshape(repmat(0:10:360, 15, 1), [], 1), ...
-    %     reshape(repmat((0:0.05:0.7)', 1, 37), [], 1)])
-    % xlabel('Direction preference')
-    % ylabel('Direction selectivity')
-    % 
-    % figure('Position', glob.figPositionDefault)
-    % scatter(oriPreferences(dirTuned), oriSel(dirTuned))
-    % xlabel('Orientation preference')
-    % ylabel('Orientation selectivity')
-    % figure('Position', glob.figPositionDefault)
-    % ksdensity([oriPreferences(dirTuned), oriSel(dirTuned)], ...
-    %     [reshape(repmat(0:10:180, 8, 1), [], 1), ...
-    %     reshape(repmat((0:0.05:0.35)', 1, 19), [], 1)])
-    % xlabel('Orientation preference')
-    % ylabel('Orientation selectivity')
+    figure('Position', glob.figPositionDefault)
+    scatter(dirPreferences(dirTuned), dirSel(dirTuned))
+    xlabel('Direction preference')
+    ylabel('Direction selectivity')
+    figure('Position', glob.figPositionDefault)
+    ksdensity([dirPreferences(dirTuned), dirSel(dirTuned)], ...
+        [reshape(repmat(0:10:360, 15, 1), [], 1), ...
+        reshape(repmat((0:0.05:0.7)', 1, 37), [], 1)])
+    xlabel('Direction preference')
+    ylabel('Direction selectivity')
+
+    figure('Position', glob.figPositionDefault)
+    scatter(oriPreferences(dirTuned), oriSel(dirTuned))
+    xlabel('Orientation preference')
+    ylabel('Orientation selectivity')
+    figure('Position', glob.figPositionDefault)
+    ksdensity([oriPreferences(dirTuned), oriSel(dirTuned)], ...
+        [reshape(repmat(0:10:180, 8, 1), [], 1), ...
+        reshape(repmat((0:0.05:0.35)', 1, 19), [], 1)])
+    xlabel('Orientation preference')
+    ylabel('Orientation selectivity')
 
     %% Heatmaps of tuning curves
     % direction tuning curves: direction selective units (sorted by pref.
@@ -222,8 +221,8 @@ for s = 1:2 % boutons and neurons
     %% Direct comparison: boutons vs neurons + mean across datasets
     nDir = histcounts(dataset(dirValid), 0.5:max(dataset)+1);
     nOri = histcounts(dataset(oriValid), 0.5:max(dataset)+1);
-    indSetsDir = nDir >= minUnits;
-    indSetsOri = nOri >= minUnits;
+    indSetsDir = nDir >= minUnits_tuning;
+    indSetsOri = nOri >= minUnits_tuning;
     numDir(s) = sum(indSetsDir);
     numOri(s) = sum(indSetsOri);
 
@@ -369,7 +368,7 @@ l = legend(hDir, sprintf('boutons (%d)', numDir(1)), ...
     sprintf('neurons (%d)', numDir(2)));
 l.Box = "off";
 xlim([-10 370])
-ylim([0 0.26])
+ylim([0 0.32])
 xlabel('Direction (deg)')
 ylabel('Proportion of units')
 io.saveFigure(gcf, fPlots, 'tuning_directionPrefHist');
@@ -380,7 +379,7 @@ l = legend(hOri, sprintf('boutons (%d)', numOri(1)), ...
     sprintf('neurons (%d)', numOri(2)));
 l.Box = "off";
 xlim([-10 190])
-ylim([0 0.26])
+ylim([0 0.32])
 xlabel('Orientation (deg)')
 ylabel('Proportion of units')
 io.saveFigure(gcf, fPlots, 'tuning_orientationPrefHist');
@@ -388,18 +387,20 @@ io.saveFigure(gcf, fPlots, 'tuning_orientationPrefHist');
 figure(figDS)
 set(gca, "Box", "off", "XTick", selEdges(1:2:end))
 xlim(selEdges([1 end]))
-ylim([0 0.5])
+ylim([0 0.8])
 xlabel('Direction selectivity')
 ylabel('Proportion of units')
-io.saveFigure(gcf, fPlots, 'tuning_directionSelectivity');
+io.saveFigure(gcf, fullfile(folders.plots, 'Figures', 'Figure01S'), ...
+    'tuning_directionSelectivity');
 
 figure(figOS)
 set(gca, "Box", "off", "XTick", selEdges(1:2:end))
 xlim(selEdges([1 end]))
-ylim([0 0.5])
+ylim([0 0.8])
 xlabel('Orientation selectivity')
 ylabel('Proportion of units')
-io.saveFigure(gcf, fPlots, 'tuning_orientationSelectivity');
+io.saveFigure(gcf, fullfile(folders.plots, 'Figures', 'Figure01S'), ...
+    'tuning_orientationSelectivity');
 
 %% Tests
 % DS
