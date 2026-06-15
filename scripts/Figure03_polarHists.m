@@ -318,7 +318,7 @@ for s = 1:length(data)
     set(gca, "Box", "off")
     xlabel('Prediction error (deg)')
     ylabel(['#' sets{s}])
-    title('Preferred directions')
+    title(sprintf('Preferred directions (n = %d)', length(errDir_original{s})))
     io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_directions%s', ...
         sets{s}, suffix))
     % 2. orientation
@@ -341,7 +341,7 @@ for s = 1:length(data)
     set(gca, "Box", "off")
     xlabel('Prediction error (deg)')
     ylabel(['#' sets{s}])
-    title('Preferred orientations')
+    title(sprintf('Preferred orientations (n = %d)', length(errDir_original{s})))
     io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_orientations%s', ...
         sets{s}, suffix))
 

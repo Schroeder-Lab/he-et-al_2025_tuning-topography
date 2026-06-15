@@ -119,4 +119,5 @@ io.saveFigure(gcf, fPlots, 'cartoon_orientationLatitudeVectors_2D')
 data = Figures_loadData(folders, sets, retinotopyRF);
 
 %% Polar histograms of preferences per visual patch
-Figure03_polarHists(glob, fPlots, data, sets, 230)
+yLimit = 230;
+Figure03_polarHists(glob, fPlots, data, sets, yLimit)

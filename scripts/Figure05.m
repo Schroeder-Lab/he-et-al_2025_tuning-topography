@@ -16,8 +16,8 @@ minROIs = 15;
 numPerm = 1000;
 binSize = [5, 20];
 stepSize = [2.5, 5];
-xLims = [50 500];
-cLims = [0.00032 0.00004];
+xLims = [50 400];
+cLims = [0.0004 0.000044];
 
 %% Examples
 % ROIs in imaging planes
@@ -195,6 +195,7 @@ for s = 1:2 % boutons and neurons
     fig = spatial.plotPrefDiffVsDist(cat(1, dirDist{:}), ...
         cat(1, dirDiff{:}), cat(1, dirDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    fig.Position = glob.figPositionDefault;
     set(gca, 'YTick', 0:45:180)
     xlim([0 xLims(s)])
     ylim([0 180])
@@ -207,6 +208,7 @@ for s = 1:2 % boutons and neurons
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
         binSize(s), stepSize(s), false);
+    fig.Position = glob.figPositionDefault;
     set(gca, 'YTick', 0:45:90)
     xlim([0 xLims(s)])
     ylim([0 90])
@@ -295,7 +297,7 @@ for s = 1:2 % boutons and neurons
     m = cellfun(@mean, dirDiff, repmat({"omitnan"},1,length(dirDiff)));
     scatter(fovSize, m, 36, c, 'filled');
     xlim(fovLims(s,:))
-    ylim([0 90])
+    ylim([0 100])
     xlabel('FOV diagonal (um)')
     ylabel('Mean \Deltadirection')
     title(sprintf('%s (n = %d)', sets{s}, sum(~isnan(m))))

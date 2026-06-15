@@ -48,3 +48,8 @@ end
 meanDist = meanDist(binValid);
 meanDiff = meanDiff(binValid);
 meanDiffPerm = meanDiffPerm(binValid,:);
+
+% remove duplicate values
+[meanDist, ind] = unique(meanDist);
+meanDiff = meanDiff(ind);
+meanDiffPerm = meanDiffPerm(ind,:);

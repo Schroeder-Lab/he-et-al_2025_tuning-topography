@@ -6,7 +6,7 @@ function Figure04S_consistenciesAll(glob, fPlots, maps, sets, retinotopyRF, ...
 numPerm = 1000;
 % plotting scatterplots
 bins2 = 0.01:0.02:1;
-yLimS = [200 120];
+yLimS = [160 100];
 
 %% Plot histograms + scatters: consistencies compared to null distribution
 for s = 1:2

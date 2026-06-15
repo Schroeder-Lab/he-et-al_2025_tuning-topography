@@ -18,4 +18,5 @@ end
 data = Figures_loadData(folders, sets, retinotopyRF);
 
 %% Polar histograms for DS and OS only units
-Figure03_polarHists(glob, fPlots, data, sets, 80, selectivityThresholds)
+yLimit = 80;
+Figure03_polarHists(glob, fPlots, data, sets, yLimit, selectivityThresholds)
