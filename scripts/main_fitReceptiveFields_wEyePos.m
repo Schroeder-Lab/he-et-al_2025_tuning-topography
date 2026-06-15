@@ -166,9 +166,6 @@ for s = 1:2 % boutons and neurons
                 % define a function that convolves current RF at a given
                 % shift with the stimulus to produce the predicted neural
                 % response
-                % [AHat, out] = rf.fitScalarEyeGain_Astep(toeplitz, zTraces, ...
-                %     eyePos, rfGaussPars, bestSubFields, subFieldSigns, ...
-                %     gridX, gridY, rfBins, fitWeights);
                 opts.A0 = A;
                 [AHat, out] = rf.fitFullEyeAffine_Astep(toeplitz, zTraces, ...
                     eyePos, rfGaussPars, bestSubFields, subFieldSigns, ...
@@ -176,21 +173,21 @@ for s = 1:2 % boutons and neurons
 
                 % only update A if results better than previously
                 if out.sse < error
+                    error = out.sse;
                     deltaShift = mean((A - AHat).^2, "all");
                     A = AHat;
+                else
+                    break
                 end
                 count = count + 1;
                 fprintf('  A = [%.2f, %.2f; %.2f, %.2f]\n\n', A')
             end
 
-            A = AHat;
-            predictions = out.pred;
-            ind = isnan(zTraces);
-            tr = zTraces;
-            tr(ind) = 0;
-            pr = predictions;
-            pr(ind) = 0;
-            EVs = 1 - (sum((tr - pr).^2, 1) ./ sum(tr.^2, 1))';
+            % Using the best A (resulting in smallest error) and the RFs 
+            % fitted on stimuli shifted according to A, predict responses 
+            % and get EVs
+            [predictions, EVs] = rf.makeAllNoisePredictions(zTraces, ...
+                toeplitz_shifted, fitGaussians, fitWeights);
 
             %% Save results
             writeNPY(permute(rFields, [5 1 2 3 4]), fullfile(f, '_ss_rf_eye.maps.npy'))
@@ -214,56 +211,56 @@ for s = 1:2 % boutons and neurons
 end
 
 %% Plot RFs
-for s = 1:2 % boutons and neurons
-    subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
-    for subj = 1:length(subjDirs) % animals
-        name = subjDirs(subj).name;
-        fprintf('%s\n', name)
-        dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
-        for dt = 1:length(dateDirs) %dates
-            date = dateDirs(dt).name;
-            fprintf('  %s\n', date)
-            f = fullfile(folders.data, sets{s}, name, date);
-            % ignore session if visual noise stimulus was not presented or
-            % pupil data is missing
-            if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy')) || ...
-                    ~isfile(fullfile(f, 'eye.xyPos.npy'))
-                continue
-            end
-            fPlots = fullfile(folders.plots, 'ReceptiveFields_eyePosCorrected', ...
-                sets{s}, name, date);
-            if ~isfolder(fPlots)
-                mkdir(fPlots)
-            end
-
-            % load data
-            results = io.getNoiseRFFits(f, true);
-
-            edges = results.edges;
-            gridW = diff(edges(1:2)) / size(results.maps,3);
-            gridH = -diff(edges(3:4)) / size(results.maps,2);
-            for iUnit = 1:size(results.gaussPars,1)
-                % plot RF (if explained var. and peak-to-noise high enough
-                if results.EV(iUnit) >= minEV_plot && ...
-                        results.peaks(iUnit) >= minPeak_plot
-                    % rf_tmp: [rows x columns x subfield]
-                    rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
-
-                    rf.plotRF(rf_tmp, results.gaussPars(iUnit,:), ...
-                        results.bestSubFields(iUnit), ...
-                        edges, edges, gridW, gridH)
-
-                    sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
-                        iUnit, results.EV(iUnit), results.peaks(iUnit), ...
-                        RFtypes{results.bestSubFields(iUnit)}))
-
-                    saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));
-                    close gcf
-                end
-            end
-        end
-    end
-end
+% for s = 1:2 % boutons and neurons
+%     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
+%     for subj = 1:length(subjDirs) % animals
+%         name = subjDirs(subj).name;
+%         fprintf('%s\n', name)
+%         dateDirs = dir(fullfile(folders.data, sets{s}, name, '2*'));
+%         for dt = 1:length(dateDirs) %dates
+%             date = dateDirs(dt).name;
+%             fprintf('  %s\n', date)
+%             f = fullfile(folders.data, sets{s}, name, date);
+%             % ignore session if visual noise stimulus was not presented or
+%             % pupil data is missing
+%             if ~isfile(fullfile(f, '_ss_sparseNoise.times.npy')) || ...
+%                     ~isfile(fullfile(f, 'eye.xyPos.npy'))
+%                 continue
+%             end
+%             fPlots = fullfile(folders.plots, 'ReceptiveFields_eyePosCorrected', ...
+%                 sets{s}, name, date);
+%             if ~isfolder(fPlots)
+%                 mkdir(fPlots)
+%             end
+% 
+%             % load data
+%             results = io.getNoiseRFFits(f, true);
+% 
+%             edges = results.edges;
+%             gridW = diff(edges(1:2)) / size(results.maps,3);
+%             gridH = -diff(edges(3:4)) / size(results.maps,2);
+%             for iUnit = 1:size(results.gaussPars,1)
+%                 % plot RF (if explained var. and peak-to-noise high enough
+%                 if results.EV(iUnit) >= minEV_plot && ...
+%                         results.peaks(iUnit) >= minPeak_plot
+%                     % rf_tmp: [rows x columns x subfield]
+%                     rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
+% 
+%                     rf.plotRF(rf_tmp, results.gaussPars(iUnit,:), ...
+%                         results.bestSubFields(iUnit), ...
+%                         edges, edges, gridW, gridH)
+% 
+%                     sgtitle(sprintf('ROI %d (EV: %.3f, peak/noise: %.1f, %s)', ...
+%                         iUnit, results.EV(iUnit), results.peaks(iUnit), ...
+%                         RFtypes{results.bestSubFields(iUnit)}))
+% 
+%                     saveas(gcf, fullfile(fPlots, sprintf('Unit%03d.jpg', iUnit)));
+%                     close gcf
+%                 end
+%             end
+%         end
+%     end
+% end
 
 %% Plot all RF outlines per dataset
 for s = 1:2 % boutons and neurons
