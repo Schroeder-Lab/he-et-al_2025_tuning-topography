@@ -13,10 +13,15 @@ function stimTypes = selectRFStim(results, minEV, minPeak, dist2edge)
 %           (timeWeights)
 % minEV     double, minimum explained variance for significant RF
 % minPeak   double, minimum peak for significant RF
+% dist2edge double, minimum distance of RF centre to monitor edge
 
 % OUTPUTS
 % stimTypes [units], 1: if 1st stimulus is better, 2: if 2nd stimulus is
 %           better, NaN: if no stimulus yielded significant RF
+
+if nargin < 4
+    dist2edge = 0;
+end
 
 edges = [-95 0 51 -27]; % [left, right, top, bottom] where bottom
                         % and top are negative if above horizon
