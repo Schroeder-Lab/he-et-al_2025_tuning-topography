@@ -103,7 +103,7 @@ for s = 1:2 % boutons and neurons
             [t_stim, stim] = stimuli.fillGapsInNoiseStim(t_stim, stim);
 
             % generate toplitz matrix for stimulus
-            toeplitz = rf.makeStimToeplitz(stim, t_stim, rfBins);
+            toeplitz = rf.makeStimToeplitz(stim, t_stim);
 
             % resample neural response at stimulus times
             tBin_ca = median(diff(t_ca));

@@ -32,6 +32,9 @@ stim = (stim - mean(stim(:),'omitnan')) ./ std(stim(:),'omitnan');
 
 prediction = NaN(size(ind));
 % multiply stimulus with RF to predict response
-prediction(~ind) = stim * spatTempRF(:);
+pred = stim * spatTempRF(:);
+prediction(~ind) = pred;
 % get explained variance of prediction
-explainedVar = 1 - sum((zTrace - prediction(~ind)).^2, 1) ./ sum(zTrace.^2, 1);
+j = ~isnan(pred);
+explainedVar = 1 - sum((zTrace(j) - pred(j)).^2, 1) ./ ...
+    sum(zTrace(j).^2, 1);

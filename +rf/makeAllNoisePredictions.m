@@ -26,7 +26,7 @@ for iUnit = 1:numUnits
     spatTempMask = reshape(fitGaussians(iUnit,:,:,:), [], 1) * ...
         fitWeights(iUnit,:); % [pix x t]
 
-    if nargin > 4 % visual noise
+    if nargin < 5 % visual noise
         % spatTempMask: [rows x cols x t x ON/OFF]
         spatTempMask = permute(reshape(spatTempMask, size(fitGaussians,2), ...
             size(fitGaussians,3), 2, size(fitWeights,2)), [1 2 4 3]);
