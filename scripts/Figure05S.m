@@ -2,11 +2,20 @@ function Figure05S(folders, glob)
 
 %% Parameters
 sets = {'boutons', 'neurons'};
-selectivityThresholds = [0.2 0.2; 0.1 0.2];
+retinotopyRF = [false true]; % true: use RF positions estimated from 
+                             % retinotopic mapping;
+                             % false: use RF positions from RF mapping
+minEV = 0.01; % minimum explained variance to plot RF
+minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
+dist2edge = 5; % minimum distance of RF centre to monitor edge
+
+minSI = 0.1;
+
+selectivityThresholds = [0.1 0.1; 0.1 0.1];
 minROIs = 15;
 binSize = [5, 20];
 stepSize = [2.5, 5];
-xLims = [50 500];
+xLims = [50 400];
 
 exp = {'bars', 'gratingsStatic'};
 maxP = 0.05;
@@ -36,19 +45,49 @@ for s = 1:2 % boutons and neurons
             date = dateDirs(dt).name;
             f = fullfile(folders.data, sets{s}, name, date);
             % ignore session if stimulus was not presented
-            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy'))
+            if ~isfile(fullfile(f, '_ss_gratingsDrifting.intervals.npy')) || ...
+                    ~isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
                 continue
             end
-                
+
             % load data
             data = io.getRecordingInfo(f);
             roiPos = data.roiPositions(:,1:2);
+
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
+            data = io.getNoiseRFFits(f);
+            rfPos = data.gaussPars(:,[2 4]);
+            ev_rf = data.EV;
+            rf_peaks = data.peaks;
+            if ~retinotopyRF(s)
+                edges = data.edges; % [left right top bottom]
+                % exclude all RFs too close to monitor edge
+                invalidRF = ev_rf < minEV | rf_peaks < minPeak | ...
+                    rfPos(:,1) < edges(1)+dist2edge | ...
+                    rfPos(:,1) > edges(2)-dist2edge | ...
+                    rfPos(:,2) > edges(3)-dist2edge | ...
+                    rfPos(:,2) < edges(4)+dist2edge;
+                clear data
+            else
+                if ~isfile(fullfile(f, '_ss_rf.posRetinotopy.npy'))
+                    continue
+                end
+                rfPos = readNPY(fullfile(f, '_ss_rf.posRetinotopy.npy'));
+                edges = readNPY(fullfile(f, '_ss_rfDescr.edges.npy'));
+                % exclude all RFs too close to monitor edge
+                invalidRF = rfPos(:,1) < edges(1)+dist2edge | ...
+                    rfPos(:,1) > edges(2)-dist2edge | ...
+                    rfPos(:,2) > edges(3)-dist2edge | ...
+                    rfPos(:,2) < edges(4)+dist2edge;
+            end
+
             dp = dirTuning.preference;
-            validDir = ~isnan(dp) & dirTuning.pValue < maxP & ...
+            validDir = ~invalidRF & ~isnan(dp) & ...
+                dirTuning.pValue < maxP & ...
                 dirTuning.selectivity >= selectivityThresholds(1,1) & ...
-                oriTuning.selectivity <= selectivityThresholds(1,2);
+                (oriTuning.pValue >= maxP | ...
+                oriTuning.selectivity < selectivityThresholds(1,2));
             if sum(validDir) < minROIs
                 dirDist{rec} = [];
                 dirDiff{rec} = [];
@@ -74,10 +113,13 @@ for s = 1:2 % boutons and neurons
                 dirDiff{rec} = ddiff;
                 dirDiffNull{rec} = ddiffPermuted;
             end
+
             op = oriTuning.preference;
-            validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
+            validOri = ~invalidRF & ~isnan(op) & ...
+                oriTuning.pValue < maxP & ...
                 oriTuning.selectivity >= selectivityThresholds(2,1) & ...
-                dirTuning.selectivity <= selectivityThresholds(2,2);
+                (dirTuning.pValue >= maxP | ...
+                dirTuning.selectivity < selectivityThresholds(2,2));
             if sum(validOri) < minROIs
                 oriDist{rec} = [];
                 oriDiff{rec} = [];
@@ -119,6 +161,7 @@ for s = 1:2 % boutons and neurons
     title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('distanceAll_%s_directionOnly', sets{s}))
+
     n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
@@ -195,7 +238,8 @@ for subj = 1:length(subjDirs) % animals
             [dirTuning, oriTuning] = io.getTuningResults(f, exp{k});
             if k == 1 % bars
                 dp = dirTuning.preference;
-                invalid = dirTuning.pValue >= maxP;
+                invalid = dirTuning.pValue >= maxP | ...
+                    dirTuning.selectivity < minSI;
                 dp(invalid) = NaN;
                 dp = dp(~invalidRF);
                 
@@ -216,7 +260,8 @@ for subj = 1:length(subjDirs) % animals
             end
 
             op = oriTuning.preference;
-            invalid = oriTuning.pValue >= maxP;
+            invalid = oriTuning.pValue >= maxP | ...
+                    oriTuning.selectivity < minSI;
             op(invalid) = NaN;
             op = op(~invalidRF);
 
@@ -254,7 +299,7 @@ spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
 set(gcf, 'Position', glob.figPositionDefault)
 xlim([0 400])
 ylim([0 180])
-clim([0 3.5e-5])
+% clim([0 3.5e-5])
 title(['\DeltaDirection pref.: ' exp{1} ' (n = ' num2str(n) ')'])
 io.saveFigure(gcf, fPlots, sprintf('dirPref_%s', exp{1}))
 
@@ -267,7 +312,7 @@ spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
 set(gcf, 'Position', glob.figPositionDefault)
 xlim([0 400])
 ylim([0 90])
-clim([0 7e-5])
+% clim([0 7e-5])
 title(['\DeltaOrientation pref.: ' exp{1} ' (n = ' num2str(n) ')'])
 io.saveFigure(gcf, fPlots, sprintf('oriPref_%s', exp{1}))
 
@@ -281,6 +326,6 @@ spatial.plotPrefDiffVsDist(cat(1, dist{ind}), ...
 set(gcf, 'Position', glob.figPositionDefault)
 xlim([0 400])
 ylim([0 90])
-clim([0 7e-5])
+% clim([0 7e-5])
 title(['\DeltaOrientation pref.: ' exp{2} ' (n = ' num2str(n) ')'])
 io.saveFigure(gcf, fPlots, sprintf('oriPref_%s', exp{2}))

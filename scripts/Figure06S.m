@@ -1,7 +1,9 @@
 function Figure06S(folders, glob)
 
 %% Parameters
+% for evaluation of tuning selectivity
 maxP = 0.05; % p-value threshold
+minSI = 0.1;
 
 % to evaluate RFs
 minEV = 0.01; % minimum explained variance
@@ -23,7 +25,7 @@ Figure06S_LFP(folders, fPlots, exAnimal, exDate)
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge);
+data = Figure06_loadData(folders, maxP, minSI, minEV, minPeak, dist2edge);
 
 %% Plot direction vs orientation preference and selectivity
 tuned = [cat(1, data.dirTuned), cat(1, data.oriTuned)];

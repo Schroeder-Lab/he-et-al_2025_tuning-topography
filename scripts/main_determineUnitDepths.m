@@ -2,10 +2,6 @@ function main_determineUnitDepths(folders)
 % Given the site of the SC surface and its SGS-SO border, determine depth
 % of each unit within SC (postive values -> microns below surface).
 
-%% Parameters
-% for depth estimate
-SC_extent = 1000; % microns
-
 %% Determine depth of each unit
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
@@ -23,7 +19,8 @@ for subj = 1:length(subjDirs) % animals
         chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
         SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
         SC_top = chanCoord(SC_depth(1), 2);
-        SC_SO = chanCoord(SC_depth(2), 2);
+        SC_SO = chanCoord(SC_depth(3), 2);
+        SC_extent = SC_top - chanCoord(SC_depth(4), 2);
         if isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
             stimData = io.getVisNoiseInfo(f);
         elseif isfile(fullfile(f, 'circles.times.npy'))

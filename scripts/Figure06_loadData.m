@@ -1,9 +1,9 @@
-function data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge)
+function data = Figure06_loadData(folders, maxP, minSI, minEV, minPeak, dist2edge)
 
 data = struct('animal', {}, 'date', {}, ...
     'dirPreferences', {}, 'oriPreferences', {}, ...
     'dirSel', {}, 'oriSel', {}, 'dirTuned', {}, 'oriTuned', {}, ...
-    'depth', {}, 'totalN', {}, 'SO_depth', {}, ...
+    'depth', {}, 'totalN', {}, 'sSC_dSC_depth', {}, ...
     'rfPos', {});
 
 subjDirs = dir(fullfile(folders.data, 'ephys'));
@@ -22,13 +22,16 @@ for subj = 1:length(subjDirs) % animals
 
         % load data
         spikeData = io.getEphysData(f);
+        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
+        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
+
         p_grandMean = readNPY(fullfile(f, ...
             '_ss_gratingsDriftingResponsive.p_grandMean.npy'));
         p_compareAcrossStimuli = readNPY(fullfile(f, ...
             '_ss_gratingsDriftingResponsive.p_acrossStimuli.npy'));
+
         [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
-        chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
-        SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
+        
         rfData = cell(2,1);
         if isfile(fullfile(f, '_ss_sparseNoise.times.npy'))
             rfData{1} = io.getNoiseRFFits(f);
@@ -48,8 +51,8 @@ for subj = 1:length(subjDirs) % animals
         data(session).date = date;
         data(session).totalN = sum(unitsSC);
         SC_top = chanCoord(SC_depth(1), 2);
-        SC_SO = chanCoord(SC_depth(2), 2);
-        data(session).SO_depth = SC_top - SC_SO;
+        sSC_dS = chanCoord(SC_depth(3), 2);
+        data(session).sSC_dSC_depth = SC_top - sSC_dS;
 
         responsive = unitsSC & ...
             (p_grandMean < maxP | p_compareAcrossStimuli < maxP);
@@ -59,8 +62,10 @@ for subj = 1:length(subjDirs) % animals
             oriTuning.preference(responsive);
         data(session).dirSel = dirTuning.selectivity(responsive);
         data(session).oriSel = oriTuning.selectivity(responsive);
-        data(session).dirTuned = dirTuning.pValue(responsive) < maxP;
-        data(session).oriTuned = oriTuning.pValue(responsive) < maxP;
+        data(session).dirTuned = dirTuning.pValue(responsive) < maxP & ...
+            dirTuning.selectivity(responsive) >= minSI;
+        data(session).oriTuned = oriTuning.pValue(responsive) < maxP & ...
+            oriTuning.selectivity(responsive) >= minSI;
         data(session).depth = spikeData.clusterDepths(responsive, 1);
 
         pos = NaN(sum(responsive), 2);

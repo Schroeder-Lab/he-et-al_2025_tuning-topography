@@ -206,6 +206,20 @@ for s = 1:length(data)
     err(ind) = 180 - err(ind);
     [errOri_original{s}, optOriVects] = min(err, [], 2);
 
+    % explained variance for original data
+    % 1. direction
+    mean_dir = rad2deg(circ_mean(deg2rad(dp)));
+    err = abs(dp - mean_dir);
+    ind = err > 180;
+    err(ind) = 360 - err(ind);
+    ev_dir = 1 - sum(errDir_original{s} .^ 2) / sum(err .^ 2);
+    % 2. orientation
+    mean_ori = rad2deg(circ_mean(deg2rad(op) .* 2) ./ 2);
+    err = abs(op - mean_ori);
+    ind = err > 90;
+    err(ind) = 180 - err(ind);
+    ev_ori = 1 - sum(errOri_original{s} .^ 2) / sum(err .^ 2);
+
     % prediction error for permuted data
     errDir_perm = NaN(1, nPerm);
     errOri_perm = NaN(1, nPerm);
@@ -344,6 +358,10 @@ for s = 1:length(data)
     title(sprintf('Preferred orientations (n = %d)', length(errDir_original{s})))
     io.saveFigure(gcf, fPlots, sprintf('predictionErrors_%s_orientations%s', ...
         sets{s}, suffix))
+
+    fprintf('Explained variance:\n')
+    fprintf('  %s: Direction: %.4f, Orientation: %.4f\n', ...
+        sets{s}, ev_dir, ev_ori)
 
     fprintf('Prediction errors [95%% conf int: (1) permuted data, (2) uniform distribution]:\n')
     fprintf('  %s:\n', sets{s})

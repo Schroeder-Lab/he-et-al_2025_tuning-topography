@@ -1,7 +1,9 @@
 function Figure07(folders, glob)
 
 %% Parameters
-maxP = 0.05; % p-value threshold
+% for evaluation of tuning selectivity
+maxP = 0.05;
+minSI = 0.1;
 
 % to evaluate RFs
 minEV = 0.01; % minimum explained variance
@@ -23,7 +25,7 @@ end
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge);
+data = Figure06_loadData(folders, maxP, minSI, minEV, minPeak, dist2edge);
 
 %% Plot example RFs
 exSession = strcmp(exAnimal, {data.animal}) & ...

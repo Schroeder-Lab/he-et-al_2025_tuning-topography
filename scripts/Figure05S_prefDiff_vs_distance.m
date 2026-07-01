@@ -11,13 +11,13 @@ minEV = 0.01;
 minPeak = 5;
 % for evaluation of tuning selectivity
 maxP = 0.05; % p-value threshold for direction/orientation selectivity
+minSI = 0.1;
 % for plotting
 minROIs = 15;
 
 binSize = [1, 2];
 stepSize = [0.2, 1];
-xLims = [15 40];
-cLims = [0.004 0.0008];
+xLims = [10 30];
 % for testing
 numPerm = 1000;
 
@@ -65,7 +65,7 @@ for s = 1:2 % boutons and neurons
             if ~retinotopyRF(s)
                 edges = data.edges; % [left right top bottom]
                 % exclude all RFs too close to monitor edge
-                invalidRF = ... % dataRF.EV < minEV | dataRF.peaks < minPeak | ...
+                invalidRF = ev_rf < minEV | rf_peaks < minPeak | ...
                     rfPos(:,1) < edges(1)+dist2edge | ...
                     rfPos(:,1) > edges(2)-dist2edge | ...
                     rfPos(:,2) > edges(3)-dist2edge | ...
@@ -83,17 +83,18 @@ for s = 1:2 % boutons and neurons
                     rfPos(:,2) > edges(3)-dist2edge | ...
                     rfPos(:,2) < edges(4)+dist2edge;
             end
+
             [dirTuning, oriTuning] = io.getTuningResults(f, 'gratingsDrifting');
 
             dp = dirTuning.preference;
             valid = ~isnan(dp) & dirTuning.pValue < maxP & ...
-                ev_rf >= minEV & rf_peaks >= minPeak & ~invalidRF;
-            numDirTuned(s) = numDirTuned(s) + ...
-                sum(~isnan(dp) & dirTuning.pValue < maxP & ~invalidRF);
-            numRFDirTuned(s) = numRFDirTuned(s) + sum(valid);
-            if sum(~isnan(dp) & dirTuning.pValue < maxP) > 0
+                dirTuning.selectivity >= minSI;
+            numDirTuned(s) = numDirTuned(s) + sum(valid);
+            if sum(valid) > 0
                 tmp(1) = tmp(1) + 1;
             end
+            valid = valid & ~invalidRF;
+            numRFDirTuned(s) = numRFDirTuned(s) + sum(valid);
             if sum(valid) < minROIs
                 dirDist{rec} = [];
                 dirDiff{rec} = [];
@@ -123,13 +124,13 @@ for s = 1:2 % boutons and neurons
 
             op = oriTuning.preference;
             valid = ~isnan(op) & oriTuning.pValue < maxP & ...
-                ev_rf >= minEV & rf_peaks >= minPeak & ~invalidRF;
-            numOriTuned(s) = numOriTuned(s) + ...
-                sum(~isnan(op) & oriTuning.pValue < maxP & ~invalidRF);
-            numRFOriTuned(s) = numRFOriTuned(s) + sum(valid);
-            if sum(~isnan(op) & oriTuning.pValue < maxP) > 0
+                oriTuning.selectivity >= minSI;
+            numOriTuned(s) = numOriTuned(s) + sum(valid);
+            if sum(valid) > 0
                 tmp(2) = tmp(2) + 1;
             end
+            valid = valid & ~invalidRF;
+            numRFOriTuned(s) = numRFOriTuned(s) + sum(valid);
             if sum(valid) < minROIs
                 oriDist{rec} = [];
                 oriDiff{rec} = [];
@@ -178,11 +179,12 @@ for s = 1:2 % boutons and neurons
     set(gca, 'YTick', 0:45:180)
     xlim([0 xLims(s)])
     ylim([0 180])
-    clim([0 cLims(s)/2])
+    % clim([0 cLims(s)/2])
     xlabel('Distance (vis. deg.)')
     title(['\DeltaDirection pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_direction', sets{s}))
+    
     n = sum(~any(isnan([cat(1, oriDist{:}) cat(1, oriDiff{:})]), 2));
     fig = spatial.plotPrefDiffVsDist(cat(1, oriDist{:}), ...
         cat(1, oriDiff{:}), cat(1, oriDiffNull{:}), ...
@@ -191,14 +193,14 @@ for s = 1:2 % boutons and neurons
     set(gca, 'YTick', 0:45:90)
     xlim([0 xLims(s)])
     ylim([0 90])
-    clim([0 cLims(s)])
+    % clim([0 cLims(s)])
     xlabel('Distance (vis. deg.)')
     title(['\DeltaOrientation pref. vs \DeltaRF-position (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('rfDistanceAll_%s_orientation', sets{s}))
 end
 
-fprintf('Number of tuned units with significant RF:\n')
+fprintf('Number of tuned units with significant RF of all tuned units:\n')
 fprintf('  Direction:\n')
 fprintf('    Boutons: %d of %d (%.1f%%), %d sessions, %d animals\n', ...
     numRFDirTuned(1), numDirTuned(1), numRFDirTuned(1)/numDirTuned(1)*100, ...

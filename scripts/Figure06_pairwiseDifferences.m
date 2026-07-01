@@ -4,7 +4,6 @@ numPerm = 1000;
 binSize = 50;
 stepSize = 5;
 xLims = 500;
-cLims = 0.00003;
 yTicks = {0:45:180, 0:45:90};
 barWidth = 0.3;
 
@@ -96,7 +95,7 @@ for feat = 1:2
     set(gca, 'YTick', yTicks{feat})
     xlim([0 xLims])
     ylim([0 180/feat])
-    clim([0 cLims/(3-feat)])
+    % clim([0 cLims/(3-feat)])
     title(['\Delta' features{feat} ' pref. vs \Deltaposition (n = ' ...
         num2str(n) ')'])
     io.saveFigure(fig, fPlots, sprintf('distanceAll_%s', features{feat}))

@@ -7,20 +7,12 @@
 % folders.results:  to save intermediate results
 % folders.plots:    to save plots
 
-% folders.data = 'C:\DataToPublish';
-% folders.dataRawEphys = 'Z:\RawData';
-% folders.tools = 'C:\dev\toolboxes';
-% folders.repo = 'C:\dev\he-et-al_2025_tuning-topography';
-% folders.results = 'C:\Results';
-% folders.plots = 'C:\Plots';
-
-% PC on campus (The Machine)
-folders.data = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\DataToPublish';
+folders.data = 'C:\DataToPublish';
 folders.dataRawEphys = 'Z:\RawData';
-folders.results = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
 folders.tools = 'C:\dev\toolboxes';
-folders.repo = 'C:\dev\workspaces\SchroederLab\he_schroeder_columns';
-folders.plots = 'C:\Users\sylvi\OneDrive - University of Sussex\Projects\2023_OrientationColumns\Results_Sylvia';
+folders.repo = 'C:\dev\he-et-al_2025_tuning-topography';
+folders.results = 'C:\Results';
+folders.plots = 'C:\Plots';
 
 %% Global parameters
 glob.figPositionDefault = [680 460 560 420];
@@ -111,6 +103,7 @@ Figure01S(folders, glob)
 
 % Receptive fields 
 Figure02(folders, glob)
+Figure02SA(folders)
 Figure02S(folders)
 
 % Match of preferences with topographic predictions

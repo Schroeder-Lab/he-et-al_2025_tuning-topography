@@ -1,7 +1,9 @@
 function Figure06(folders, glob)
 
 %% Parameters
-maxP = 0.05; % p-value threshold
+% for evaluation of tuning selectivity
+maxP = 0.05;
+minSI = 0.1;
 
 % to evaluate RFs
 minEV = 0.01; % minimum explained variance
@@ -12,7 +14,9 @@ dist2edge = 5; % minimum distance of RF centre to monitor edge
 % RFs
 exAnimal = 'FG010';
 exDate = '2024-10-19';
-exUnits = [361 491 282 559];
+% exUnits = [361 491 282 559];
+% exUnits = [361 491, 147 161 164 171 235, 291];
+exUnits = [361 491 235];
 
 %% For all plots
 fPlots = fullfile(folders.plots, 'Figures', 'Figure06');
@@ -25,10 +29,10 @@ Figure06_examplesTuning(folders, fPlots, exAnimal, exDate, exUnits)
 
 %% Load data: tuning preferences, RF position
 % include all units within SC that are responsive to gratings
-data = Figure06_loadData(folders, maxP, minEV, minPeak, dist2edge);
+data = Figure06_loadData(folders, maxP, minSI, minEV, minPeak, dist2edge);
 
 %% Plot tuning preferences and selectivity against depth in SC (per recording)
-Figure06_plotTuningData(data, fPlots)
+Figure06_plotTuningData(fPlots, glob, data)
 
 %% Pairwise differences in tuning preferences and SC depth
 Figure06_pairwiseDifferences(fPlots, glob, data)

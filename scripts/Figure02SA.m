@@ -163,8 +163,12 @@ for s = 1:2 % boutons and neurons
     figure
     histogram(euclidDist, 0:0.2:4)
     set(gca, 'box', 'off')
-    xlabel('Euclidian distance (vis. deg.)')
-    ylabel(sprintf('#%s (vis.deg.)', sets{s}))
+    xlabel('Euclidean distance (vis. deg.)')
+    ylabel(sprintf('#%s', sets{s}))
+    title(sprintf('Median: %.2f (%d%% < 1 deg, %d%% < 2 deg)', ...
+        median(euclidDist, "omitnan"), ...
+        round(sum(euclidDist < 1) / sum(~isnan(euclidDist)) * 100), ...
+        round(sum(euclidDist < 2) / sum(~isnan(euclidDist)) * 100)))
     io.saveFigure(gcf, fPlots, ...
         sprintf('rf-eye-corrected_%s_histogram', sets{s}))
 end
@@ -174,6 +178,7 @@ end
 limit_x = 8;
 limit_y = 4;
 eyePos = cell(12,1); % eye position per grating direction
+nSessions = 0;
 for s = 1:2 % boutons and neurons
     subjDirs = dir(fullfile(folders.data, sets{s}, 'SS*'));
     for subj = 1:length(subjDirs) % animals
@@ -217,6 +222,8 @@ for s = 1:2 % boutons and neurons
                 pos_stim = pos(:,ind,:);
                 eyePos{stim} = [eyePos{stim}; reshape(pos_stim, [], 2)];
             end
+
+            nSessions = nSessions + 1;
         end
     end
 end
@@ -247,3 +254,5 @@ for stim = 1:12
     imwrite(plots{stim}, fullfile(fPlots, ...
         sprintf('eyePosPerGrating_%d.png', stimData.directions(stim))));
 end
+
+fprintf("%d sessions used for eye movements during drifting gratings.\n", nSessions)

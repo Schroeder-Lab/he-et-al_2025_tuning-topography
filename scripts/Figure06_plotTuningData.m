@@ -1,4 +1,4 @@
-function Figure06_plotTuningData(tuningData, fPlots)
+function Figure06_plotTuningData(fPlots, glob, tuningData)
 
 %% Parameters
 % tuning curves
@@ -13,7 +13,7 @@ minUnits = 10;
 % preferences across depths
 scale = 30;
 colors = {colmaps.colorcet('C7'), colmaps.colorcet('C1')};
-depthLimits = [-300 850];
+depthLimits = [-400 750];
 
 features = {'direction', 'orientation'};
 featureNames = {'dir', 'ori'};
@@ -61,7 +61,7 @@ plot(dirBinsFine, mSm, 'Color', 'k', "LineWidth", 1);
 plot(dirBins, m, '.', 'Color', 'k', "MarkerSize", 30)
 set(gca, "Box", "off", "XTick", 0:90:360)
 xlim([-10 370])
-ylim([0 0.2])
+ylim([0 0.21])
 xlabel('Direction (deg)')
 ylabel('Proportion of units')
 title(sprintf('Direction tuning (%d sessions)', sum(indDir)))
@@ -79,7 +79,7 @@ plot(oriBinsFine, mSm, 'Color', 'k', "LineWidth", 1);
 plot(oriBins, m, '.', 'Color', 'k', "MarkerSize", 30)
 set(gca, "Box", "off", "XTick", 0:45:180)
 xlim([-10 190])
-ylim([0 0.2])
+ylim([0 0.21])
 xlabel('Orientation (deg)')
 ylabel('Proportion of units')
 title(sprintf('Orientation tuning (%d sessions)', sum(indOri)))
@@ -94,7 +94,7 @@ for feat = 1:2 % direction and orientation preferences
         units = find(tuningData(session).([featureNames{feat} 'Tuned']));
         X = ones(length(units),1) .* (session * 3 * scale);
         Y = tuningData(session).depth(units) - ...
-            tuningData(session).SO_depth;
+            tuningData(session).sSC_dSC_depth;
         angles = tuningData(session).([featureNames{feat} 'Preferences'])(units);
         if feat == 1 % direction
             [U, V] = pol2cart(deg2rad(angles), ...
@@ -146,7 +146,7 @@ for feat = 1:2 % direction and orientation selectivities
             tuningData(session).([featureNames{feat} 'Sel'])(units)];
         depths_relative = [depths_relative; ...
             tuningData(session).depth(units) - ...
-            tuningData(session).SO_depth];
+            tuningData(session).sSC_dSC_depth];
     end
     figure('Position', [100 100 300 650])
     hold on

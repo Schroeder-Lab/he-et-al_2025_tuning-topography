@@ -10,6 +10,8 @@ minEV = 0.01; % minimum explained variance to plot RF
 minPeak = 5; % minimum peak of RF (compared to noise) to plot RF
 dist2edge = 5; % minimum distance of RF centre to monitor edge
 
+minSI = 0.1;
+
 fovLims = [20 160; 400 900];
 maxP = 0.05; % p-value threshold for direction/orientation selectivity
 minROIs = 15;
@@ -17,7 +19,6 @@ numPerm = 1000;
 binSize = [5, 20];
 stepSize = [2.5, 5];
 xLims = [50 400];
-cLims = [0.0004 0.000044];
 
 %% Examples
 % ROIs in imaging planes
@@ -110,7 +111,8 @@ for s = 1:2 % boutons and neurons
             end
 
             dp = dirTuning.preference;
-            validDir = ~isnan(dp) & dirTuning.pValue < maxP;
+            validDir = ~isnan(dp) & dirTuning.pValue < maxP & ...
+                dirTuning.selectivity >= minSI;
             valid = validDir & ~invalidRF;
             if sum(valid) < minROIs
                 dirDist{rec} = [];
@@ -147,7 +149,8 @@ for s = 1:2 % boutons and neurons
             end
 
             op = oriTuning.preference;
-            validOri = ~isnan(op) & oriTuning.pValue < maxP;
+            validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
+                dirTuning.selectivity >= minSI;
             valid = validOri & ~invalidRF;
             if sum(valid) < minROIs
                 oriDist{rec} = [];
@@ -199,7 +202,7 @@ for s = 1:2 % boutons and neurons
     set(gca, 'YTick', 0:45:180)
     xlim([0 xLims(s)])
     ylim([0 180])
-    clim([0 cLims(s)/2])
+    % clim([0 cLims(s)/2])
     title(['\DeltaDirection pref. vs \Deltaposition (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('distanceAll_%s_direction', sets{s}))
@@ -212,7 +215,7 @@ for s = 1:2 % boutons and neurons
     set(gca, 'YTick', 0:45:90)
     xlim([0 xLims(s)])
     ylim([0 90])
-    clim([0 cLims(s)])
+    % clim([0 cLims(s)])
     title(['\DeltaOrientation pref. vs \Deltaposition (n = ' num2str(n) ')'])
     io.saveFigure(fig, fPlots, ...
         sprintf('distanceAll_%s_orientation', sets{s}))

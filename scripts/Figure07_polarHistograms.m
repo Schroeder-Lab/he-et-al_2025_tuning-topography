@@ -21,8 +21,8 @@ cols = {'k', 'b', 'r', 'm'};
 minCount = 4;
 % prediction errors
 edges_err = 0:5:60;
-yLimits = [30 45 75];
-heights = [28 43 70];
+yLimits = [35 25 75];
+heights = 0.9 .* yLimits;
 
 % Tests
 nPerm = 1000;
@@ -49,11 +49,6 @@ for subj = 1:length(animals)
 end
 
 %% Pool data across sessions
-rfPositions = cat(1, data.rfPos);
-directionPreferences = cat(1, data.dirPreferences);
-directionPreferences(~cat(1, data.dirTuned)) = NaN;
-orientationPreferences = cat(1, data.oriPreferences);
-orientationPreferences(~cat(1, data.oriTuned)) = NaN;
 ID = [];
 layer = [];
 modelDirs = []; % in degree
@@ -96,6 +91,12 @@ for session = 1:length(data)
 end
 
 %% Polar histograms
+rfPositions = cat(1, data.rfPos);
+directionPreferences = cat(1, data.dirPreferences);
+directionPreferences(~cat(1, data.dirTuned)) = NaN;
+orientationPreferences = cat(1, data.oriPreferences);
+orientationPreferences(~cat(1, data.oriTuned)) = NaN;
+
 pitch = mean(bestPitches);
 [ds_trans, os_long, os_lat] = algebra.getDsOsAxes(pitch);
 valid = true(size(layer));
@@ -174,6 +175,17 @@ sgtitle(sprintf(['Orientation tuning with pitch %.2fdeg\n' ...
     pitch, round(os_lat(2,:)), gridX([1 end]), gridY([end 1])))
 io.saveFigure(gcf, fPlots, ...
     sprintf('polarHists_orientation_%s', SCLabel{3}))
+
+numRFDirTuned = sum(~any(isnan([rfPositions directionPreferences]), 2));
+numDirTuned = sum(~isnan(directionPreferences));
+fprintf('Number of tuned units with significant RF of all tuned units:\n')
+fprintf('  Direction: %d of %d (%.1f%%)\n', ...
+    numRFDirTuned, numDirTuned, numRFDirTuned/numDirTuned*100)
+
+numRFOriTuned = sum(~any(isnan([rfPositions orientationPreferences]), 2));
+numOriTuned = sum(~isnan(orientationPreferences));
+fprintf('  Orientation: %d of %d (%.1f%%)\n', ...
+    numRFOriTuned, numOriTuned, numRFOriTuned/numOriTuned*100)
 
 %% Prediction error, significance tests and classification histograms
 % prediction error for original data
@@ -384,3 +396,15 @@ for l = 1:2
         errOri_perm(l,[1 3]), ...
         errOri_uni(l,[1 3]))
 end
+
+%% Pitches
+ptch = unique(bestPitches);
+figure('Position', glob.figPositionDefault)
+ch = swarmchart(ones(length(ptch),1), ptch, ...
+    80, 'k', 'o', 'filled');
+ch.XJitterWidth = 0.1;
+xlim([0 2])
+ylim([-24 0])
+set(gca, "XTick", 1)
+ylabel('Head pitch (deg.)')
+io.saveFigure(gcf, fPlots, 'pitchAngles')
