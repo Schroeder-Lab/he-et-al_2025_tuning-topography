@@ -14,8 +14,6 @@ dist2edge = 5; % minimum distance of RF centre to monitor edge
 % RFs
 exAnimal = 'FG010';
 exDate = '2024-10-19';
-% exUnits = [361 491 282 559];
-% exUnits = [361 491, 147 161 164 171 235, 291];
 exUnits = [361 491 235];
 
 %% For all plots
