@@ -180,19 +180,19 @@ for s = 1:2 % boutons and neurons
             end
 
             % load data
-            results = getNoiseRFFits(f);
+            results = io.getNoiseRFFits(f);
 
             edges = results.edges;
             gridW = diff(edges(1:2)) / size(results.maps,3);
             gridH = -diff(edges(3:4)) / size(results.maps,2);
-            for iUnit = 1:size(results.fitParameters,1)
+            for iUnit = 1:size(results.gaussPars,1)
                 % plot RF (if explained var. and peak-to-noise high enough
                 if results.EV(iUnit) >= minEV_plot && ...
                         results.peaks(iUnit) >= minPeak_plot
                     % rf_tmp: [rows x columns x subfield]
                     rf_tmp = squeeze(mean(results.maps(iUnit,:,:,:,:),4));
 
-                    rf.plotRF(rf_tmp, results.fitParameters(iUnit,:), ...
+                    rf.plotRF(rf_tmp, results.gaussPars(iUnit,:), ...
                         results.bestSubFields(iUnit), ...
                         edges, edges, gridW, gridH)
 
@@ -229,7 +229,7 @@ for s = 1:2 % boutons and neurons
 
             data = io.getNoiseRFFits(f);
 
-            rf.plotRFOutlines(data.fitParameters, data.EV, data.peaks, ...
+            rf.plotRFOutlines(data.gaussPars, data.EV, data.peaks, ...
                 minEV, minPeak, [], data.edges, [])
 
             title(sprintf('%s %s', name, date))

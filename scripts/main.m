@@ -113,7 +113,7 @@ Figure03S(folders, glob)
 % Global distribution of direction and orientation preferences across
 % visual field
 Figure04(folders, glob)
-Figure04S(folders)
+Figure04S(folders, glob)
 
 % Pairwise difference in tuning preferences depending on horizontal distance
 Figure05(folders, glob)

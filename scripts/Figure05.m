@@ -150,7 +150,7 @@ for s = 1:2 % boutons and neurons
 
             op = oriTuning.preference;
             validOri = ~isnan(op) & oriTuning.pValue < maxP & ...
-                dirTuning.selectivity >= minSI;
+                oriTuning.selectivity >= minSI;
             valid = validOri & ~invalidRF;
             if sum(valid) < minROIs
                 oriDist{rec} = [];

@@ -59,7 +59,7 @@ for session = 1:length(data)
 
     ID = [ID; ones(n,1) .* session];
     l = ones(n, 1);
-    l(data(session).depth > data(session).SO_depth) = 2;
+    l(data(session).depth > data(session).sSC_dSC_depth) = 2;
     layer = [layer; l];
 
     tv = NaN(n, 4);

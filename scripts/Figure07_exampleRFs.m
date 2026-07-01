@@ -47,7 +47,7 @@ cols(indEx,:) = exColors;
 
 figure('Position', glob.figPositionDefault)
 scatter(zeros(sum(indAll), 1), spikeData.clusterDepths(indAll,1) - ...
-    tuningData.SO_depth, 30, cols, 'filled', '<');
+    tuningData.sSC_dSC_depth, 30, cols, 'filled', '<');
 set(gca, "YDir", "reverse")
 ylabel('Depth from SGS-SO border (in um)')
 title(sprintf('%s %s (n = %d)', tuningData.animal, ...
