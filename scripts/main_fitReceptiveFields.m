@@ -97,13 +97,13 @@ for s = 1:2 % boutons and neurons
             % reshape stimulus frames to [time x px]; this represents a single
             % "stimulus block", i.e. the pixels to estimate a single time point of the
             % receptive field
-            stim = reshape(stimFrames, size(stimFrames,1), []);
+            stim = reshape(stimMatrix, size(stimMatrix,1), []);
             
             % fill time gaps in stimulus with zeros
             [t_stim, stim] = stimuli.fillGapsInNoiseStim(t_stim, stim);
 
             % generate toplitz matrix for stimulus
-            toeplitz = rf.makeStimToeplitz(stim, t_stim);
+            toeplitz = rf.makeStimToeplitz(stim, rfBins);
 
             % resample neural response at stimulus times
             tBin_ca = median(diff(t_ca));
