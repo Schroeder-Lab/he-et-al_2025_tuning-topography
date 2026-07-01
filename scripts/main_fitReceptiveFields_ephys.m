@@ -75,6 +75,16 @@ for subj = 1:length(subjDirs) % animals
             rfBins = floor(rf_timeLimits(1) / tBin_stim) : ...
                 ceil(rf_timeLimits(2) / tBin_stim) - 1;
 
+            %% Prepare stimulus
+            % reshape stimulus frames to [time x px]; this represents a single
+            % "stimulus block", i.e. the pixels to estimate a single time point of the
+            % receptive field
+            stim = reshape(stimMatrix, size(stimMatrix,1), []);
+
+            % fill time gaps in stimulus with zeros
+            [t_stim, stim] = stimuli.fillGapsInNoiseStim(t_stim, stim);
+            t_toeplitz = t_stim;
+
             %% Prepare traces
 
             % ignore spike data before/after visual noise stimulation
@@ -102,8 +112,7 @@ for subj = 1:length(subjDirs) % animals
 
             %% Map RFs
             % generate toplitz matrix for stimulus
-            [toeplitz, t_toeplitz] = ...
-                rf.makeStimToeplitz(stimMatrix, t_stim, rfBins);
+            toeplitz = rf.makeStimToeplitz(stim, rfBins);
 
             %--------------------------------------------------------------
             % Comment if RFs are already mapped and only Gaussian fit is
