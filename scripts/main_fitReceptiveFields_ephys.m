@@ -22,11 +22,13 @@ plotFolder = '05_ReceptiveFields';
 cms = cat(3, cm_ON, cm_OFF);
 ellipse_x = linspace(-pi, pi, 100);
 titles = {'ON field','OFF field'};
+depthPlotFolders = {'1_above', '2_sSC', '3_dSC', '4_below', ...
+    '5_unknown'};
 
 % for depth estimate
 SC_extent = 1000; % microns
 
-%% Fit RFs and get cross-validated explained variance
+%% Fit RFs and get explained variance
 subjDirs = dir(fullfile(folders.data, 'ephys'));
 subjDirs = subjDirs(~startsWith({subjDirs.name}, '.') & [subjDirs.isdir]);
 for subj = 1:length(subjDirs) % animals
@@ -195,11 +197,10 @@ for subj = 1:length(subjDirs) % animals
                 end
                 fPlots = fullfile(folders.plots, plotFolder, ...
                     'ephys', 'noise', name, date);
-                if ~isfolder(fPlots)
-                    mkdir(fullfile(fPlots, '1_above'))
-                    mkdir(fullfile(fPlots, '2_sSC'))
-                    mkdir(fullfile(fPlots, '3_dSC'))
-                    mkdir(fullfile(fPlots, '4_below'))
+                for fp = 1:length(depthPlotFolders)
+                    if ~isfolder(fullfile(fPlots, depthPlotFolders{fp}))
+                        mkdir(fullfile(fPlots, depthPlotFolders{fp}))
+                    end
                 end
                 % load data
                 results = io.getNoiseRFFits(f);
@@ -212,11 +213,10 @@ for subj = 1:length(subjDirs) % animals
                 end
                 fPlots = fullfile(folders.plots, plotFolder, ...
                     'ephys', 'circles', name, date);
-                if ~isfolder(fPlots)
-                    mkdir(fullfile(fPlots, '1_above'))
-                    mkdir(fullfile(fPlots, '2_sSC'))
-                    mkdir(fullfile(fPlots, '3_dSC'))
-                    mkdir(fullfile(fPlots, '4_below'))
+                for fp = 1:length(depthPlotFolders)
+                    if ~isfolder(fullfile(fPlots, depthPlotFolders{fp}))
+                        mkdir(fullfile(fPlots, depthPlotFolders{fp}))
+                    end
                 end
                 % load data
                 results = io.getCircleRFFits(f);
@@ -244,7 +244,8 @@ for subj = 1:length(subjDirs) % animals
                 if ndims(results.maps) == 5 % visual noise
                     rfield = squeeze(results.maps(iUnit,:,:,mxTime,:));
                 elseif ndims(results.maps) == 6 % circle paradigm
-                    [~, mxSize] = max(results.sizeTuning(iUnit,:));
+                    [~, mxSize] = max(abs(results.sizeTuning(iUnit,:)), ...
+                        [], 2, 'omitnan');
                     rfield = squeeze(results.maps(iUnit,:,:,mxSize,mxTime,:));
                 end
                 rfield(:,:,2) = -rfield(:,:,2);
@@ -284,24 +285,34 @@ for subj = 1:length(subjDirs) % animals
                     colorbar
                 end
 
-                depth = spikeData.clusterDepths(iUnit,:);
+                if isfield(spikeData, 'clusterDepths')
+                    depth = spikeData.clusterDepths(iUnit,:);
+                else
+                    depth = [NaN NaN];
+                end
+                if isnan(depth(1))
+                    depthText = 'Depth unavailable';
+                    depthName = 'unknown';
+                else
+                    depthText = sprintf('%.1f um from SC surface', ...
+                        depth(1));
+                    depthName = sprintf('%04d', round(depth(1)));
+                end
                 if stimType == 1
                     sgtitle(sprintf(['ROI %d ' ...
-                        '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
-                        '%.1f um from SC surface'], ...
+                        '(EV: %.3f, peak/noise: %.1f, %s)\n%s'], ...
                         spikeData.clusterIDs(iUnit), ...
                         results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}, ...
-                        depth(1)))
+                        depthText))
                 else
                     sgtitle(sprintf(['ROI %d, size: %.1f deg ' ...
-                        '(EV: %.3f, peak/noise: %.1f, %s)\n' ...
-                        '%.1f um from SC surface'], ...
+                        '(EV: %.3f, peak/noise: %.1f, %s)\n%s'], ...
                         spikeData.clusterIDs(iUnit), ...
                         results.diameters(mxSize), ...
                         results.EV(iUnit), results.peaks(iUnit), ...
                         RFtypes{results.bestSubFields(iUnit)}, ...
-                        depth(1)))
+                        depthText))
                 end
 
                 switch depth(2)
@@ -313,9 +324,11 @@ for subj = 1:length(subjDirs) % animals
                         fp = '3_dSC';
                     case 0
                         fp = '4_below';
+                    otherwise
+                        fp = '5_unknown';
                 end
                 saveas(gcf, fullfile(fPlots, fp, ...
-                    sprintf('%04d_Unit%04d.jpg', round(depth(1)), ...
+                    sprintf('%s_Unit%04d.jpg', depthName, ...
                     spikeData.clusterIDs(iUnit))));
                 close gcf
             end
@@ -342,6 +355,11 @@ for subj = 1:length(subjDirs) % animals
 
         % load data
         spikeData = io.getEphysData(f);
+        if ~isfield(spikeData, 'clusterDepths')
+            warning('Skipping RF outline plot for %s %s: clusters.depths.npy is missing.', ...
+                name, date)
+            continue
+        end
         chanCoord = readNPY(fullfile(f, 'channels.localCoordinates.npy'));
         SC_depth = readNPY(fullfile(f, '_ss_recordings.scChannels.npy'));
         SC_top = chanCoord(SC_depth(1), 2);

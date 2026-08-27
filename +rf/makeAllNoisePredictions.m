@@ -34,8 +34,22 @@ for iUnit = 1:numUnits
     else % circle paradigm
         % repeat spatio-temporal RF for each diameter, weighted according
         % to size tuning
+        tuning = sizeTuning(iUnit,:);
+        if all(isnan(tuning))
+            continue
+        end
+        [~, peakSize] = max(abs(tuning), [], 2, 'omitnan');
+        sgn = sign(tuning(peakSize));
+        if sgn == 0 || isnan(sgn)
+            sgn = 1;
+        end
+        tuning = tuning .* sgn;
+        peakTuning = max(tuning, [], 2, 'omitnan');
+        if peakTuning == 0 || isnan(peakTuning)
+            continue
+        end
         spatTempMask = reshape(spatTempMask, [], 1) * ...
-            (sizeTuning(iUnit,:) ./ max(sizeTuning(iUnit,:))); % [(pix * t) x diameters]
+            (tuning ./ peakTuning); % [(pix * t) x diameters]
         % spatTempMas: [rows x cols x diameters x t x ON/OFF]
         spatTempMask = permute(reshape( ...
             spatTempMask, size(fitGaussians,2), size(fitGaussians,3), ...

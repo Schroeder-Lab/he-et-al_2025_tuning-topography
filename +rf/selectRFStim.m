@@ -23,9 +23,6 @@ if nargin < 4
     dist2edge = 0;
 end
 
-edges = [-95 0 51 -27]; % [left, right, top, bottom] where bottom
-                        % and top are negative if above horizon
-
 n = 0;
 for stimType = 1:2
     if isempty(results{stimType})
@@ -36,6 +33,7 @@ for stimType = 1:2
         EVs = NaN(n, 2);
     end
     dt = results{stimType};
+    edges = getResultEdges(dt);
     pos = results{stimType}.gaussPars(:,[2 4]);
     % exclude all RFs too close to monitor edge
     invalidRF = dt.EV < minEV | dt.peaks < minPeak | ...
@@ -47,3 +45,21 @@ for stimType = 1:2
 end
 [~, stimTypes] = max(EVs, [], 2);
 stimTypes(all(isnan(EVs), 2)) = NaN;
+end
+
+function edges = getResultEdges(result)
+if isfield(result, 'edges')
+    edges = result.edges;
+    return
+end
+if ~isfield(result, 'x') || ~isfield(result, 'y')
+    error('RF result must contain either edges or x/y coordinates.')
+end
+gridX = result.x;
+gridY = result.y;
+gridW = median(diff(gridX));
+gridH = median(-diff(gridY));
+% edges: [left right top bottom] (above horizon: >0)
+edges = [gridX(1)-0.5*gridW gridX(end)+0.5*gridW ...
+    gridY(1)+0.5*gridH gridY(end)-0.5*gridH];
+end

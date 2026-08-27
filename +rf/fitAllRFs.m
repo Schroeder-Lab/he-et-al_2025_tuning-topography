@@ -63,8 +63,9 @@ for iUnit = 1:numUnits
         rfield(:,:,:,:,2) = -rfield(:,:,:,:,2);
         % average across time
         rf_tmp = squeeze(mean(rfield,4,"omitnan"));
-        % most driven RF "pixel"
-        [~,mpx] = max(rf_tmp, [], "all");
+        % most driven RF "pixel", regardless of whether response is
+        % enhanced or suppressed
+        [~,mpx] = max(abs(rf_tmp), [], "all", "omitnan");
         % translate "pixel" to indices in RF dimensions
         [mr,mc,md,ms] = ind2sub(size(rf_tmp), mpx);
         % get size tuning for optimal RF location and subfield
@@ -72,9 +73,10 @@ for iUnit = 1:numUnits
         % sign of strongest response (enhanced or suppressed)
         sgn = sign(mx(md));
         sizeTuning(iUnit,:) = mx;
-        % determine circle sizes that drive cell to >thresh_diam of maximum
-        % response
-        gd = (mx .* sgn) ./ max(mx.*sgn) > thresh_diam;
+        % determine circle sizes that drive or suppress cell to
+        % >thresh_diam of the sign-aligned peak response
+        mx_signed = mx .* sgn;
+        gd = mx_signed ./ max(mx_signed, [], 2, 'omitnan') > thresh_diam;
         % average across well-driving circle sizes
         rfield = squeeze(mean(rfield(:,:,gd,:,:),3));
     end

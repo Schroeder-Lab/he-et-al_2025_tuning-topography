@@ -19,6 +19,9 @@ ind = isnan(zTrace);
 toeplitz(ind,:) = [];
 zTrace(ind,:) = [];
 
+% set NaN stimulus predictors (e.g. untested circle conditions) to zero
+toeplitz(isnan(toeplitz)) = 0;
+
 % duplicate stimulus matrix to predict ON part (1st half) and OFF
 % part (2nd half)
 s = toeplitz;

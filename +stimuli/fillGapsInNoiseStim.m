@@ -11,7 +11,7 @@ if ~isempty(indGap)
     time_new = [];
     k = 1;
     for g = 1:length(indGap)
-        add = floor(diff(t_stim(indGap(g) + [0 1])) ./ stimBin);
+        add = max(floor(diff(t_stim(indGap(g) + [0 1])) ./ stimBin) - 1, 0);
         stim_new = [stim_new; stim(k:indGap(g),:); ...
             zeros(add, size(stim,2))];
         time_new = [time_new; time(k:indGap(g)); ...
